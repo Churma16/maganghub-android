@@ -106,12 +106,13 @@ fun DashboardScreen(
         context.startActivity(intent)
     }
 
-    var remainingTimeText by remember { mutableStateOf(calculateRemainingTime()) }
+    var remainingTimeText by remember { mutableStateOf(calculateRemainingTime().first) }
 
     LaunchedEffect(Unit) {
         while (isActive) {
-            remainingTimeText = calculateRemainingTime()
-            delay(1000L)
+            val (timeText, delayMs) = calculateRemainingTime()
+            remainingTimeText = timeText
+            delay(delayMs)
         }
     }
 
@@ -726,14 +727,19 @@ private fun formatHeroDate(dateStr: String?): String {
     return LocalDate.now(ZONE_WIB).format(INDONESIAN_HERO_DATE_FORMATTER)
 }
 
-private fun calculateRemainingTime(): String {
+private fun calculateRemainingTime(): Pair<String, Long> {
     val now = ZonedDateTime.now(ZONE_WIB)
     val deadline = now.toLocalDate().atTime(23, 59, 59).atZone(ZONE_WIB)
     val duration = Duration.between(now, deadline)
     if (duration.isNegative || duration.isZero) {
-        return "0j 0m"
+        return Pair("0j 0m", 60_000L)
     }
     val hours = duration.toHours()
     val minutes = duration.toMinutes() % 60
-    return "${hours}j ${minutes}m"
+    val seconds = duration.seconds % 60
+    return if (hours > 0) {
+        Pair("${hours}j ${minutes}m", 30_000L)
+    } else {
+        Pair("${minutes}m ${seconds}d", 1_000L)
+    }
 }
