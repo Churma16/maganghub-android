@@ -15,7 +15,7 @@ jobs:
   verify:
     name: Code & Test Verification
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.action != 'labeled' || contains(github.event.pull_request.labels.*.name, 'build-apk')
+    if: github.event_name != 'pull_request' || github.event.action != 'labeled' || github.event.label.name == 'build-apk'
 
     steps:
       - name: Checkout Repository
