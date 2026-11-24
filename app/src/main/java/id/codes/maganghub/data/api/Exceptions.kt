@@ -17,6 +17,15 @@ class ForbiddenException(
 ) : IOException(message)
 
 /**
+ * Thrown when MagangHub or Kemnaker API returns HTTP 429 Too Many Requests.
+ * @param retryAfterSeconds backoff delay in seconds parsed from Retry-After header or default fallback.
+ */
+class RateLimitedException(
+    val retryAfterSeconds: Long = 900L,
+    message: String = "Rate limit reached (HTTP 429). Retry after $retryAfterSeconds seconds."
+) : IOException(message)
+
+/**
  * Thrown when the endpoint is not found (HTTP 404).
  */
 class NotFoundException(

@@ -204,4 +204,60 @@ class MagangHubApiClientTest {
         assertTrue(req4.path?.startsWith("/api/v1/auth/login/callback") == true)
         assertTrue(req4.path?.contains("code=mock_auth_code_123") == true)
     }
+
+    @Test
+    fun testParseRetryAfter_NumericSeconds() {
+        assertEquals(120L, MagangHubApiClient.parseRetryAfter("120"))
+        assertEquals(3600L, MagangHubApiClient.parseRetryAfter(" 3600 "))
+    }
+
+    @Test
+    fun testParseRetryAfter_NullOrEmptyFallback() {
+        assertEquals(900L, MagangHubApiClient.parseRetryAfter(null))
+        assertEquals(900L, MagangHubApiClient.parseRetryAfter(""))
+        assertEquals(900L, MagangHubApiClient.parseRetryAfter("invalid_data"))
+    }
+
+    @Test
+    fun testParseRetryAfter_HttpDate() {
+        val futureDate = java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC).plusSeconds(300)
+        val formattedDate = futureDate.format(java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME)
+        val parsedSeconds = MagangHubApiClient.parseRetryAfter(formattedDate)
+        assertTrue("Expected parsed seconds near 300, got: $parsedSeconds", parsedSeconds in 290..310)
+    }
+
+    @Test
+    fun testFetchTodayAttendanceStatusRateLimited() {
+        mockServer.enqueue(
+            MockResponse()
+                .setResponseCode(429)
+                .setHeader("Content-Type", "application/json")
+                .setHeader("Retry-After", "180")
+                .setBody("""{"message":"Too many requests"}""")
+        )
+
+        val exception = assertThrows(RateLimitedException::class.java) {
+            runBlocking {
+                client.fetchTodayAttendanceStatus("any_valid_token")
+            }
+        }
+        assertEquals(180L, exception.retryAfterSeconds)
+    }
+
+    @Test
+    fun testMobileUserAgentHeader() = runBlocking {
+        mockServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("""{"data":{"date":"2026-11-24","has_attendance":true}}""")
+        )
+
+        client.fetchTodayAttendanceStatus("sample_token")
+        val recorded = mockServer.takeRequest()
+        val userAgent = recorded.getHeader("User-Agent")
+        assertNotNull(userAgent)
+        assertTrue("User agent should indicate Android Mobile, got: $userAgent", userAgent?.contains("Android") == true)
+        assertTrue("User agent should indicate Mobile, got: $userAgent", userAgent?.contains("Mobile") == true)
+    }
 }

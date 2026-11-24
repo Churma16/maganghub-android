@@ -47,11 +47,13 @@ class AttendanceRepositoryImpl(
                     val token = apiClient.loginWithCredentials(username, password)
                     storage.saveCredentials(username, password)
                     storage.saveAccessToken(token)
+                    storage.resetLoginFailureCount()
                     _sessionFlow.value = storage.getUserSession()
                     Log.i(TAG, "Successfully authenticated user $username with Kemnaker SSO")
                     Result.success(token)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Login failed for user $username", e)
+                    storage.incrementLoginFailureCount()
+                    Log.e(TAG, "Login failed for user $username (failure count: ${storage.getLoginFailureCount()})", e)
                     Result.failure(e)
                 }
             }
@@ -69,6 +71,13 @@ class AttendanceRepositoryImpl(
                     if (savedUsername.isNullOrBlank() || savedPassword.isNullOrBlank()) {
                         return@withContext Result.failure(
                             UnauthorizedSessionException("Belum login. Masukkan kredensial Kemnaker terlebih dahulu.")
+                        )
+                    }
+
+                    if (storage.isLoginCircuitOpen()) {
+                        Log.w(TAG, "SSO auto-login circuit breaker is open. Halting auto-login.")
+                        return@withContext Result.failure(
+                            UnauthorizedSessionException("Auto-login ditangguhkan sementara demi keamanan akun Kemnaker. Silakan login manual di aplikasi.")
                         )
                     }
 
@@ -92,6 +101,11 @@ class AttendanceRepositoryImpl(
                     val savedPassword = storage.getPassword()
                     if (savedUsername.isNullOrBlank() || savedPassword.isNullOrBlank()) {
                         throw e
+                    }
+
+                    if (storage.isLoginCircuitOpen()) {
+                        Log.w(TAG, "SSO auto-login circuit breaker is open. Halting re-authentication.")
+                        throw UnauthorizedSessionException("Auto-login ditangguhkan sementara demi keamanan akun Kemnaker. Silakan login manual di aplikasi.")
                     }
 
                     Log.w(TAG, "Access token expired (401). Attempting re-authentication with Kemnaker SSO...")
