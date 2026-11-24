@@ -47,6 +47,13 @@ class MagangHubApiClient(
             }
             return token
         }
+
+        fun ensureHttps(url: String): String {
+            if (url.startsWith("http://", ignoreCase = true)) {
+                return "https://" + url.substring(7)
+            }
+            return url
+        }
     }
 
     private val gson = Gson()
@@ -59,6 +66,15 @@ class MagangHubApiClient(
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
+        .addInterceptor { chain ->
+            var request = chain.request()
+            val url = request.url
+            if (!request.isHttps && (url.host.endsWith("kemnaker.go.id") || url.host.contains("maganghub"))) {
+                val secureUrl = url.newBuilder().scheme("https").port(443).build()
+                request = request.newBuilder().url(secureUrl).build()
+            }
+            chain.proceed(request)
+        }
         .addInterceptor(loggingInterceptor)
         .build()
 
@@ -142,7 +158,7 @@ class MagangHubApiClient(
                 throw IOException("Step 1 failed with status ${step1Response.code}: $step1Body")
             }
 
-            val ssoAuthUrlString = parseSsoAuthorizationUrl(step1Body)
+            val ssoAuthUrlString = ensureHttps(parseSsoAuthorizationUrl(step1Body))
             if (ssoAuthUrlString.isBlank()) {
                 throw IOException("Step 1 failed: empty SSO authorization URL in response: $step1Body")
             }
@@ -174,7 +190,7 @@ class MagangHubApiClient(
                 .followSslRedirects(false)
                 .build()
 
-            val ssoLoginEndpoint = "${parsedSsoUrl.scheme}://${parsedSsoUrl.host}/auth/login"
+            val ssoLoginEndpoint = "https://${parsedSsoUrl.host}/auth/login"
             val payload = JsonObject().apply {
                 addProperty("username", trimmedUsername)
                 addProperty("password", trimmedPassword)
@@ -199,9 +215,9 @@ class MagangHubApiClient(
             var redirectUriString: String? = null
 
             if (step3Response.code in listOf(302, 303, 307, 308)) {
-                redirectUriString = step3Response.header("Location")
+                redirectUriString = step3Response.header("Location")?.let { ensureHttps(it) }
             } else if (step3Response.code == 200) {
-                redirectUriString = parseRedirectUriFromJson(step3Body)
+                redirectUriString = parseRedirectUriFromJson(step3Body)?.let { ensureHttps(it) }
             } else {
                 // Parse Kemnaker error message
                 val errorMsg = parseErrorMessageFromJson(step3Body)
@@ -223,9 +239,9 @@ class MagangHubApiClient(
                 hopCount++
                 val urlToLoad = currentRedirectUrl ?: break
                 val fullUrl = if (!urlToLoad.startsWith("http://") && !urlToLoad.startsWith("https://")) {
-                    "${parsedSsoUrl.scheme}://${parsedSsoUrl.host}$urlToLoad"
+                    "https://${parsedSsoUrl.host}$urlToLoad"
                 } else {
-                    urlToLoad
+                    ensureHttps(urlToLoad)
                 }
 
                 val hopRequest = Request.Builder()
@@ -236,7 +252,7 @@ class MagangHubApiClient(
                     .build()
 
                 val nextLocation = step3Client.newCall(hopRequest).execute().use { hopResponse ->
-                    hopResponse.header("Location")
+                    hopResponse.header("Location")?.let { ensureHttps(it) }
                 } ?: break
                 currentRedirectUrl = nextLocation
 
