@@ -86,9 +86,9 @@ val OnSecondaryDark = Slate900               // 0xFF0F172A
 val SecondaryContainerDark = Color(0xFF1E293B)
 val OnSecondaryContainerDark = Slate100
 
-val BackgroundDark = Color(0xFF0B1120)       // Ultra Deep Slate
+val BackgroundDark = Color(0xFF0F172A)       // Slate-900
 val OnBackgroundDark = Slate50               // 0xFFF8FAFC
-val SurfaceDark = Color(0xFF1E293B)
+val SurfaceDark = Color(0xFF1E293B)          // Slate-800
 val OnSurfaceDark = Slate50                  // 0xFFF8FAFC
 val SurfaceVariantDark = Color(0xFF334155)
 val OnSurfaceVariantDark = Slate400          // 0xFF94A3B8

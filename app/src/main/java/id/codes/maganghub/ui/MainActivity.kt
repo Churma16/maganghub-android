@@ -46,9 +46,6 @@ import id.codes.maganghub.ui.screens.SettingsScreen
 import id.codes.maganghub.ui.theme.KemnakerSky
 import id.codes.maganghub.ui.theme.KemnakerSkyContainer
 import id.codes.maganghub.ui.theme.MagangHubTheme
-import id.codes.maganghub.ui.theme.PureWhite
-import id.codes.maganghub.ui.theme.Slate500
-import id.codes.maganghub.ui.theme.Slate900
 import id.codes.maganghub.ui.viewmodel.AttendanceViewModel
 import id.codes.maganghub.ui.viewmodel.AttendanceViewModelFactory
 
@@ -112,7 +109,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
                         text = if (selectedTab == 0) "Presensi MagangHub" else "Pengaturan Presensi",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge,
-                        color = Slate900
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 actions = {
@@ -139,13 +136,13 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = Slate900
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
         bottomBar = {
             NavigationBar(
-                containerColor = PureWhite,
+                containerColor = MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp
             ) {
                 NavigationBarItem(
@@ -157,8 +154,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
                         selectedIconColor = KemnakerSky,
                         selectedTextColor = KemnakerSky,
                         indicatorColor = KemnakerSkyContainer,
-                        unselectedIconColor = Slate500,
-                        unselectedTextColor = Slate500
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 )
                 NavigationBarItem(
@@ -170,8 +167,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
                         selectedIconColor = KemnakerSky,
                         selectedTextColor = KemnakerSky,
                         indicatorColor = KemnakerSkyContainer,
-                        unselectedIconColor = Slate500,
-                        unselectedTextColor = Slate500
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 )
             }

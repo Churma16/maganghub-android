@@ -5,8 +5,8 @@ import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,11 +45,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,13 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.AttendanceStatus
-import id.codes.maganghub.ui.theme.BorderSlate
-import id.codes.maganghub.ui.theme.CardBorderLight
-import id.codes.maganghub.ui.theme.DangerRed
 import id.codes.maganghub.ui.theme.DangerRedContainer
 import id.codes.maganghub.ui.theme.DangerRedText
 import id.codes.maganghub.ui.theme.HadirGreen
-import id.codes.maganghub.ui.theme.HadirGreenDark
 import id.codes.maganghub.ui.theme.HadirGreenLight
 import id.codes.maganghub.ui.theme.HadirGreenText
 import id.codes.maganghub.ui.theme.InfoSky
@@ -77,19 +68,12 @@ import id.codes.maganghub.ui.theme.InfoSkyContainer
 import id.codes.maganghub.ui.theme.InfoSkyText
 import id.codes.maganghub.ui.theme.KemnakerSky
 import id.codes.maganghub.ui.theme.KemnakerSkyContainer
-import id.codes.maganghub.ui.theme.PureWhite
-import id.codes.maganghub.ui.theme.Slate400
-import id.codes.maganghub.ui.theme.Slate600
-import id.codes.maganghub.ui.theme.Slate900
 import id.codes.maganghub.ui.theme.WarningAmber
 import id.codes.maganghub.ui.theme.WarningAmberContainer
 import id.codes.maganghub.ui.theme.WarningAmberText
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -118,22 +102,13 @@ fun DashboardScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. Floating Server Clock Pill
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            ServerClockPill()
-        }
-
-        // 2. Header Greeting
+        // 1. Header Greeting
         HeaderGreetingSection(username = uiState.username)
 
-        // 3. Official Monev Web Banners
-        SoftSkyInfoBanner()
+        // 2. Official Monev Web Announcement Banner
         SoftAmberAnnouncementBanner()
 
-        // 4. Runtime Error or Success Alert Banner
+        // 3. Runtime Error or Success Alert Banner
         AnimatedVisibility(
             visible = uiState.errorMessage != null,
             enter = fadeIn(),
@@ -160,26 +135,26 @@ fun DashboardScreen(
             )
         }
 
-        // 5. Main "Hari Ini" Card
+        // 4. Main "Hari Ini" Card
         HariIniCard(
             uiState = uiState,
             onOpenLogin = onOpenLoginDialog,
             onOpenPortal = openMonevPortal
         )
 
-        // 6. Next Reminder Status Card
+        // 5. Next Reminder Status Card
         ReminderStatusCard(
             nextReminderText = uiState.nextReminderFormatted,
             isReminderEnabled = uiState.reminderSettings.isEnabled,
             intervalMinutes = uiState.reminderSettings.intervalMinutes
         )
 
-        // 7. Attendance Details Breakdown Card
+        // 6. Attendance Details Breakdown Card
         if (uiState.attendanceData != null) {
             AttendanceDetailCard(uiState = uiState)
         }
 
-        // 8. Action Buttons Section
+        // 7. Action Buttons Section
         ActionButtonsSection(
             isChecking = uiState.isChecking,
             isLoggedIn = uiState.isLoggedIn,
@@ -187,7 +162,7 @@ fun DashboardScreen(
             onOpenMonevPortal = openMonevPortal
         )
 
-        // 9. Last Sync Footer
+        // 8. Last Sync Footer
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -197,7 +172,7 @@ fun DashboardScreen(
             Text(
                 text = "Terakhir diperbarui: ${formatLastSync(uiState.lastSyncTimestamp)}",
                 style = MaterialTheme.typography.bodySmall,
-                color = Slate600
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -206,106 +181,17 @@ fun DashboardScreen(
 }
 
 /**
- * Floating server clock pill: "🕒 Waktu Server [HH.mm.ss] WIB (GMT+7)"
- */
-@Composable
-private fun ServerClockPill(modifier: Modifier = Modifier) {
-    var currentTime by remember {
-        mutableStateOf(getCurrentWibTimeString())
-    }
-
-    LaunchedEffect(Unit) {
-        while (isActive) {
-            currentTime = getCurrentWibTimeString()
-            delay(1000L)
-        }
-    }
-
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = InfoSkyContainer,
-        border = androidx.compose.foundation.BorderStroke(1.dp, InfoSkyBorder),
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = "🕒 Waktu Server $currentTime WIB (GMT+7)",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = InfoSkyText
-            )
-        }
-    }
-}
-
-private val ZONE_WIB = ZoneId.of("Asia/Jakarta")
-private val WIB_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH.mm.ss")
-private val INDONESIAN_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale("id", "ID"))
-
-private fun getCurrentWibTimeString(): String {
-    return ZonedDateTime.now(ZONE_WIB).format(WIB_TIME_FORMATTER)
-}
-
-/**
- * Header Greeting: "Halo, [Username] 👋" with subtitle "Global Digital Niaga"
+ * Header Greeting: "Halo, [Username] 👋"
  */
 @Composable
 private fun HeaderGreetingSection(username: String) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        val displayName = username.ifBlank { "Rekan Magang" }
-        Text(
-            text = "Halo, $displayName 👋",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Slate900
-        )
-        Text(
-            text = "Global Digital Niaga",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = Slate600
-        )
-    }
-}
-
-/**
- * Soft Sky info card ("Izin hingga 3 hari dibayar...")
- */
-@Composable
-private fun SoftSkyInfoBanner() {
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = InfoSkyContainer,
-        border = androidx.compose.foundation.BorderStroke(1.dp, InfoSkyBorder),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = null,
-                tint = InfoSky,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = "Izin hingga 3 hari dibayar secara proporsional. Izin lebih dari 3 hari tidak dibayarkan uang saku bulanan.",
-                style = MaterialTheme.typography.bodySmall,
-                color = InfoSkyText,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
+    val displayName = username.ifBlank { "Rekan Magang" }
+    Text(
+        text = "Halo, $displayName 👋",
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onBackground
+    )
 }
 
 /**
@@ -316,7 +202,7 @@ private fun SoftAmberAnnouncementBanner() {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = WarningAmberContainer,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
+        border = BorderStroke(1.dp, Color(0xFFFDE68A)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -343,12 +229,6 @@ private fun SoftAmberAnnouncementBanner() {
 
 /**
  * Main "Hari Ini" Card
- * - Pure white card with rounded border (20.dp radius)
- * - Card header: Calendar icon in soft blue square, formatted Date, and pill badge "Aktif" (green)
- * - Center Status: Large mint circular icon (0xFFDCFCE7) with green clipboard checkmark,
- *   bold headline "Laporan hari ini sudah diisi", description "Laporan dan kehadiran Anda sudah tercatat."
- * - Main CTA Button: Emerald Green (0xFF00875A) "Lihat Laporan Hari Ini >"
- * - Inner deadline box: Light blue container with info icon "Batas pengisian laporan hari ini pukul 23.59 WIB"
  */
 @Composable
 private fun HariIniCard(
@@ -361,8 +241,8 @@ private fun HariIniCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = PureWhite),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderLight),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
@@ -397,7 +277,7 @@ private fun HariIniCard(
                         text = formatDisplayDate(uiState.attendanceData?.date),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = Slate900
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -495,7 +375,7 @@ private fun HariIniCard(
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = InfoSkyContainer,
-                border = androidx.compose.foundation.BorderStroke(1.dp, InfoSkyBorder),
+                border = BorderStroke(1.dp, InfoSkyBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -560,7 +440,7 @@ private fun CenterStatusSection(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = Slate900,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
 
@@ -568,7 +448,7 @@ private fun CenterStatusSection(
         Text(
             text = description,
             style = MaterialTheme.typography.bodyMedium,
-            color = Slate600,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             lineHeight = 20.sp,
             modifier = Modifier.padding(horizontal = 8.dp)
@@ -580,7 +460,10 @@ private fun CenterStatusSection(
         Button(
             onClick = onButtonClick,
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = buttonColor,
+                contentColor = Color.White
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
@@ -589,7 +472,7 @@ private fun CenterStatusSection(
                 text = buttonText,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = PureWhite
+                color = Color.White
             )
         }
     }
@@ -607,8 +490,8 @@ private fun ReminderStatusCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = PureWhite),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderLight)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
     ) {
         Row(
             modifier = Modifier
@@ -621,13 +504,13 @@ private fun ReminderStatusCard(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (isReminderEnabled) KemnakerSkyContainer else Color(0xFFF1F5F9)),
+                    .background(if (isReminderEnabled) KemnakerSkyContainer else MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.NotificationsActive,
                     contentDescription = "Pengingat",
-                    tint = if (isReminderEnabled) KemnakerSky else Slate400,
+                    tint = if (isReminderEnabled) KemnakerSky else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -640,18 +523,18 @@ private fun ReminderStatusCard(
                     Text(
                         text = "Jadwal Pengingat",
                         style = MaterialTheme.typography.labelLarge,
-                        color = Slate600
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Surface(
                         shape = RoundedCornerShape(4.dp),
-                        color = if (isReminderEnabled) HadirGreenLight else Color(0xFFF1F5F9)
+                        color = if (isReminderEnabled) HadirGreenLight else MaterialTheme.colorScheme.surfaceVariant
                     ) {
                         Text(
                             text = if (isReminderEnabled) "AKTIF ($intervalMinutes m)" else "NONAKTIF",
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = if (isReminderEnabled) HadirGreenText else Slate600
+                            color = if (isReminderEnabled) HadirGreenText else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -660,7 +543,7 @@ private fun ReminderStatusCard(
                     text = nextReminderText,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = Slate900
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
@@ -677,8 +560,8 @@ private fun AttendanceDetailCard(uiState: AttendanceUiState) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = PureWhite),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderLight)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -740,20 +623,20 @@ private fun DetailRow(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Slate600,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Slate600
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
-            color = Slate900
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -777,14 +660,15 @@ private fun ActionButtonsSection(
                 .fillMaxWidth()
                 .height(48.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = KemnakerSky
+                containerColor = KemnakerSky,
+                contentColor = Color.White
             )
         ) {
             if (isChecking) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
-                    color = PureWhite
+                    color = Color.White
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text("Memeriksa Server Monev...")
@@ -801,11 +685,11 @@ private fun ActionButtonsSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSlate)
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         ) {
             Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp), tint = KemnakerSky)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Buka Monev MagangHub Portal", fontWeight = FontWeight.Medium, color = Slate900)
+            Text("Buka Monev MagangHub Portal", fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -842,6 +726,9 @@ private fun BannerCard(
         }
     }
 }
+
+private val ZONE_WIB = ZoneId.of("Asia/Jakarta")
+private val INDONESIAN_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale("id", "ID"))
 
 private fun formatDisplayDate(dateStr: String?): String {
     if (!dateStr.isNullOrBlank()) {
