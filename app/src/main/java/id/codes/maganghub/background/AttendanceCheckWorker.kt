@@ -107,6 +107,14 @@ class AttendanceCheckWorker(
             val exception = checkResult.exceptionOrNull()
             Log.e(TAG, "Attendance verification failed", exception)
 
+            if (exception is id.codes.maganghub.data.api.RateLimitedException) {
+                val backoffSec = exception.retryAfterSeconds.coerceAtLeast(60L)
+                val resumeEpochMillis = System.currentTimeMillis() + (backoffSec * 1000L)
+                Log.w(TAG, "MagangHub API rate limited (HTTP 429). Rescheduling next alarm in $backoffSec seconds.")
+                AttendanceAlarmScheduler.scheduleNextAlarm(appContext, overrideTriggerMillis = resumeEpochMillis)
+                return Result.success()
+            }
+
             if (exception is UnauthorizedSessionException && !AttendanceAlarmScheduler.isAuthAlertSentToday(appContext)) {
                 NotificationHelper.showSessionExpiredNotification(appContext)
                 AttendanceAlarmScheduler.setAuthAlertSent(appContext, true)

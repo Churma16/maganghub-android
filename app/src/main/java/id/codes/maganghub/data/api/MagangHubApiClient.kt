@@ -30,7 +30,7 @@ class MagangHubApiClient(
     companion object {
         const val DEFAULT_BASE_URL = "https://monev-api.maganghub.kemnaker.go.id/api/v1"
         const val DEFAULT_USER_AGENT =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
 
         private val CSRF_PATTERN_1 = Pattern.compile(
             "(?i)<meta[^>]+name\\s*=\\s*[\"']csrf-token[\"'][^>]+content\\s*=\\s*[\"']([^\"']+)[\"']"
@@ -50,9 +50,35 @@ class MagangHubApiClient(
 
         fun ensureHttps(url: String): String {
             if (url.startsWith("http://", ignoreCase = true)) {
-                return "https://" + url.substring(7)
+                val parsed = url.toHttpUrlOrNull()
+                if (parsed != null && (parsed.host.endsWith("kemnaker.go.id") || parsed.host.contains("maganghub"))) {
+                    return "https://" + url.substring(7)
+                }
             }
             return url
+        }
+
+        /**
+         * Parses the HTTP Retry-After header as integer seconds or RFC 1123 HTTP-date.
+         * Falls back to defaultSeconds (default: 900 seconds / 15 minutes) on null or parsing failure.
+         */
+        fun parseRetryAfter(headerValue: String?, defaultSeconds: Long = 900L): Long {
+            if (headerValue.isNullOrBlank()) return defaultSeconds
+            val trimmed = headerValue.trim()
+            trimmed.toLongOrNull()?.let { seconds ->
+                return if (seconds > 0) seconds else defaultSeconds
+            }
+            return try {
+                val retryTime = java.time.ZonedDateTime.parse(
+                    trimmed,
+                    java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME
+                )
+                val now = java.time.ZonedDateTime.now(retryTime.zone)
+                val diffSeconds = java.time.Duration.between(now, retryTime).seconds
+                if (diffSeconds > 0) diffSeconds else defaultSeconds
+            } catch (_: Exception) {
+                defaultSeconds
+            }
         }
     }
 
@@ -118,6 +144,10 @@ class MagangHubApiClient(
                 }
                 403 -> throw ForbiddenException()
                 404 -> throw NotFoundException()
+                429 -> {
+                    val retrySec = parseRetryAfter(response.header("Retry-After"))
+                    throw RateLimitedException(retrySec)
+                }
                 else -> throw MagangHubApiException(response.code, responseBody)
             }
         }
@@ -153,6 +183,11 @@ class MagangHubApiClient(
                 .build()
 
             val step1Response = sessionClient.newCall(step1Request).execute()
+            if (step1Response.code == 429) {
+                val retrySec = parseRetryAfter(step1Response.header("Retry-After"))
+                step1Response.close()
+                throw RateLimitedException(retrySec, "Step 1 rate limited (HTTP 429)")
+            }
             val step1Body = step1Response.body?.string().orEmpty()
             if (!step1Response.isSuccessful) {
                 throw IOException("Step 1 failed with status ${step1Response.code}: $step1Body")
@@ -175,6 +210,11 @@ class MagangHubApiClient(
                 .build()
 
             val step2Response = sessionClient.newCall(step2Request).execute()
+            if (step2Response.code == 429) {
+                val retrySec = parseRetryAfter(step2Response.header("Retry-After"))
+                step2Response.close()
+                throw RateLimitedException(retrySec, "Step 2 rate limited (HTTP 429)")
+            }
             val step2Body = step2Response.body?.string().orEmpty()
             if (!step2Response.isSuccessful) {
                 throw IOException("Step 2 failed with status ${step2Response.code}: $step2Body")
@@ -190,13 +230,19 @@ class MagangHubApiClient(
                 .followSslRedirects(false)
                 .build()
 
-            val ssoLoginEndpoint = "https://${parsedSsoUrl.host}/auth/login"
+            val ssoLoginEndpoint = parsedSsoUrl.newBuilder()
+                .encodedPath("/auth/login")
+                .query(null)
+                .fragment(null)
+                .build()
+                .toString()
             val payload = JsonObject().apply {
                 addProperty("username", trimmedUsername)
                 addProperty("password", trimmedPassword)
             }
             val requestBody = payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
 
+            val portSuffix = if (parsedSsoUrl.port != 80 && parsedSsoUrl.port != 443) ":${parsedSsoUrl.port}" else ""
             val step3Request = Request.Builder()
                 .url(ssoLoginEndpoint)
                 .post(requestBody)
@@ -205,11 +251,16 @@ class MagangHubApiClient(
                 .header("X-CSRF-TOKEN", csrfToken)
                 .header("X-Requested-With", "XMLHttpRequest")
                 .header("Referer", ssoLoginEndpoint)
-                .header("Origin", "${parsedSsoUrl.scheme}://${parsedSsoUrl.host}")
+                .header("Origin", "${parsedSsoUrl.scheme}://${parsedSsoUrl.host}$portSuffix")
                 .header("User-Agent", userAgentString)
                 .build()
 
             val step3Response = step3Client.newCall(step3Request).execute()
+            if (step3Response.code == 429) {
+                val retrySec = parseRetryAfter(step3Response.header("Retry-After"))
+                step3Response.close()
+                throw RateLimitedException(retrySec, "Step 3 rate limited (HTTP 429)")
+            }
             val step3Body = step3Response.body?.string().orEmpty()
 
             val redirectUriString = when (step3Response.code) {
@@ -235,11 +286,7 @@ class MagangHubApiClient(
             while (authCode.isNullOrEmpty() && hopCount < 3) {
                 hopCount++
                 val urlToLoad = currentRedirectUrl ?: break
-                val fullUrl = if (!urlToLoad.startsWith("http://") && !urlToLoad.startsWith("https://")) {
-                    "https://${parsedSsoUrl.host}$urlToLoad"
-                } else {
-                    ensureHttps(urlToLoad)
-                }
+                val fullUrl = parsedSsoUrl.resolve(urlToLoad)?.toString() ?: ensureHttps(urlToLoad)
 
                 val hopRequest = Request.Builder()
                     .url(fullUrl)
@@ -286,6 +333,11 @@ class MagangHubApiClient(
                 .build()
 
             val step4Response = sessionClient.newCall(step4Request).execute()
+            if (step4Response.code == 429) {
+                val retrySec = parseRetryAfter(step4Response.header("Retry-After"))
+                step4Response.close()
+                throw RateLimitedException(retrySec, "Step 4 rate limited (HTTP 429)")
+            }
             val step4Body = step4Response.body?.string().orEmpty()
 
             if (!step4Response.isSuccessful) {
