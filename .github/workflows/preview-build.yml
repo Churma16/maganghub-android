@@ -1,0 +1,154 @@
+name: PR Preview Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull Request number to build preview APK for (e.g. 4)"
+        required: true
+        type: string
+  pull_request:
+    types: [labeled]
+
+concurrency:
+  group: preview-build-${{ github.event.inputs.pr_number || github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  preview:
+    name: Build & Publish PR Preview APK
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.label.name == 'build-preview')
+    steps:
+      - name: Resolve PR Details
+        id: pr_meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PR_NUM="${{ github.event.inputs.pr_number }}"
+          else
+            PR_NUM="${{ github.event.pull_request.number }}"
+          fi
+          echo "PR_NUMBER=$PR_NUM" >> $GITHUB_ENV
+          echo "[INFO] Targeting PR #$PR_NUM for preview build"
+
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ env.PR_NUMBER }}/head
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run Release Scripts Unit Tests
+        run: node --test tests/releaseScripts.test.js
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x ./gradlew
+
+      - name: Compute Preview Metadata
+        id: preview_meta
+        run: |
+          VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
+          if [ -z "$VERSION" ]; then
+            echo "[ERROR] Failed to extract versionName from app/build.gradle.kts"
+            exit 1
+          fi
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          PREVIEW_TAG="v${VERSION}-pr${{ env.PR_NUMBER }}.${SHORT_SHA}"
+          VERSION_SUFFIX="-pr.${{ env.PR_NUMBER }}.${SHORT_SHA}"
+          echo "PREVIEW_TAG=$PREVIEW_TAG" >> $GITHUB_ENV
+          echo "PREVIEW_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+          echo "VERSION_SUFFIX=$VERSION_SUFFIX" >> $GITHUB_ENV
+          echo "[INFO] Computed preview tag: $PREVIEW_TAG"
+
+      - name: Restore Release Keystore
+        run: |
+          if [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
+            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > release.jks
+            echo "[INFO] Release keystore restored from repository secret."
+          else
+            echo "[WARN] RELEASE_KEYSTORE_BASE64 not set, falling back to dynamic keystore."
+            keytool -genkeypair -v \
+              -keystore release.jks \
+              -alias maganghub \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass maganghub \
+              -keypass maganghub \
+              -dname "CN=MagangHub, OU=Churma, O=Churma, L=Jakarta, ST=Jakarta, C=ID"
+          fi
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+
+      - name: Build Signed Release APK
+        run: ./gradlew assembleRelease -PversionSuffix="${{ env.VERSION_SUFFIX }}" --stacktrace
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'maganghub' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'maganghub' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'maganghub' }}
+
+      - name: Package Preview APK
+        run: |
+          APK_FILE=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          PREVIEW_APK="maganghub-${{ env.PREVIEW_TAG }}.apk"
+          cp "$APK_FILE" "$PREVIEW_APK"
+          echo "PREVIEW_APK=$PREVIEW_APK" >> $GITHUB_ENV
+          echo "[INFO] Ready to publish preview APK: $PREVIEW_APK"
+
+      - name: Publish Preview Pre-Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.PREVIEW_TAG }}
+          name: "PR #${{ env.PR_NUMBER }} Preview: ${{ env.PREVIEW_TAG }}"
+          target_commitish: ${{ env.SHORT_SHA }}
+          prerelease: true
+          generate_release_notes: false
+          files: ${{ env.PREVIEW_APK }}
+          body: |
+            ### 📱 Preview Build for Pull Request #${{ env.PR_NUMBER }}
+
+            This is an automated preview release built from commit `${{ env.SHORT_SHA }}` on PR #${{ env.PR_NUMBER }}.
+
+            * **Pull Request:** https://github.com/${{ github.repository }}/pull/${{ env.PR_NUMBER }}
+            * **Direct APK Download:** [${{ env.PREVIEW_APK }}](https://github.com/${{ github.repository }}/releases/download/${{ env.PREVIEW_TAG }}/${{ env.PREVIEW_APK }})
+
+            Signed with the official MagangHub keystore. Install directly to test on Android.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post Sticky Comment on PR
+        run: |
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.PREVIEW_TAG }}/${{ env.PREVIEW_APK }}"
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ env.PREVIEW_TAG }}"
+          
+          COMMENT_BODY="### 📱 Preview APK Ready for Testing!
+
+          * **PR:** #${{ env.PR_NUMBER }}
+          * **Commit:** \`${{ env.SHORT_SHA }}\`
+          * **Release:** [${{ env.PREVIEW_TAG }}](${RELEASE_URL})
+          * **Download APK:** [${{ env.PREVIEW_APK }}](${DOWNLOAD_URL})
+
+          > Ditandatangani dengan keystore resmi — siap diunduh dan dipasang di HP tanpa perlu login GitHub."
+
+          gh pr comment "${{ env.PR_NUMBER }}" --repo "${{ github.repository }}" --body "$COMMENT_BODY"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
