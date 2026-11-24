@@ -52,7 +52,7 @@ class AttendanceRepositoryImpl(
                     Log.i(TAG, "Successfully authenticated user $username with Kemnaker SSO")
                     Result.success(token)
                 } catch (e: Exception) {
-                    if (e !is java.net.UnknownHostException && e !is java.net.SocketTimeoutException) {
+                    if (e is id.codes.maganghub.data.api.KemnakerAuthException) {
                         storage.incrementLoginFailureCount()
                     }
                     Log.e(TAG, "Login failed for user $username (failure count: ${storage.getLoginFailureCount()})", e)

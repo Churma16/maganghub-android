@@ -227,12 +227,14 @@ object AttendanceAlarmScheduler {
         val effectiveInterval = (rawInterval + clampedJitter).coerceAtLeast(10)
         val clampedSeed = deviceSeedMinutes.coerceIn(0, 7)
 
+        val tomorrowStart = ZonedDateTime.of(
+            todayDate.plusDays(1),
+            LocalTime.of(startHour, clampedSeed),
+            ZONE_WIB
+        )
+
         if (hasAttendedToday) {
-            return ZonedDateTime.of(
-                todayDate.plusDays(1),
-                LocalTime.of(startHour, clampedSeed),
-                ZONE_WIB
-            )
+            return tomorrowStart
         }
 
         val currentHour = nowWib.hour
@@ -249,23 +251,13 @@ object AttendanceAlarmScheduler {
             currentHour < endHour -> {
                 val nextTrigger = nowWib.plusMinutes(effectiveInterval.toLong())
                 if (nextTrigger.toLocalDate() != todayDate || nextTrigger.hour >= endHour) {
-                    ZonedDateTime.of(
-                        todayDate.plusDays(1),
-                        LocalTime.of(startHour, clampedSeed),
-                        ZONE_WIB
-                    )
+                    tomorrowStart
                 } else {
                     nextTrigger
                 }
             }
             // Past reminder window (after midnight / >= endHour): schedule for tomorrow
-            else -> {
-                ZonedDateTime.of(
-                    todayDate.plusDays(1),
-                    LocalTime.of(startHour, clampedSeed),
-                    ZONE_WIB
-                )
-            }
+            else -> tomorrowStart
         }
     }
 
