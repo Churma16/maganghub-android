@@ -149,7 +149,7 @@ class MagangHubApiClientTest {
 
     @Test
     fun testLoginWithCredentials4StepFlow() = runBlocking {
-        val ssoBaseUrl = mockServer.url("/sso")
+        val ssoBaseUrl = mockServer.url("/sso/")
         val authLoginUrl = "${ssoBaseUrl}auth/login"
 
         // Step 1: GET /api/v1/auth/login returns SSO URL
