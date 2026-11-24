@@ -1,4 +1,4 @@
-name: CI Build Verification
+name: CI Verification
 
 on:
   pull_request:
@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build & Verify APK
+  verify:
+    name: Code & Test Verification
     runs-on: ubuntu-latest
 
     steps:
@@ -51,6 +51,7 @@ jobs:
         run: ./gradlew testDebugUnitTest --continue
 
       - name: Restore Release Keystore
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'build-apk'))
         run: |
           if [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
             echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > release.jks
@@ -71,6 +72,7 @@ jobs:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
 
       - name: Build Signed Release APK
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'build-apk'))
         run: ./gradlew assembleRelease --stacktrace
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'maganghub' }}
@@ -78,6 +80,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'maganghub' }}
 
       - name: Upload Build Artifact
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'build-apk'))
         uses: actions/upload-artifact@v4
         with:
           name: maganghub-pr-apk
