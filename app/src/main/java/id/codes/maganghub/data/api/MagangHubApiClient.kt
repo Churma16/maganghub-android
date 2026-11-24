@@ -50,7 +50,10 @@ class MagangHubApiClient(
 
         fun ensureHttps(url: String): String {
             if (url.startsWith("http://", ignoreCase = true)) {
-                return "https://" + url.substring(7)
+                val parsed = url.toHttpUrlOrNull()
+                if (parsed != null && (parsed.host.endsWith("kemnaker.go.id") || parsed.host.contains("maganghub"))) {
+                    return "https://" + url.substring(7)
+                }
             }
             return url
         }
@@ -227,13 +230,19 @@ class MagangHubApiClient(
                 .followSslRedirects(false)
                 .build()
 
-            val ssoLoginEndpoint = "https://${parsedSsoUrl.host}/auth/login"
+            val ssoLoginEndpoint = parsedSsoUrl.newBuilder()
+                .encodedPath("/auth/login")
+                .query(null)
+                .fragment(null)
+                .build()
+                .toString()
             val payload = JsonObject().apply {
                 addProperty("username", trimmedUsername)
                 addProperty("password", trimmedPassword)
             }
             val requestBody = payload.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
 
+            val portSuffix = if (parsedSsoUrl.port != 80 && parsedSsoUrl.port != 443) ":${parsedSsoUrl.port}" else ""
             val step3Request = Request.Builder()
                 .url(ssoLoginEndpoint)
                 .post(requestBody)
@@ -242,7 +251,7 @@ class MagangHubApiClient(
                 .header("X-CSRF-TOKEN", csrfToken)
                 .header("X-Requested-With", "XMLHttpRequest")
                 .header("Referer", ssoLoginEndpoint)
-                .header("Origin", "${parsedSsoUrl.scheme}://${parsedSsoUrl.host}")
+                .header("Origin", "${parsedSsoUrl.scheme}://${parsedSsoUrl.host}$portSuffix")
                 .header("User-Agent", userAgentString)
                 .build()
 
@@ -277,11 +286,7 @@ class MagangHubApiClient(
             while (authCode.isNullOrEmpty() && hopCount < 3) {
                 hopCount++
                 val urlToLoad = currentRedirectUrl ?: break
-                val fullUrl = if (!urlToLoad.startsWith("http://") && !urlToLoad.startsWith("https://")) {
-                    "https://${parsedSsoUrl.host}$urlToLoad"
-                } else {
-                    ensureHttps(urlToLoad)
-                }
+                val fullUrl = parsedSsoUrl.resolve(urlToLoad)?.toString() ?: ensureHttps(urlToLoad)
 
                 val hopRequest = Request.Builder()
                     .url(fullUrl)

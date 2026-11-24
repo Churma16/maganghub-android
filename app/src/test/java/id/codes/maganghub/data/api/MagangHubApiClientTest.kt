@@ -33,6 +33,8 @@ class MagangHubApiClientTest {
     fun testEnsureHttps() {
         assertEquals("https://account.kemnaker.go.id/auth", MagangHubApiClient.ensureHttps("http://account.kemnaker.go.id/auth"))
         assertEquals("https://account.kemnaker.go.id/auth", MagangHubApiClient.ensureHttps("https://account.kemnaker.go.id/auth"))
+        assertEquals("https://monev-api.maganghub.kemnaker.go.id/api", MagangHubApiClient.ensureHttps("http://monev-api.maganghub.kemnaker.go.id/api"))
+        assertEquals("http://localhost:8080/auth", MagangHubApiClient.ensureHttps("http://localhost:8080/auth"))
         assertEquals("/auth/login", MagangHubApiClient.ensureHttps("/auth/login"))
     }
 
