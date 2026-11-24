@@ -27,9 +27,9 @@ android {
             val keystoreFile = file("${project.rootDir}/release.jks")
             if (keystoreFile.exists()) {
                 storeFile = keystoreFile
-                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "maganghub"
-                keyAlias = System.getenv("KEY_ALIAS") ?: "maganghub"
-                keyPassword = System.getenv("KEY_PASSWORD") ?: "maganghub"
+                storePassword = System.getenv("KEYSTORE_PASSWORD")?.takeIf { it.isNotBlank() } ?: "maganghub"
+                keyAlias = System.getenv("KEY_ALIAS")?.takeIf { it.isNotBlank() } ?: "maganghub"
+                keyPassword = System.getenv("KEY_PASSWORD")?.takeIf { it.isNotBlank() } ?: "maganghub"
             } else {
                 initWith(getByName("debug"))
             }

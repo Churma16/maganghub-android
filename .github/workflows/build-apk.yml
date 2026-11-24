@@ -73,9 +73,9 @@ jobs:
       - name: Build Signed Release APK
         run: ./gradlew assembleRelease --stacktrace
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'maganghub' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'maganghub' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'maganghub' }}
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
