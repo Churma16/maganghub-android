@@ -78,6 +78,24 @@ import id.codes.maganghub.ui.theme.Slate900
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
 
 @Composable
+private fun DefaultAvatarPlaceholder(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(KemnakerSkyContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Person,
+            contentDescription = null,
+            tint = KemnakerSkyOnContainer,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+@Composable
 fun SettingsScreen(
     uiState: AttendanceUiState,
     onUpdateReminderSettings: (ReminderSettings) -> Unit,
@@ -209,52 +227,11 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .size(44.dp)
                                     .clip(RoundedCornerShape(10.dp)),
-                                loading = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(KemnakerSkyContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = null,
-                                            tint = KemnakerSkyOnContainer,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                },
-                                error = {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(KemnakerSkyContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = null,
-                                            tint = KemnakerSkyOnContainer,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
+                                loading = { DefaultAvatarPlaceholder() },
+                                error = { DefaultAvatarPlaceholder() }
                             )
                         } else {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(KemnakerSkyContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = null,
-                                    tint = KemnakerSkyOnContainer,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
+                            DefaultAvatarPlaceholder()
                         }
 
                         Column(modifier = Modifier.weight(1f)) {

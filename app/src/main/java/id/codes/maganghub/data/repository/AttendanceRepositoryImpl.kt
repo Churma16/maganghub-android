@@ -124,15 +124,17 @@ class AttendanceRepositoryImpl(
                     }
 
                     val refreshedToken = storage.getAccessToken().orEmpty()
+                    currentToken = refreshedToken
                     apiClient.fetchTodayAttendanceStatus(refreshedToken)
                 }
 
                 val status = homeData.toAttendanceStatus()
                 val now = System.currentTimeMillis()
                 storage.saveAttendanceCache(homeData, status, now)
-                if (storage.getFullName().isNullOrBlank() || storage.getPhotoUrl().isNullOrBlank()) {
+                if (storage.getFullName().isNullOrBlank()) {
                     try {
-                        val profile = apiClient.fetchUserProfile(currentToken.orEmpty())
+                        val validToken = storage.getAccessToken().orEmpty()
+                        val profile = apiClient.fetchUserProfile(validToken)
                         storage.saveUserProfile(profile.name, profile.photoUrl)
                     } catch (pe: Exception) {
                         Log.w(TAG, "Best-effort profile fetch during check failed: ${pe.message}")

@@ -78,6 +78,9 @@ class AttendanceViewModel(
      * Triggers manual or automated attendance check.
      */
     fun checkAttendanceNow(silent: Boolean = false) {
+        if (!silent) {
+            refreshUserProfile()
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isChecking = true, errorMessage = null, successMessage = null) }
 
