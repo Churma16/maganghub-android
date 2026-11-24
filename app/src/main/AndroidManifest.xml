@@ -17,7 +17,7 @@
         android:name=".MagangHubApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="${appName}"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MagangHub"
@@ -27,7 +27,7 @@
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
+            android:label="${appName}"
             android:theme="@style/Theme.MagangHub"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

@@ -4,6 +4,9 @@ plugins {
 }
 
 val versionSuffix = project.findProperty("versionSuffix") as? String
+val appIdSuffix = project.findProperty("applicationIdSuffix") as? String
+    ?: (project.findProperty("appIdSuffix") as? String)
+val appName = project.findProperty("appName") as? String ?: "MagangHub"
 
 android {
     namespace = "id.codes.maganghub"
@@ -15,6 +18,8 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
+
+        manifestPlaceholders["appName"] = appName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -41,11 +46,18 @@ android {
             applicationIdSuffix = ".debug"
             isDebuggable = true
             versionNameSuffix = versionSuffix?.takeIf { it.isNotBlank() } ?: "-dev"
+            manifestPlaceholders["appName"] = "MagangHub (Dev)"
         }
         release {
             isMinifyEnabled = false
             if (!versionSuffix.isNullOrBlank()) {
                 versionNameSuffix = versionSuffix
+            }
+            if (!appIdSuffix.isNullOrBlank()) {
+                applicationIdSuffix = appIdSuffix
+            }
+            if (!appName.isNullOrBlank() && appName != "MagangHub") {
+                manifestPlaceholders["appName"] = appName
             }
             signingConfig = signingConfigs.getByName("release")
             proguardFiles(
