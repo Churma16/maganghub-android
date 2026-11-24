@@ -8,7 +8,5 @@
     </base-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">kemnaker.go.id</domain>
-        <domain includeSubdomains="true">account.kemnaker.go.id</domain>
-        <domain includeSubdomains="true">maganghub.kemnaker.go.id</domain>
     </domain-config>
 </network-security-config>
