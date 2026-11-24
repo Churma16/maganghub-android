@@ -1,6 +1,6 @@
 # MagangHub Logbook Companion
 
-[![CI Verification](https://github.com/Churma16/maganghub-logbook-companion/actions/workflows/build-apk.yml/badge.svg)](https://github.com/Churma16/maganghub-logbook-companion/actions/workflows/build-apk.yml)
+[![CI Verification](https://github.com/Churma16/maganghub-logbook-companion/actions/workflows/build-apk.yml/badge.svg?branch=main)](https://github.com/Churma16/maganghub-logbook-companion/actions/workflows/build-apk.yml)
 [![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-brightgreen.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.23-blue.svg)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.04.01-informational.svg)](https://developer.android.com/jetpack/compose)
