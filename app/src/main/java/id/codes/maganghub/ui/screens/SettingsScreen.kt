@@ -2,6 +2,7 @@ package id.codes.maganghub.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,18 +18,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
@@ -45,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -54,16 +53,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.ReminderSettings
-import id.codes.maganghub.ui.theme.HadirGreenDark
+import id.codes.maganghub.ui.theme.DangerRed
 import id.codes.maganghub.ui.theme.HadirGreenLight
 import id.codes.maganghub.ui.theme.HadirGreenText
+import id.codes.maganghub.ui.theme.KemnakerSky
+import id.codes.maganghub.ui.theme.KemnakerSkyContainer
+import id.codes.maganghub.ui.theme.KemnakerSkyOnContainer
+import id.codes.maganghub.ui.theme.PureWhite
+import id.codes.maganghub.ui.theme.Slate400
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -96,10 +100,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-            )
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -115,7 +116,8 @@ fun SettingsScreen(
                             Text(
                                 text = uiState.username.ifBlank { "Pengguna Kemnaker" },
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Surface(
@@ -132,14 +134,20 @@ fun SettingsScreen(
                             }
                         }
 
+                        // "Keluar dari akun" in red (0xFFDC2626)
                         OutlinedButton(
                             onClick = { showLogoutConfirm = true },
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+                                contentColor = DangerRed
+                            ),
+                            border = BorderStroke(1.dp, DangerRed)
                         ) {
-                            Text("Keluar")
+                            Text(
+                                text = "Keluar dari akun",
+                                color = DangerRed,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 } else {
@@ -152,7 +160,8 @@ fun SettingsScreen(
                         Button(
                             onClick = onOpenLoginDialog,
                             shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = KemnakerSky)
                         ) {
                             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
@@ -164,22 +173,20 @@ fun SettingsScreen(
         }
 
         // Section 2: Reminder Configuration
+        // Bell icon in soft blue square
         SettingsSectionHeader(title = "Pengaturan Pengingat", icon = Icons.Default.Notifications)
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-            )
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Main Switch
+                // Main Switch with Kemnaker Sky Blue
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -189,7 +196,8 @@ fun SettingsScreen(
                         Text(
                             text = "Aktifkan Pengingat Spam",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Kirim notifikasi berkala pukul 16:00 - 23:59 WIB jika belum presensi & logbook",
@@ -201,19 +209,26 @@ fun SettingsScreen(
                         checked = settings.isEnabled,
                         onCheckedChange = { checked ->
                             onUpdateReminderSettings(settings.copy(isEnabled = checked))
-                        }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = PureWhite,
+                            checkedTrackColor = KemnakerSky,
+                            uncheckedThumbColor = Slate400,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                        )
                     )
                 }
 
                 if (settings.isEnabled) {
-                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
                     // Jam Mulai Pengingat
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             text = "Jam Mulai Pengingat (WIB):",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -227,22 +242,23 @@ fun SettingsScreen(
                                     },
                                     label = { Text("$hour:00 WIB") },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        selectedContainerColor = KemnakerSkyContainer,
+                                        selectedLabelColor = KemnakerSkyOnContainer
                                     )
                                 )
                             }
                         }
                     }
 
-                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
                     // Interval Pengingat
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             text = "Interval Pengingat:",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -256,15 +272,15 @@ fun SettingsScreen(
                                     },
                                     label = { Text("$interval Menit") },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        selectedContainerColor = KemnakerSkyContainer,
+                                        selectedLabelColor = KemnakerSkyOnContainer
                                     )
                                 )
                             }
                         }
                     }
 
-                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
 
                     // Suara Notifikasi
                     Row(
@@ -279,14 +295,21 @@ fun SettingsScreen(
                             Icon(Icons.Default.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 text = "Bunyi Notifikasi",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                         Switch(
                             checked = settings.soundEnabled,
                             onCheckedChange = { checked ->
                                 onUpdateReminderSettings(settings.copy(soundEnabled = checked))
-                            }
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = PureWhite,
+                                checkedTrackColor = KemnakerSky,
+                                uncheckedThumbColor = Slate400,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            )
                         )
                     }
 
@@ -303,14 +326,21 @@ fun SettingsScreen(
                             Icon(Icons.Default.Vibration, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(
                                 text = "Getar Notifikasi",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                         Switch(
                             checked = settings.vibrationEnabled,
                             onCheckedChange = { checked ->
                                 onUpdateReminderSettings(settings.copy(vibrationEnabled = checked))
-                            }
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = PureWhite,
+                                checkedTrackColor = KemnakerSky,
+                                uncheckedThumbColor = Slate400,
+                                uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            )
                         )
                     }
                 }
@@ -324,10 +354,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-            )
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -336,11 +363,12 @@ fun SettingsScreen(
                 OutlinedButton(
                     onClick = onTestNotification,
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                 ) {
-                    Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(18.dp), tint = KemnakerSky)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Uji Notifikasi Sekarang")
+                    Text("Uji Notifikasi Sekarang", color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 OutlinedButton(
@@ -351,11 +379,12 @@ fun SettingsScreen(
                         context.startActivity(intent)
                     },
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                 ) {
-                    Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp), tint = KemnakerSky)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Buka Monev MagangHub Portal")
+                    Text("Buka Monev MagangHub Portal", color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
@@ -364,9 +393,8 @@ fun SettingsScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-            )
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -375,7 +403,8 @@ fun SettingsScreen(
                 Text(
                     text = "MagangHub Presensi Checker v1.0.0",
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "Aplikasi otomatisasi pengecekan kehadiran dan pengingat harian logbook magang terintegrasi Kemnaker SSO OAuth2.",
@@ -392,41 +421,53 @@ fun SettingsScreen(
     if (showLogoutConfirm) {
         AlertDialog(
             onDismissRequest = { showLogoutConfirm = false },
-            title = { Text("Konfirmasi Keluar") },
-            text = { Text("Apakah Anda yakin ingin menghapus kredensial tersimpan dan keluar dari aplikasi?") },
+            title = { Text("Konfirmasi Keluar", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Apakah Anda yakin ingin menghapus kredensial tersimpan dan keluar dari akun?", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            containerColor = MaterialTheme.colorScheme.surface,
             confirmButton = {
                 Button(
                     onClick = {
                         showLogoutConfirm = false
                         onLogout()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.buttonColors(containerColor = DangerRed)
                 ) {
-                    Text("Keluar")
+                    Text("Keluar dari akun", color = PureWhite)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutConfirm = false }) {
-                    Text("Batal")
+                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
     }
 }
 
+/**
+ * Section Header with soft blue square icon container
+ */
 @Composable
 private fun SettingsSectionHeader(title: String, icon: ImageVector) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.padding(top = 8.dp)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(KemnakerSkyContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = KemnakerSky,
+                modifier = Modifier.size(20.dp)
+            )
+        }
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
