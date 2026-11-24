@@ -26,6 +26,8 @@ data class AttendanceCheckResult(
  */
 data class ReminderSettings(
     val isEnabled: Boolean = true,
+    val morningReminderEnabled: Boolean = true,
+    val skipHolidays: Boolean = true,
     val startHour: Int = 16,
     val endHour: Int = 24,
     val intervalMinutes: Int = 30,

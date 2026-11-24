@@ -30,6 +30,8 @@ class EncryptedPreferences(context: Context) {
         private const val KEY_LAST_CHECK_TIME = "pref_last_check_timestamp"
 
         private const val KEY_REMINDER_ENABLED = "pref_reminder_enabled"
+        private const val KEY_REMINDER_MORNING = "pref_reminder_morning"
+        private const val KEY_REMINDER_SKIP_HOLIDAYS = "pref_reminder_skip_holidays"
         private const val KEY_REMINDER_START_HOUR = "pref_reminder_start_hour"
         private const val KEY_REMINDER_END_HOUR = "pref_reminder_end_hour"
         private const val KEY_REMINDER_INTERVAL = "pref_reminder_interval"
@@ -152,6 +154,8 @@ class EncryptedPreferences(context: Context) {
     fun saveReminderSettings(settings: ReminderSettings) {
         prefs.edit()
             .putBoolean(KEY_REMINDER_ENABLED, settings.isEnabled)
+            .putBoolean(KEY_REMINDER_MORNING, settings.morningReminderEnabled)
+            .putBoolean(KEY_REMINDER_SKIP_HOLIDAYS, settings.skipHolidays)
             .putInt(KEY_REMINDER_START_HOUR, settings.startHour)
             .putInt(KEY_REMINDER_END_HOUR, settings.endHour)
             .putInt(KEY_REMINDER_INTERVAL, settings.intervalMinutes)
@@ -163,6 +167,8 @@ class EncryptedPreferences(context: Context) {
     fun getReminderSettings(): ReminderSettings {
         return ReminderSettings(
             isEnabled = prefs.getBoolean(KEY_REMINDER_ENABLED, true),
+            morningReminderEnabled = prefs.getBoolean(KEY_REMINDER_MORNING, true),
+            skipHolidays = prefs.getBoolean(KEY_REMINDER_SKIP_HOLIDAYS, true),
             startHour = prefs.getInt(KEY_REMINDER_START_HOUR, 16),
             endHour = prefs.getInt(KEY_REMINDER_END_HOUR, 24),
             intervalMinutes = prefs.getInt(KEY_REMINDER_INTERVAL, 30),

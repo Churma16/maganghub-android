@@ -179,6 +179,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 uiState = uiState,
                 onCheckNow = { viewModel.checkAttendanceNow(silent = false) },
                 onOpenLoginDialog = { viewModel.setLoginDialogOpen(true) },
+                onNavigateToSettings = { selectedTab = 1 },
+                onDismissMessage = { viewModel.clearMessages() },
                 formatLastSync = { viewModel.formatLastSync(it) },
                 modifier = Modifier
                     .fillMaxSize()
