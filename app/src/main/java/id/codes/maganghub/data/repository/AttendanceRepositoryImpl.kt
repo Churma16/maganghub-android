@@ -66,21 +66,21 @@ class AttendanceRepositoryImpl(
                 if (currentToken.isNullOrBlank()) {
                     val savedUsername = storage.getUsername()
                     val savedPassword = storage.getPassword()
-                    if (!savedUsername.isNullOrBlank() && !savedPassword.isNullOrBlank()) {
-                        Log.i(TAG, "No active token found; attempting auto-login with stored credentials")
-                        val loginResult = login(savedUsername, savedPassword)
-                        if (loginResult.isFailure) {
-                            return@withContext Result.failure(
-                                loginResult.exceptionOrNull()
-                                    ?: UnauthorizedSessionException("Auto-login failed")
-                            )
-                        }
-                        currentToken = storage.getAccessToken()
-                    } else {
+                    if (savedUsername.isNullOrBlank() || savedPassword.isNullOrBlank()) {
                         return@withContext Result.failure(
                             UnauthorizedSessionException("Belum login. Masukkan kredensial Kemnaker terlebih dahulu.")
                         )
                     }
+
+                    Log.i(TAG, "No active token found; attempting auto-login with stored credentials")
+                    val loginResult = login(savedUsername, savedPassword)
+                    if (loginResult.isFailure) {
+                        return@withContext Result.failure(
+                            loginResult.exceptionOrNull()
+                                ?: UnauthorizedSessionException("Auto-login failed")
+                        )
+                    }
+                    currentToken = storage.getAccessToken()
                 }
 
                 // Attempt to fetch attendance status with current token
@@ -90,18 +90,18 @@ class AttendanceRepositoryImpl(
                     // Token expired: attempt automatic re-login if credentials exist
                     val savedUsername = storage.getUsername()
                     val savedPassword = storage.getPassword()
-                    if (!savedUsername.isNullOrBlank() && !savedPassword.isNullOrBlank()) {
-                        Log.w(TAG, "Access token expired (401). Attempting re-authentication with Kemnaker SSO...")
-                        val reloginResult = login(savedUsername, savedPassword)
-                        if (reloginResult.isSuccess) {
-                            val refreshedToken = storage.getAccessToken().orEmpty()
-                            apiClient.fetchTodayAttendanceStatus(refreshedToken)
-                        } else {
-                            throw reloginResult.exceptionOrNull() ?: e
-                        }
-                    } else {
+                    if (savedUsername.isNullOrBlank() || savedPassword.isNullOrBlank()) {
                         throw e
                     }
+
+                    Log.w(TAG, "Access token expired (401). Attempting re-authentication with Kemnaker SSO...")
+                    val reloginResult = login(savedUsername, savedPassword)
+                    if (reloginResult.isFailure) {
+                        throw reloginResult.exceptionOrNull() ?: e
+                    }
+
+                    val refreshedToken = storage.getAccessToken().orEmpty()
+                    apiClient.fetchTodayAttendanceStatus(refreshedToken)
                 }
 
                 val status = homeData.toAttendanceStatus()

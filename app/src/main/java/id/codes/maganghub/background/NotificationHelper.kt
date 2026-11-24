@@ -34,58 +34,58 @@ object NotificationHelper {
      * Initializes notification channels required for Android O+ (API 26+).
      */
     fun createNotificationChannels(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-                ?: return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
 
-            val soundUri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            val audioAttributes = AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
-                .build()
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            ?: return
 
-            // 1. High Priority Reminder Channel (with sound & prominent vibration)
-            val reminderChannel = NotificationChannel(
-                CHANNEL_REMINDER_ID,
-                "Pengingat Presensi MagangHub",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Pengingat berkala pukul 16:00 - 23:59 WIB jika belum presensi & isi logbook"
-                enableLights(true)
-                lightColor = Color.RED
-                enableVibration(true)
-                vibrationPattern = longArrayOf(0, 500, 200, 500, 200, 500)
-                setSound(soundUri, audioAttributes)
-                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
-            }
+        val soundUri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        val audioAttributes = AudioAttributes.Builder()
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
+            .build()
 
-            // 2. Default Priority Confirmation Channel
-            val confirmationChannel = NotificationChannel(
-                CHANNEL_CONFIRMATION_ID,
-                "Konfirmasi Presensi Tercatat",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Konfirmasi sukses setelah presensi & logbook harian berhasil tercatat"
-                enableLights(true)
-                lightColor = Color.GREEN
-                enableVibration(false)
-            }
-
-            // 3. System Alert Channel
-            val systemChannel = NotificationChannel(
-                CHANNEL_SYSTEM_ID,
-                "Peringatan Sistem & Sesi",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Peringatan sesi otorisasi kedaluwarsa atau masalah sinkronisasi"
-                enableLights(true)
-                lightColor = Color.YELLOW
-            }
-
-            notificationManager.createNotificationChannels(
-                listOf(reminderChannel, confirmationChannel, systemChannel)
-            )
+        // 1. High Priority Reminder Channel (with sound & prominent vibration)
+        val reminderChannel = NotificationChannel(
+            CHANNEL_REMINDER_ID,
+            "Pengingat Presensi MagangHub",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Pengingat berkala pukul 16:00 - 23:59 WIB jika belum presensi & isi logbook"
+            enableLights(true)
+            lightColor = Color.RED
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 500, 200, 500, 200, 500)
+            setSound(soundUri, audioAttributes)
+            lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
         }
+
+        // 2. Default Priority Confirmation Channel
+        val confirmationChannel = NotificationChannel(
+            CHANNEL_CONFIRMATION_ID,
+            "Konfirmasi Presensi Tercatat",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Konfirmasi sukses setelah presensi & logbook harian berhasil tercatat"
+            enableLights(true)
+            lightColor = Color.GREEN
+            enableVibration(false)
+        }
+
+        // 3. System Alert Channel
+        val systemChannel = NotificationChannel(
+            CHANNEL_SYSTEM_ID,
+            "Peringatan Sistem & Sesi",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Peringatan sesi otorisasi kedaluwarsa atau masalah sinkronisasi"
+            enableLights(true)
+            lightColor = Color.YELLOW
+        }
+
+        notificationManager.createNotificationChannels(
+            listOf(reminderChannel, confirmationChannel, systemChannel)
+        )
     }
 
     /**
