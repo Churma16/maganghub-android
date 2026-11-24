@@ -87,10 +87,11 @@ import id.codes.maganghub.ui.theme.WarningAmberText
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
-import java.util.TimeZone
 
 @Composable
 fun DashboardScreen(
@@ -241,11 +242,12 @@ private fun ServerClockPill(modifier: Modifier = Modifier) {
     }
 }
 
+private val ZONE_WIB = ZoneId.of("Asia/Jakarta")
+private val WIB_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH.mm.ss")
+private val INDONESIAN_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale("id", "ID"))
+
 private fun getCurrentWibTimeString(): String {
-    val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Jakarta"))
-    val sdf = SimpleDateFormat("HH.mm.ss", Locale("id", "ID"))
-    sdf.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
-    return sdf.format(cal.time)
+    return ZonedDateTime.now(ZONE_WIB).format(WIB_TIME_FORMATTER)
 }
 
 /**
@@ -844,19 +846,11 @@ private fun BannerCard(
 private fun formatDisplayDate(dateStr: String?): String {
     if (!dateStr.isNullOrBlank()) {
         try {
-            val sdfInput = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val parsed = sdfInput.parse(dateStr)
-            if (parsed != null) {
-                val sdfOutput = SimpleDateFormat("EEEE, d MMMM yyyy", Locale("id", "ID"))
-                sdfOutput.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
-                return sdfOutput.format(parsed)
-            }
+            val date = LocalDate.parse(dateStr)
+            return date.format(INDONESIAN_DATE_FORMATTER)
         } catch (_: Exception) {
             return dateStr
         }
     }
-    val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Jakarta"))
-    val sdfOutput = SimpleDateFormat("EEEE, d MMMM yyyy", Locale("id", "ID"))
-    sdfOutput.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
-    return sdfOutput.format(cal.time)
+    return LocalDate.now(ZONE_WIB).format(INDONESIAN_DATE_FORMATTER)
 }
