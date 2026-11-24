@@ -26,11 +26,11 @@ class AttendanceSchedulerLogicTest {
         val morningTime = ZonedDateTime.of(today, LocalTime.of(9, 30), zoneWib)
         val settings = ReminderSettings(startHour = 16, endHour = 24, intervalMinutes = 30)
 
-        val targetStartToday = ZonedDateTime.of(today, LocalTime.of(16, 0), zoneWib)
+        val nextTrigger = AttendanceAlarmScheduler.calculateNextTriggerTime(morningTime, false, settings)
 
-        // Expect alarm to be scheduled at 16:00 today
-        assertTrue(targetStartToday.toInstant().toEpochMilli() > morningTime.toInstant().toEpochMilli())
-        assertEquals(16, targetStartToday.hour)
+        assertEquals(16, nextTrigger.hour)
+        assertEquals(0, nextTrigger.minute)
+        assertEquals(today, nextTrigger.toLocalDate())
     }
 
     @Test
@@ -39,19 +39,36 @@ class AttendanceSchedulerLogicTest {
         val eveningTime = ZonedDateTime.of(today, LocalTime.of(17, 15), zoneWib)
         val settings = ReminderSettings(startHour = 16, endHour = 24, intervalMinutes = 30)
 
-        val nextTrigger = eveningTime.plusMinutes(settings.intervalMinutes.toLong())
+        val nextTrigger = AttendanceAlarmScheduler.calculateNextTriggerTime(eveningTime, false, settings)
 
         assertEquals(17, nextTrigger.hour)
         assertEquals(45, nextTrigger.minute)
+        assertEquals(today, nextTrigger.toLocalDate())
     }
 
     @Test
     fun testNextAlarmCalculation_AttendedScheduleTomorrow() {
         val today = LocalDate.of(2026, 11, 24)
-        val tomorrow = today.plusDays(1)
-        val tomorrowStart = ZonedDateTime.of(tomorrow, LocalTime.of(16, 0), zoneWib)
+        val afternoonTime = ZonedDateTime.of(today, LocalTime.of(14, 0), zoneWib)
+        val settings = ReminderSettings(startHour = 16, endHour = 24, intervalMinutes = 30)
 
-        assertEquals(25, tomorrowStart.dayOfMonth)
-        assertEquals(16, tomorrowStart.hour)
+        val nextTrigger = AttendanceAlarmScheduler.calculateNextTriggerTime(afternoonTime, true, settings)
+
+        assertEquals(today.plusDays(1), nextTrigger.toLocalDate())
+        assertEquals(16, nextTrigger.hour)
+        assertEquals(0, nextTrigger.minute)
+    }
+
+    @Test
+    fun testNextAlarmCalculation_EndOfWindowRollsToTomorrow() {
+        val today = LocalDate.of(2026, 11, 24)
+        val lateNightTime = ZonedDateTime.of(today, LocalTime.of(23, 45), zoneWib)
+        val settings = ReminderSettings(startHour = 16, endHour = 24, intervalMinutes = 30)
+
+        val nextTrigger = AttendanceAlarmScheduler.calculateNextTriggerTime(lateNightTime, false, settings)
+
+        assertEquals(today.plusDays(1), nextTrigger.toLocalDate())
+        assertEquals(16, nextTrigger.hour)
+        assertEquals(0, nextTrigger.minute)
     }
 }

@@ -93,7 +93,7 @@ class MagangHubApiClient(
                 401 -> {
                     val errorEnvelope = try {
                         gson.fromJson(responseBody, ApiErrorResponse::class.java)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
                         null
                     }
                     val msg = errorEnvelope?.message?.takeIf { it.isNotEmpty() }
@@ -217,26 +217,30 @@ class MagangHubApiClient(
             var (authCode, state) = extractCodeAndState(redirectUriString, parsedSsoUrl)
 
             // If redirected to intermediate OAuth consent/authorize page, follow up to 3 hops
-            var currentRedirectUrl = redirectUriString
+            var currentRedirectUrl: String? = redirectUriString
             var hopCount = 0
             while (authCode.isNullOrEmpty() && hopCount < 3) {
                 hopCount++
-                if (!currentRedirectUrl.startsWith("http://") && !currentRedirectUrl.startsWith("https://")) {
-                    currentRedirectUrl = "${parsedSsoUrl.scheme}://${parsedSsoUrl.host}$currentRedirectUrl"
+                val urlToLoad = currentRedirectUrl ?: break
+                val fullUrl = if (!urlToLoad.startsWith("http://") && !urlToLoad.startsWith("https://")) {
+                    "${parsedSsoUrl.scheme}://${parsedSsoUrl.host}$urlToLoad"
+                } else {
+                    urlToLoad
                 }
 
                 val hopRequest = Request.Builder()
-                    .url(currentRedirectUrl)
+                    .url(fullUrl)
                     .get()
                     .header("User-Agent", userAgentString)
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                     .build()
 
-                val hopResponse = step3Client.newCall(hopRequest).execute()
-                val nextLocation = hopResponse.header("Location") ?: break
+                val nextLocation = step3Client.newCall(hopRequest).execute().use { hopResponse ->
+                    hopResponse.header("Location")
+                } ?: break
                 currentRedirectUrl = nextLocation
 
-                val (hopCode, hopState) = extractCodeAndState(currentRedirectUrl, parsedSsoUrl)
+                val (hopCode, hopState) = extractCodeAndState(nextLocation, parsedSsoUrl)
                 if (!hopCode.isNullOrEmpty()) {
                     authCode = hopCode
                 }
@@ -319,7 +323,7 @@ class MagangHubApiClient(
                     } else trimmed
                 } else trimmed
             } else trimmed
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             trimmed
         }
     }
@@ -365,7 +369,7 @@ class MagangHubApiClient(
             if (trimmed.isNotBlank() && !trimmed.startsWith("{") && !trimmed.startsWith("<")) {
                 cleanBearerToken(trimmed)
             } else null
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             val trimmed = responseBody.trim()
             if (trimmed.isNotBlank() && !trimmed.startsWith("{") && !trimmed.startsWith("<")) {
                 cleanBearerToken(trimmed)
@@ -385,7 +389,7 @@ class MagangHubApiClient(
                     ?: dataObj.get("redirect_url")?.asString
             }
             uri
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             null
         }
     }
@@ -409,7 +413,7 @@ class MagangHubApiClient(
             } else {
                 message
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             null
         }
     }

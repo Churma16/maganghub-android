@@ -133,15 +133,19 @@ class AttendanceRepositoryImpl(
             }
         }
 
-    override suspend fun logout() = withContext(ioDispatcher) {
-        storage.clearAll()
-        _sessionFlow.value = storage.getUserSession()
-        Log.i(TAG, "Logged out and cleared all session data")
+    override suspend fun logout() {
+        withContext(ioDispatcher) {
+            storage.clearAll()
+            _sessionFlow.value = storage.getUserSession()
+            Log.i(TAG, "Logged out and cleared all session data")
+        }
     }
 
-    override suspend fun updateReminderSettings(settings: ReminderSettings) = withContext(ioDispatcher) {
-        storage.saveReminderSettings(settings)
-        _reminderSettingsFlow.value = settings
+    override suspend fun updateReminderSettings(settings: ReminderSettings) {
+        withContext(ioDispatcher) {
+            storage.saveReminderSettings(settings)
+            _reminderSettingsFlow.value = settings
+        }
     }
 
     override fun getCachedHomeData(): AttendanceHomeData? = storage.getLastHomeData()

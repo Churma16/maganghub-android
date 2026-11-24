@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import id.codes.maganghub.MagangHubApp
+import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.ui.MainActivity
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -104,8 +105,8 @@ object AttendanceAlarmScheduler {
         // Read user settings
         val settings = try {
             MagangHubApp.instance.encryptedPreferences.getReminderSettings()
-        } catch (_: Exception) {
-            id.codes.maganghub.data.model.ReminderSettings()
+        } catch (e: Exception) {
+            ReminderSettings()
         }
 
         if (!settings.isEnabled && overrideTriggerMillis == null) {
@@ -170,9 +171,9 @@ object AttendanceAlarmScheduler {
      * - If today's attendance already completed: schedule for 16:00 WIB tomorrow.
      * - If before 16:00 WIB: schedule for 16:00 WIB today.
      * - If between 16:00 and 23:59 WIB: schedule for next interval (e.g. +30 mins).
-     * - If past 23:59 WIB: schedule for 16:00 WIB today (or tomorrow).
+     * - If past 23:59 WIB: schedule for 16:00 WIB tomorrow.
      */
-    fun calculateNextTriggerMillis(context: Context, settings: id.codes.maganghub.data.model.ReminderSettings): Long {
+    fun calculateNextTriggerMillis(context: Context, settings: ReminderSettings): Long {
         val nowWib = ZonedDateTime.now(ZONE_WIB)
         val todayDate = nowWib.toLocalDate()
         val todayDateString = todayDate.toString()
@@ -181,59 +182,70 @@ object AttendanceAlarmScheduler {
 
         val cachedHomeData = try {
             MagangHubApp.instance.encryptedPreferences.getLastHomeData()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             null
         }
 
-        // If attendance for today is already completed, schedule for tomorrow at startHour
-        if (cachedHomeData != null && cachedHomeData.date == todayDateString && cachedHomeData.hasAttendance) {
-            val tomorrowStart = ZonedDateTime.of(
-                todayDate.plusDays(1),
-                LocalTime.of(settings.startHour, 0),
-                ZONE_WIB
-            )
-            return tomorrowStart.toInstant().toEpochMilli()
-        }
+        val hasAttendedToday = cachedHomeData != null &&
+            cachedHomeData.date == todayDateString &&
+            cachedHomeData.hasAttendance
 
-        val currentHour = nowWib.hour
+        val nextTrigger = calculateNextTriggerTime(nowWib, hasAttendedToday, settings)
+        return nextTrigger.toInstant().toEpochMilli()
+    }
+
+    /**
+     * Pure time calculation function for next alarm trigger in WIB (UTC+7).
+     * Directly unit testable without Android Context.
+     */
+    fun calculateNextTriggerTime(
+        nowWib: ZonedDateTime,
+        hasAttendedToday: Boolean,
+        settings: ReminderSettings
+    ): ZonedDateTime {
+        val todayDate = nowWib.toLocalDate()
         val startHour = settings.startHour
         val endHour = settings.endHour
         val intervalMinutes = if (settings.intervalMinutes > 0) settings.intervalMinutes else 30
 
+        if (hasAttendedToday) {
+            return ZonedDateTime.of(
+                todayDate.plusDays(1),
+                LocalTime.of(startHour, 0),
+                ZONE_WIB
+            )
+        }
+
+        val currentHour = nowWib.hour
         return when {
-            // Before reminder window (e.g. 08:00 WIB): schedule for 16:00 WIB today
+            // Before reminder window (e.g. 08:00 WIB): schedule for startHour WIB today
             currentHour < startHour -> {
-                val todayStart = ZonedDateTime.of(
+                ZonedDateTime.of(
                     todayDate,
                     LocalTime.of(startHour, 0),
                     ZONE_WIB
                 )
-                todayStart.toInstant().toEpochMilli()
             }
-            // Inside active spam reminder window (16:00 - 23:59 WIB)
+            // Inside active spam reminder window (startHour - endHour WIB)
             currentHour < endHour -> {
-                // Align to next interval (e.g. 30 minutes from now, with minimum 60s delay)
                 val nextTrigger = nowWib.plusMinutes(intervalMinutes.toLong())
                 if (nextTrigger.hour >= endHour) {
-                    // Falls past end of window tonight; schedule for tomorrow at startHour
-                    val tomorrowStart = ZonedDateTime.of(
+                    ZonedDateTime.of(
                         todayDate.plusDays(1),
                         LocalTime.of(startHour, 0),
                         ZONE_WIB
                     )
-                    tomorrowStart.toInstant().toEpochMilli()
                 } else {
-                    nextTrigger.toInstant().toEpochMilli()
+                    nextTrigger
                 }
             }
-            // Past reminder window (after midnight / >= 24:00): schedule for 16:00 WIB today/tomorrow
+            // Past reminder window (after midnight / >= endHour): schedule for tomorrow
             else -> {
-                val nextStart = ZonedDateTime.of(
+                ZonedDateTime.of(
                     todayDate.plusDays(1),
                     LocalTime.of(startHour, 0),
                     ZONE_WIB
                 )
-                nextStart.toInstant().toEpochMilli()
             }
         }
     }
