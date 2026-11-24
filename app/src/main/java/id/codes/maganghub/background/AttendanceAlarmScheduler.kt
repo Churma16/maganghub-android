@@ -248,7 +248,7 @@ object AttendanceAlarmScheduler {
             // Inside active spam reminder window (startHour - endHour WIB)
             currentHour < endHour -> {
                 val nextTrigger = nowWib.plusMinutes(effectiveInterval.toLong())
-                if (nextTrigger.hour >= endHour) {
+                if (nextTrigger.toLocalDate() != todayDate || nextTrigger.hour >= endHour) {
                     ZonedDateTime.of(
                         todayDate.plusDays(1),
                         LocalTime.of(startHour, clampedSeed),

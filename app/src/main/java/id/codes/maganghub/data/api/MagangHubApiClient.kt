@@ -182,6 +182,7 @@ class MagangHubApiClient(
             val step1Response = sessionClient.newCall(step1Request).execute()
             if (step1Response.code == 429) {
                 val retrySec = parseRetryAfter(step1Response.header("Retry-After"))
+                step1Response.close()
                 throw RateLimitedException(retrySec, "Step 1 rate limited (HTTP 429)")
             }
             val step1Body = step1Response.body?.string().orEmpty()
@@ -208,6 +209,7 @@ class MagangHubApiClient(
             val step2Response = sessionClient.newCall(step2Request).execute()
             if (step2Response.code == 429) {
                 val retrySec = parseRetryAfter(step2Response.header("Retry-After"))
+                step2Response.close()
                 throw RateLimitedException(retrySec, "Step 2 rate limited (HTTP 429)")
             }
             val step2Body = step2Response.body?.string().orEmpty()
@@ -247,6 +249,7 @@ class MagangHubApiClient(
             val step3Response = step3Client.newCall(step3Request).execute()
             if (step3Response.code == 429) {
                 val retrySec = parseRetryAfter(step3Response.header("Retry-After"))
+                step3Response.close()
                 throw RateLimitedException(retrySec, "Step 3 rate limited (HTTP 429)")
             }
             val step3Body = step3Response.body?.string().orEmpty()
@@ -327,6 +330,7 @@ class MagangHubApiClient(
             val step4Response = sessionClient.newCall(step4Request).execute()
             if (step4Response.code == 429) {
                 val retrySec = parseRetryAfter(step4Response.header("Retry-After"))
+                step4Response.close()
                 throw RateLimitedException(retrySec, "Step 4 rate limited (HTTP 429)")
             }
             val step4Body = step4Response.body?.string().orEmpty()
