@@ -41,6 +41,15 @@ val BelumHadirRed = DangerRed
 val BelumHadirRedContainer = DangerRedContainer
 val BelumHadirRedText = DangerRedText
 
+// Purpose-First UI Hero Status Card Colors
+val HeroIncompleteContainer = Color(0xFF38141E)
+val HeroIncompleteBorder = Color(0xFF5C1D2E)
+val HeroIncompleteBadge = Color(0xFFE11D48)
+
+val HeroCompleteContainer = Color(0xFF0F2E22)
+val HeroCompleteBorder = Color(0xFF16593F)
+val HeroCompleteBadge = Color(0xFF059669)
+
 // Info Box: Sky
 val InfoSky = KemnakerSky                    // 0xFF0284C7
 val InfoSkyContainer = Color(0xFFF0F9FF)
