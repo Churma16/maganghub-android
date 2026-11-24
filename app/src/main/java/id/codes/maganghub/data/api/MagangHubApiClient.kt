@@ -235,8 +235,9 @@ class MagangHubApiClient(
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                     .build()
 
-                val hopResponse = step3Client.newCall(hopRequest).execute()
-                val nextLocation = hopResponse.header("Location") ?: break
+                val nextLocation = step3Client.newCall(hopRequest).execute().use { hopResponse ->
+                    hopResponse.header("Location")
+                } ?: break
                 currentRedirectUrl = nextLocation
 
                 val (hopCode, hopState) = extractCodeAndState(nextLocation, parsedSsoUrl)
