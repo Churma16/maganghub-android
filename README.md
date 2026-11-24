@@ -1,6 +1,6 @@
 # 🚀 MagangHub Android
 
-[![Build & Release Android APK](https://github.com/maganghub/maganghub-android/actions/workflows/build-apk.yml/badge.svg)](https://github.com/maganghub/maganghub-android/actions/workflows/build-apk.yml)
+[![CI Verification](https://github.com/maganghub/maganghub-android/actions/workflows/build-apk.yml/badge.svg)](https://github.com/maganghub/maganghub-android/actions/workflows/build-apk.yml)
 [![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-brightgreen.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.23-blue.svg)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.04.01-informational.svg)](https://developer.android.com/jetpack/compose)
@@ -256,8 +256,8 @@ Proyek ini telah dikonfigurasi dengan pipeline CI/CD otomatis berbasis GitHub Ac
   1. Validasi skrip rilis dengan unit test Node.js (`tests/releaseScripts.test.js`).
   2. Pengecekan guardrail versi PR (`verify-no-manual-version-bump.js`).
   3. Setup JDK 17 & Gradle Caching.
-  4. Kompilasi Release APK (`assembleRelease`) dengan keystore signing fallback.
-  5. Pengunggahan artefak APK build verification.
+  4. Eksekusi unit test & linting Android (`./gradlew testDebugUnitTest`).
+  5. (Opsional on-demand) Kompilasi signed APK saat dipicu via label `build-apk` atau `workflow_dispatch`.
 * **Snapshot Release (`.github/workflows/snapshot-release.yml`)**:
   - Berjalan saat push ke `main`, mengompilasi release snapshot APK dengan suffix `-PversionSuffix="-snapshot.${GITHUB_SHA::7}"`, membuat pre-release tag `v<version>-snapshot.<sha>`, dan mengunggah APK.
 * **Manual Release (`.github/workflows/manual-release.yml`)**:
