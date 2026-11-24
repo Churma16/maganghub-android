@@ -41,16 +41,16 @@ object AttendanceAlarmScheduler {
     fun checkAndResetDailyRollover(context: Context, todayDateString: String) {
         val prefs = context.getSharedPreferences(PREFS_SCHEDULER_STATE, Context.MODE_PRIVATE)
         val savedDate = prefs.getString(KEY_STATE_DATE, null)
-        if (savedDate != todayDateString) {
-            Log.i(TAG, "Daily rollover detected ($savedDate -> $todayDateString). Resetting daily reminder counters.")
-            prefs.edit()
-                .putString(KEY_STATE_DATE, todayDateString)
-                .putInt(KEY_STATE_REMINDER_COUNT, 0)
-                .putLong(KEY_STATE_LAST_REMINDER_TIME, 0L)
-                .putBoolean(KEY_STATE_CONGRATS_SENT, false)
-                .putBoolean(KEY_STATE_AUTH_ALERT_SENT, false)
-                .apply()
-        }
+        if (savedDate == todayDateString) return
+
+        Log.i(TAG, "Daily rollover detected ($savedDate -> $todayDateString). Resetting daily reminder counters.")
+        prefs.edit()
+            .putString(KEY_STATE_DATE, todayDateString)
+            .putInt(KEY_STATE_REMINDER_COUNT, 0)
+            .putLong(KEY_STATE_LAST_REMINDER_TIME, 0L)
+            .putBoolean(KEY_STATE_CONGRATS_SENT, false)
+            .putBoolean(KEY_STATE_AUTH_ALERT_SENT, false)
+            .apply()
     }
 
     fun getDailyReminderCount(context: Context): Int {
@@ -145,21 +145,22 @@ object AttendanceAlarmScheduler {
                 true
             }
 
-            if (canScheduleExact) {
-                // Use setAlarmClock for highest reliability through aggressive Doze mode & OEM task killers
-                val showIntent = Intent(context, MainActivity::class.java)
-                val showPendingIntent = PendingIntent.getActivity(
-                    context,
-                    0,
-                    showIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-                val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerEpochMillis, showPendingIntent)
-                alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
-            } else {
+            if (!canScheduleExact) {
                 Log.w(TAG, "Cannot schedule exact alarm (permission missing). Falling back to setAndAllowWhileIdle.")
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerEpochMillis, pendingIntent)
+                return
             }
+
+            // Use setAlarmClock for highest reliability through aggressive Doze mode & OEM task killers
+            val showIntent = Intent(context, MainActivity::class.java)
+            val showPendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                showIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerEpochMillis, showPendingIntent)
+            alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
         } catch (e: SecurityException) {
             Log.e(TAG, "SecurityException while scheduling exact alarm, falling back to set()", e)
             alarmManager.set(AlarmManager.RTC_WAKEUP, triggerEpochMillis, pendingIntent)
@@ -273,11 +274,10 @@ object AttendanceAlarmScheduler {
             REQUEST_CODE_ALARM,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-        if (pendingIntent != null) {
-            alarmManager.cancel(pendingIntent)
-            pendingIntent.cancel()
-            Log.i(TAG, "Cancelled existing AttendanceAlarmReceiver pending alarm.")
-        }
+        ) ?: return
+
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
+        Log.i(TAG, "Cancelled existing AttendanceAlarmReceiver pending alarm.")
     }
 }

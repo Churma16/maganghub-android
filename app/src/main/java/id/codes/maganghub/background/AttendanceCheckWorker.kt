@@ -103,68 +103,79 @@ class AttendanceCheckWorker(
 
         val checkResult = repository.checkAttendance(forceRefresh = true)
 
-        if (checkResult.isSuccess) {
-            val resultData = checkResult.getOrNull()
-            val homeData = resultData?.data
-
-            if (homeData != null) {
-                Log.i(TAG, "Attendance check succeeded. Date: ${homeData.date}, HasAttendance: ${homeData.hasAttendance}")
-
-                if (homeData.hasAttendance) {
-                    // Attendance is confirmed
-                    if (!AttendanceAlarmScheduler.isCongratulationsSentToday(appContext)) {
-                        NotificationHelper.showSuccessNotification(appContext, homeData.date)
-                        AttendanceAlarmScheduler.markCongratulationsSent(appContext)
-                    } else {
-                        NotificationHelper.cancelReminder(appContext)
-                    }
-                } else {
-                    // Attendance NOT completed
-                    if (homeData.isHoliday || homeData.isScheduledOffDay) {
-                        Log.i(TAG, "Today is holiday or scheduled off-day. Skipping reminder.")
-                        NotificationHelper.cancelReminder(appContext)
-                    } else if (!homeData.activeInternship) {
-                        Log.i(TAG, "Internship inactive. Skipping reminder.")
-                        NotificationHelper.cancelReminder(appContext)
-                    } else {
-                        // Active workday & not attended yet: check if current hour is within spam reminder window
-                        val currentHour = nowWib.hour
-                        if (currentHour >= settings.startHour && currentHour < settings.endHour && settings.isEnabled) {
-                            val reminderCount = AttendanceAlarmScheduler.incrementDailyReminderCount(appContext)
-                            Log.i(TAG, "Dispatching spam reminder #$reminderCount at $currentTimeString WIB")
-
-                            NotificationHelper.showReminderNotification(
-                                context = appContext,
-                                reminderIndex = reminderCount,
-                                currentTimeWib = currentTimeString,
-                                dateFormatted = homeData.date,
-                                soundEnabled = settings.soundEnabled,
-                                vibrationEnabled = settings.vibrationEnabled
-                            )
-                        } else {
-                            Log.i(TAG, "Current hour ($currentHour WIB) outside reminder window [${settings.startHour}-${settings.endHour}).")
-                        }
-                    }
-                }
-            }
-
-            // Reschedule next exact alarm
-            AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
-            return Result.success()
-        } else {
+        if (checkResult.isFailure) {
             val exception = checkResult.exceptionOrNull()
             Log.e(TAG, "Attendance verification failed", exception)
 
-            if (exception is UnauthorizedSessionException) {
-                if (!AttendanceAlarmScheduler.isAuthAlertSentToday(appContext)) {
-                    NotificationHelper.showSessionExpiredNotification(appContext)
-                    AttendanceAlarmScheduler.setAuthAlertSent(appContext, true)
-                }
+            if (exception is UnauthorizedSessionException && !AttendanceAlarmScheduler.isAuthAlertSentToday(appContext)) {
+                NotificationHelper.showSessionExpiredNotification(appContext)
+                AttendanceAlarmScheduler.setAuthAlertSent(appContext, true)
             }
 
             // Reschedule next alarm attempt
             AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
             return Result.retry()
         }
+
+        val resultData = checkResult.getOrNull()
+        val homeData = resultData?.data
+        if (homeData == null) {
+            AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+            return Result.success()
+        }
+
+        Log.i(TAG, "Attendance check succeeded. Date: ${homeData.date}, HasAttendance: ${homeData.hasAttendance}")
+
+        if (homeData.hasAttendance) {
+            // Attendance is confirmed
+            if (!AttendanceAlarmScheduler.isCongratulationsSentToday(appContext)) {
+                NotificationHelper.showSuccessNotification(appContext, homeData.date)
+                AttendanceAlarmScheduler.markCongratulationsSent(appContext)
+            } else {
+                NotificationHelper.cancelReminder(appContext)
+            }
+            AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+            return Result.success()
+        }
+
+        // Attendance NOT completed
+        if (homeData.isHoliday || homeData.isScheduledOffDay) {
+            Log.i(TAG, "Today is holiday or scheduled off-day. Skipping reminder.")
+            NotificationHelper.cancelReminder(appContext)
+            AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+            return Result.success()
+        }
+
+        if (!homeData.activeInternship) {
+            Log.i(TAG, "Internship inactive. Skipping reminder.")
+            NotificationHelper.cancelReminder(appContext)
+            AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+            return Result.success()
+        }
+
+        // Active workday & not attended yet: check if current hour is within spam reminder window
+        val currentHour = nowWib.hour
+        val isWithinWindow = currentHour >= settings.startHour && currentHour < settings.endHour && settings.isEnabled
+        if (!isWithinWindow) {
+            Log.i(TAG, "Current hour ($currentHour WIB) outside reminder window [${settings.startHour}-${settings.endHour}) or reminder disabled.")
+            AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+            return Result.success()
+        }
+
+        val reminderCount = AttendanceAlarmScheduler.incrementDailyReminderCount(appContext)
+        Log.i(TAG, "Dispatching spam reminder #$reminderCount at $currentTimeString WIB")
+
+        NotificationHelper.showReminderNotification(
+            context = appContext,
+            reminderIndex = reminderCount,
+            currentTimeWib = currentTimeString,
+            dateFormatted = homeData.date,
+            soundEnabled = settings.soundEnabled,
+            vibrationEnabled = settings.vibrationEnabled
+        )
+
+        // Reschedule next exact alarm
+        AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+        return Result.success()
     }
 }

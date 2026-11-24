@@ -212,17 +212,14 @@ class MagangHubApiClient(
             val step3Response = step3Client.newCall(step3Request).execute()
             val step3Body = step3Response.body?.string().orEmpty()
 
-            var redirectUriString: String? = null
-
-            if (step3Response.code in listOf(302, 303, 307, 308)) {
-                redirectUriString = step3Response.header("Location")?.let { ensureHttps(it) }
-            } else if (step3Response.code == 200) {
-                redirectUriString = parseRedirectUriFromJson(step3Body)?.let { ensureHttps(it) }
-            } else {
-                // Parse Kemnaker error message
-                val errorMsg = parseErrorMessageFromJson(step3Body)
-                    ?: "Kemnaker authentication failed with status ${step3Response.code}: $step3Body"
-                throw KemnakerAuthException(errorMsg)
+            val redirectUriString = when (step3Response.code) {
+                in listOf(302, 303, 307, 308) -> step3Response.header("Location")?.let { ensureHttps(it) }
+                200 -> parseRedirectUriFromJson(step3Body)?.let { ensureHttps(it) }
+                else -> {
+                    val errorMsg = parseErrorMessageFromJson(step3Body)
+                        ?: "Kemnaker authentication failed with status ${step3Response.code}: $step3Body"
+                    throw KemnakerAuthException(errorMsg)
+                }
             }
 
             if (redirectUriString.isNullOrBlank()) {
@@ -303,13 +300,11 @@ class MagangHubApiClient(
 
     fun extractCsrfTokenFromHtml(htmlContent: String): String? {
         val matcher1 = CSRF_PATTERN_1.matcher(htmlContent)
-        if (matcher1.find()) {
-            return matcher1.group(1)
-        }
+        if (matcher1.find()) return matcher1.group(1)
+
         val matcher2 = CSRF_PATTERN_2.matcher(htmlContent)
-        if (matcher2.find()) {
-            return matcher2.group(1)
-        }
+        if (matcher2.find()) return matcher2.group(1)
+
         return null
     }
 
@@ -321,24 +316,29 @@ class MagangHubApiClient(
 
         return try {
             val jsonElement = JsonParser.parseString(responseBody)
-            if (jsonElement.isJsonPrimitive && jsonElement.asJsonPrimitive.isString) {
-                jsonElement.asString.trim()
-            } else if (jsonElement.isJsonObject) {
-                val obj = jsonElement.asJsonObject
-                if (obj.has("url") && obj.get("url").isJsonPrimitive) {
-                    obj.get("url").asString
-                } else if (obj.has("data")) {
+            when {
+                jsonElement.isJsonPrimitive && jsonElement.asJsonPrimitive.isString -> {
+                    jsonElement.asString.trim()
+                }
+                jsonElement.isJsonObject -> {
+                    val obj = jsonElement.asJsonObject
+                    val urlPrimitive = obj.get("url")?.takeIf { it.isJsonPrimitive }?.asString
+                    if (!urlPrimitive.isNullOrBlank()) return urlPrimitive
+
                     val data = obj.get("data")
-                    if (data.isJsonPrimitive && data.asJsonPrimitive.isString) {
-                        data.asString
-                    } else if (data.isJsonObject) {
-                        val dataObj = data.asJsonObject
-                        dataObj.get("url")?.asString
-                            ?: dataObj.get("redirect_uri")?.asString
-                            ?: trimmed
-                    } else trimmed
-                } else trimmed
-            } else trimmed
+                    when {
+                        data?.isJsonPrimitive == true && data.asJsonPrimitive.isString -> data.asString
+                        data?.isJsonObject == true -> {
+                            val dataObj = data.asJsonObject
+                            dataObj.get("url")?.asString
+                                ?: dataObj.get("redirect_uri")?.asString
+                                ?: trimmed
+                        }
+                        else -> trimmed
+                    }
+                }
+                else -> trimmed
+            }
         } catch (e: Exception) {
             trimmed
         }
@@ -349,6 +349,11 @@ class MagangHubApiClient(
 
         return try {
             val element = JsonParser.parseString(responseBody)
+            if (element.isJsonPrimitive && element.asJsonPrimitive.isString) {
+                val str = element.asString
+                if (str.isNotBlank()) return cleanBearerToken(str)
+            }
+
             if (element.isJsonObject) {
                 val root = element.asJsonObject
 
@@ -357,27 +362,21 @@ class MagangHubApiClient(
                     val data = root.get("data")
                     if (data.isJsonPrimitive && data.asJsonPrimitive.isString) {
                         return cleanBearerToken(data.asString)
-                    } else if (data.isJsonObject) {
+                    }
+                    if (data.isJsonObject) {
                         val dataObj = data.asJsonObject
                         for (key in candidateKeys) {
-                            if (dataObj.has(key) && dataObj.get(key).isJsonPrimitive) {
-                                val value = dataObj.get(key).asString
-                                if (value.isNotBlank()) return cleanBearerToken(value)
-                            }
+                            val value = dataObj.get(key)?.takeIf { it.isJsonPrimitive }?.asString
+                            if (!value.isNullOrBlank()) return cleanBearerToken(value)
                         }
                     }
                 }
 
                 // Check root level
                 for (key in candidateKeys) {
-                    if (root.has(key) && root.get(key).isJsonPrimitive) {
-                        val value = root.get(key).asString
-                        if (value.isNotBlank()) return cleanBearerToken(value)
-                    }
+                    val value = root.get(key)?.takeIf { it.isJsonPrimitive }?.asString
+                    if (!value.isNullOrBlank()) return cleanBearerToken(value)
                 }
-            } else if (element.isJsonPrimitive && element.asJsonPrimitive.isString) {
-                val str = element.asString
-                if (str.isNotBlank()) return cleanBearerToken(str)
             }
 
             // Fallback plain string
@@ -415,20 +414,20 @@ class MagangHubApiClient(
             val root = JsonParser.parseString(jsonBody).asJsonObject
             val message = root.get("message")?.asString
             val errorsObj = root.getAsJsonObject("errors")
-            if (errorsObj != null && !errorsObj.isEmpty) {
-                val details = mutableListOf<String>()
-                for ((key, value) in errorsObj.entrySet()) {
-                    if (value.isJsonArray) {
-                        val items = value.asJsonArray.map { it.asString }.joinToString(", ")
-                        details.add("$key: $items")
-                    } else {
-                        details.add("$key: ${value.asString}")
-                    }
-                }
-                "$message (${details.joinToString("; ")})"
-            } else {
-                message
+            if (errorsObj == null || errorsObj.isEmpty) {
+                return message
             }
+
+            val details = mutableListOf<String>()
+            for ((key, value) in errorsObj.entrySet()) {
+                val itemText = if (value.isJsonArray) {
+                    value.asJsonArray.map { it.asString }.joinToString(", ")
+                } else {
+                    value.asString
+                }
+                details.add("$key: $itemText")
+            }
+            "$message (${details.joinToString("; ")})"
         } catch (e: Exception) {
             null
         }
@@ -437,20 +436,16 @@ class MagangHubApiClient(
     private fun extractCodeAndState(uriString: String, baseSsoUrl: HttpUrl): Pair<String?, String?> {
         val parsed = uriString.toHttpUrlOrNull()
             ?: "${baseSsoUrl.scheme}://${baseSsoUrl.host}$uriString".toHttpUrlOrNull()
+            ?: return Pair(null, null)
 
-        if (parsed != null) {
-            val error = parsed.queryParameter("error")
-            if (!error.isNullOrEmpty()) {
-                val errorDesc = parsed.queryParameter("error_description").orEmpty()
-                throw KemnakerAuthException("OAuth error: $error ($errorDesc)")
-            }
-            val code = parsed.queryParameter("code")
-            var state = parsed.queryParameter("state")
-            if (state.isNullOrEmpty()) {
-                state = baseSsoUrl.queryParameter("state")
-            }
-            return Pair(code, state)
+        val error = parsed.queryParameter("error")
+        if (!error.isNullOrEmpty()) {
+            val errorDesc = parsed.queryParameter("error_description").orEmpty()
+            throw KemnakerAuthException("OAuth error: $error ($errorDesc)")
         }
-        return Pair(null, null)
+
+        val code = parsed.queryParameter("code")
+        val state = parsed.queryParameter("state") ?: baseSsoUrl.queryParameter("state")
+        return Pair(code, state)
     }
 }

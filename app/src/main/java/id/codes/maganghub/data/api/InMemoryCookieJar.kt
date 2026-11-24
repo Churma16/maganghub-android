@@ -33,15 +33,15 @@ class InMemoryCookieJar : CookieJar {
         val currentTime = System.currentTimeMillis()
 
         for ((domain, cookies) in cookieStore) {
-            if (isDomainMatch(host, domain)) {
-                val iterator = cookies.iterator()
-                while (iterator.hasNext()) {
-                    val cookie = iterator.next()
-                    if (cookie.expiresAt < currentTime) {
-                        cookies.remove(cookie)
-                    } else if (cookie.matches(url)) {
-                        validCookies.add(cookie)
-                    }
+            if (!isDomainMatch(host, domain)) continue
+
+            val iterator = cookies.iterator()
+            while (iterator.hasNext()) {
+                val cookie = iterator.next()
+                if (cookie.expiresAt < currentTime) {
+                    cookies.remove(cookie)
+                } else if (cookie.matches(url)) {
+                    validCookies.add(cookie)
                 }
             }
         }
