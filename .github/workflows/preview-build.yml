@@ -149,16 +149,14 @@ jobs:
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.PREVIEW_TAG }}/${{ env.PREVIEW_APK }}"
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ env.PREVIEW_TAG }}"
 
-          gh pr comment "${{ env.PR_NUMBER }}" --repo "${{ github.repository }}" --body "$(cat <<EOF
-### 📱 Preview APK Ready for Testing!
+          COMMENT_BODY=$(printf "### 📱 Preview APK Ready for Testing!\n\n* **PR:** #%s\n* **Commit:** \`%s\`\n* **Release:** [%s](%s)\n* **Download APK:** [%s](%s)\n\n> Ditandatangani dengan keystore resmi — siap diunduh dan dipasang di HP tanpa perlu login GitHub.\n" \
+            "${{ env.PR_NUMBER }}" \
+            "${{ env.SHORT_SHA }}" \
+            "${{ env.PREVIEW_TAG }}" \
+            "$RELEASE_URL" \
+            "${{ env.PREVIEW_APK }}" \
+            "$DOWNLOAD_URL")
 
-* **PR:** #${{ env.PR_NUMBER }}
-* **Commit:** \`${{ env.SHORT_SHA }}\`
-* **Release:** [${{ env.PREVIEW_TAG }}](${RELEASE_URL})
-* **Download APK:** [${{ env.PREVIEW_APK }}](${DOWNLOAD_URL})
-
-> Ditandatangani dengan keystore resmi — siap diunduh dan dipasang di HP tanpa perlu login GitHub.
-EOF
-)"
+          gh pr comment "${{ env.PR_NUMBER }}" --repo "${{ github.repository }}" --body "$COMMENT_BODY"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
