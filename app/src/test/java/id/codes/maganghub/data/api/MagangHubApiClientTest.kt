@@ -29,6 +29,13 @@ class MagangHubApiClientTest {
     }
 
     @Test
+    fun testEnsureHttps() {
+        assertEquals("https://account.kemnaker.go.id/auth", MagangHubApiClient.ensureHttps("http://account.kemnaker.go.id/auth"))
+        assertEquals("https://account.kemnaker.go.id/auth", MagangHubApiClient.ensureHttps("https://account.kemnaker.go.id/auth"))
+        assertEquals("/auth/login", MagangHubApiClient.ensureHttps("/auth/login"))
+    }
+
+    @Test
     fun testCleanBearerToken() {
         assertEquals("sample_token_123", MagangHubApiClient.cleanBearerToken("Bearer sample_token_123"))
         assertEquals("sample_token_123", MagangHubApiClient.cleanBearerToken("bearer sample_token_123"))
