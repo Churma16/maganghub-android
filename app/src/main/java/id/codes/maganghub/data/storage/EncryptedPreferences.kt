@@ -105,7 +105,7 @@ class EncryptedPreferences(context: Context) {
         val statusName = prefs.getString(KEY_LAST_STATUS, null) ?: return AttendanceStatus.UNKNOWN
         return try {
             AttendanceStatus.valueOf(statusName)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             AttendanceStatus.UNKNOWN
         }
     }
@@ -114,7 +114,7 @@ class EncryptedPreferences(context: Context) {
         val json = prefs.getString(KEY_LAST_HOME_DATA, null) ?: return null
         return try {
             gson.fromJson(json, AttendanceHomeData::class.java)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             null
         }
     }

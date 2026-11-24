@@ -15,6 +15,7 @@ import androidx.work.WorkerParameters
 import id.codes.maganghub.MagangHubApp
 import id.codes.maganghub.data.api.UnauthorizedSessionException
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.ReminderSettings
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
@@ -96,8 +97,8 @@ class AttendanceCheckWorker(
 
         val settings = try {
             MagangHubApp.instance.encryptedPreferences.getReminderSettings()
-        } catch (_: Exception) {
-            id.codes.maganghub.data.model.ReminderSettings()
+        } catch (e: Exception) {
+            ReminderSettings()
         }
 
         val checkResult = repository.checkAttendance(forceRefresh = true)

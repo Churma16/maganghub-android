@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import id.codes.maganghub.MagangHubApp
+import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.ui.MainActivity
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -104,8 +105,8 @@ object AttendanceAlarmScheduler {
         // Read user settings
         val settings = try {
             MagangHubApp.instance.encryptedPreferences.getReminderSettings()
-        } catch (_: Exception) {
-            id.codes.maganghub.data.model.ReminderSettings()
+        } catch (e: Exception) {
+            ReminderSettings()
         }
 
         if (!settings.isEnabled && overrideTriggerMillis == null) {
@@ -172,7 +173,7 @@ object AttendanceAlarmScheduler {
      * - If between 16:00 and 23:59 WIB: schedule for next interval (e.g. +30 mins).
      * - If past 23:59 WIB: schedule for 16:00 WIB today (or tomorrow).
      */
-    fun calculateNextTriggerMillis(context: Context, settings: id.codes.maganghub.data.model.ReminderSettings): Long {
+    fun calculateNextTriggerMillis(context: Context, settings: ReminderSettings): Long {
         val nowWib = ZonedDateTime.now(ZONE_WIB)
         val todayDate = nowWib.toLocalDate()
         val todayDateString = todayDate.toString()
@@ -181,7 +182,7 @@ object AttendanceAlarmScheduler {
 
         val cachedHomeData = try {
             MagangHubApp.instance.encryptedPreferences.getLastHomeData()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             null
         }
 

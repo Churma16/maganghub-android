@@ -180,7 +180,7 @@ object NotificationHelper {
 
         try {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_REMINDER, builder.build())
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
             // POST_NOTIFICATIONS permission not granted yet by user
         }
     }
@@ -222,7 +222,7 @@ object NotificationHelper {
 
         try {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_CONFIRMATION, builder.build())
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
             // POST_NOTIFICATIONS permission not granted yet
         }
     }
@@ -260,7 +260,7 @@ object NotificationHelper {
 
         try {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_AUTH_ALERT, builder.build())
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
             // Permission not granted
         }
     }
@@ -271,6 +271,6 @@ object NotificationHelper {
     fun cancelReminder(context: Context) {
         try {
             NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_REMINDER)
-        } catch (_: Exception) {}
+        } catch (e: Exception) {}
     }
 }
