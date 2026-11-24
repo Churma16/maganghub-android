@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,7 +43,12 @@ import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.ui.screens.DashboardScreen
 import id.codes.maganghub.ui.screens.LoginDialog
 import id.codes.maganghub.ui.screens.SettingsScreen
+import id.codes.maganghub.ui.theme.KemnakerSky
+import id.codes.maganghub.ui.theme.KemnakerSkyContainer
 import id.codes.maganghub.ui.theme.MagangHubTheme
+import id.codes.maganghub.ui.theme.PureWhite
+import id.codes.maganghub.ui.theme.Slate500
+import id.codes.maganghub.ui.theme.Slate900
 import id.codes.maganghub.ui.viewmodel.AttendanceViewModel
 import id.codes.maganghub.ui.viewmodel.AttendanceViewModelFactory
 
@@ -105,7 +111,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
                     Text(
                         text = if (selectedTab == 0) "Presensi MagangHub" else "Pengaturan Presensi",
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Slate900
                     )
                 },
                 actions = {
@@ -118,36 +125,54 @@ fun MainContent(viewModel: AttendanceViewModel) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
                                     strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = KemnakerSky
                                 )
                             } else {
-                                Icon(Icons.Default.Refresh, contentDescription = "Perbarui Presensi")
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Perbarui Presensi",
+                                    tint = KemnakerSky
+                                )
                             }
                         }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
+                    titleContentColor = Slate900
                 )
             )
         },
         bottomBar = {
             NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = PureWhite,
                 tonalElevation = 8.dp
             ) {
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
                     icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-                    label = { Text("Dashboard") }
+                    label = { Text("Dashboard") },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = KemnakerSky,
+                        selectedTextColor = KemnakerSky,
+                        indicatorColor = KemnakerSkyContainer,
+                        unselectedIconColor = Slate500,
+                        unselectedTextColor = Slate500
+                    )
                 )
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
                     icon = { Icon(Icons.Default.Settings, contentDescription = "Pengaturan") },
-                    label = { Text("Pengaturan") }
+                    label = { Text("Pengaturan") },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = KemnakerSky,
+                        selectedTextColor = KemnakerSky,
+                        indicatorColor = KemnakerSkyContainer,
+                        unselectedIconColor = Slate500,
+                        unselectedTextColor = Slate500
+                    )
                 )
             }
         }

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +46,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.codes.maganghub.ui.theme.DangerRed
+import id.codes.maganghub.ui.theme.InfoSkyBorder
+import id.codes.maganghub.ui.theme.InfoSkyContainer
+import id.codes.maganghub.ui.theme.InfoSkyText
+import id.codes.maganghub.ui.theme.KemnakerSky
+import id.codes.maganghub.ui.theme.PureWhite
+import id.codes.maganghub.ui.theme.Slate600
+import id.codes.maganghub.ui.theme.Slate900
 
 @Composable
 fun LoginDialog(
@@ -67,6 +76,7 @@ fun LoginDialog(
             if (!isLoading) onDismiss()
         },
         shape = RoundedCornerShape(16.dp),
+        containerColor = PureWhite,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -75,13 +85,14 @@ fun LoginDialog(
                 Icon(
                     imageVector = Icons.Default.Lock,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = KemnakerSky,
                     modifier = Modifier.size(24.dp)
                 )
                 Text(
                     text = "Masuk Akun Kemnaker",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Slate900
                 )
             }
         },
@@ -93,15 +104,16 @@ fun LoginDialog(
                 Text(
                     text = "Masukkan kredensial akun SiapKerja / Monev Kemnaker Anda untuk mengaktifkan pemantauan dan pengingat presensi otomatis.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Slate600
                 )
 
                 // Security Note
                 Card(
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        containerColor = InfoSkyContainer
                     ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, InfoSkyBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -112,14 +124,14 @@ fun LoginDialog(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = KemnakerSky,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = "Kredensial disimpan terenkripsi di perangkat (AES-256) menggunakan Android Keystore.",
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = InfoSkyText
                         )
                     }
                 }
@@ -128,7 +140,7 @@ fun LoginDialog(
                     Text(
                         text = errorMessage,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
+                        color = DangerRed,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -138,7 +150,7 @@ fun LoginDialog(
                     onValueChange = { username = it },
                     label = { Text("Username / Email / NIK") },
                     leadingIcon = {
-                        Icon(Icons.Default.Person, contentDescription = null)
+                        Icon(Icons.Default.Person, contentDescription = null, tint = Slate600)
                     },
                     singleLine = true,
                     enabled = !isLoading,
@@ -157,13 +169,14 @@ fun LoginDialog(
                     onValueChange = { password = it },
                     label = { Text("Kata Sandi") },
                     leadingIcon = {
-                        Icon(Icons.Default.Lock, contentDescription = null)
+                        Icon(Icons.Default.Lock, contentDescription = null, tint = Slate600)
                     },
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Sembunyikan" else "Tampilkan"
+                                contentDescription = if (passwordVisible) "Sembunyikan" else "Tampilkan",
+                                tint = Slate600
                             )
                         }
                     },
@@ -194,18 +207,19 @@ fun LoginDialog(
                     }
                 },
                 enabled = !isLoading && username.isNotBlank() && password.isNotBlank(),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = KemnakerSky)
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = PureWhite
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Memverifikasi...")
                 } else {
-                    Text("Masuk")
+                    Text("Masuk", color = PureWhite)
                 }
             }
         },
@@ -214,7 +228,7 @@ fun LoginDialog(
                 onClick = onDismiss,
                 enabled = !isLoading
             ) {
-                Text("Batal")
+                Text("Batal", color = Slate600)
             }
         }
     )

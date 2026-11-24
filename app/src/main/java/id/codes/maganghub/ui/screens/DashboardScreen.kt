@@ -45,6 +45,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,26 +57,40 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.AttendanceStatus
-import id.codes.maganghub.ui.theme.BelumHadirAmber
-import id.codes.maganghub.ui.theme.BelumHadirAmberContainer
-import id.codes.maganghub.ui.theme.BelumHadirAmberText
-import id.codes.maganghub.ui.theme.BelumHadirRed
-import id.codes.maganghub.ui.theme.BelumHadirRedContainer
-import id.codes.maganghub.ui.theme.BelumHadirRedText
-import id.codes.maganghub.ui.theme.CardBorderDark
+import id.codes.maganghub.ui.theme.BorderSlate
 import id.codes.maganghub.ui.theme.CardBorderLight
+import id.codes.maganghub.ui.theme.DangerRed
+import id.codes.maganghub.ui.theme.DangerRedContainer
+import id.codes.maganghub.ui.theme.DangerRedText
 import id.codes.maganghub.ui.theme.HadirGreen
 import id.codes.maganghub.ui.theme.HadirGreenDark
 import id.codes.maganghub.ui.theme.HadirGreenLight
 import id.codes.maganghub.ui.theme.HadirGreenText
-import id.codes.maganghub.ui.theme.LiburSky
-import id.codes.maganghub.ui.theme.LiburSkyContainer
-import id.codes.maganghub.ui.theme.LiburSkyText
+import id.codes.maganghub.ui.theme.InfoSky
+import id.codes.maganghub.ui.theme.InfoSkyBorder
+import id.codes.maganghub.ui.theme.InfoSkyContainer
+import id.codes.maganghub.ui.theme.InfoSkyText
+import id.codes.maganghub.ui.theme.KemnakerSky
+import id.codes.maganghub.ui.theme.KemnakerSkyContainer
+import id.codes.maganghub.ui.theme.PureWhite
+import id.codes.maganghub.ui.theme.Slate400
+import id.codes.maganghub.ui.theme.Slate600
+import id.codes.maganghub.ui.theme.Slate900
+import id.codes.maganghub.ui.theme.WarningAmber
+import id.codes.maganghub.ui.theme.WarningAmberContainer
+import id.codes.maganghub.ui.theme.WarningAmberText
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun DashboardScreen(
@@ -84,6 +103,13 @@ fun DashboardScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
+    val openMonevPortal: () -> Unit = {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_MONEV_DASHBOARD)).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        context.startActivity(intent)
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -91,7 +117,22 @@ fun DashboardScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Error or Success Banner
+        // 1. Floating Server Clock Pill
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            ServerClockPill()
+        }
+
+        // 2. Header Greeting
+        HeaderGreetingSection(username = uiState.username)
+
+        // 3. Official Monev Web Banners
+        SoftSkyInfoBanner()
+        SoftAmberAnnouncementBanner()
+
+        // 4. Runtime Error or Success Alert Banner
         AnimatedVisibility(
             visible = uiState.errorMessage != null,
             enter = fadeIn(),
@@ -100,8 +141,8 @@ fun DashboardScreen(
             BannerCard(
                 icon = Icons.Default.Error,
                 message = uiState.errorMessage.orEmpty(),
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                containerColor = DangerRedContainer,
+                contentColor = DangerRedText
             )
         }
 
@@ -118,58 +159,44 @@ fun DashboardScreen(
             )
         }
 
-        // Account Status Bar (User summary)
-        AccountSummaryCard(
-            isLoggedIn = uiState.isLoggedIn,
-            username = uiState.username,
-            onOpenLogin = onOpenLoginDialog
-        )
-
-        // Main Attendance Status Block
-        AttendanceHeroCard(
+        // 5. Main "Hari Ini" Card
+        HariIniCard(
             uiState = uiState,
-            onOpenLogin = onOpenLoginDialog
+            onOpenLogin = onOpenLoginDialog,
+            onOpenPortal = openMonevPortal
         )
 
-        // Next Reminder & Countdown Indicator
+        // 6. Next Reminder Status Card
         ReminderStatusCard(
             nextReminderText = uiState.nextReminderFormatted,
             isReminderEnabled = uiState.reminderSettings.isEnabled,
             intervalMinutes = uiState.reminderSettings.intervalMinutes
         )
 
-        // Details Breakdown Card
+        // 7. Attendance Details Breakdown Card
         if (uiState.attendanceData != null) {
-            AttendanceDetailCard(
-                uiState = uiState,
-                formatLastSync = formatLastSync
-            )
+            AttendanceDetailCard(uiState = uiState)
         }
 
-        // Action Buttons Row
+        // 8. Action Buttons Section
         ActionButtonsSection(
             isChecking = uiState.isChecking,
             isLoggedIn = uiState.isLoggedIn,
             onCheckNow = onCheckNow,
-            onOpenMonevPortal = {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_MONEV_DASHBOARD)).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                context.startActivity(intent)
-            }
+            onOpenMonevPortal = openMonevPortal
         )
 
-        // Last Sync Footer
+        // 9. Last Sync Footer
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
+                .padding(vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "Terakhir diperbarui: ${formatLastSync(uiState.lastSyncTimestamp)}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Slate600
             )
         }
 
@@ -177,197 +204,398 @@ fun DashboardScreen(
     }
 }
 
+/**
+ * Floating server clock pill: "🕒 Waktu Server [HH.mm.ss] WIB (GMT+7)"
+ */
 @Composable
-private fun AccountSummaryCard(
-    isLoggedIn: Boolean,
-    username: String,
-    onOpenLogin: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+private fun ServerClockPill(modifier: Modifier = Modifier) {
+    var currentTime by remember {
+        mutableStateOf(getCurrentWibTimeString())
+    }
+
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            currentTime = getCurrentWibTimeString()
+            delay(1000L)
+        }
+    }
+
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = InfoSkyContainer,
+        border = androidx.compose.foundation.BorderStroke(1.dp, InfoSkyBorder),
+        modifier = modifier
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = if (isLoggedIn) HadirGreenLight else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "User",
-                            tint = if (isLoggedIn) HadirGreenDark else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-                Column {
-                    Text(
-                        text = if (isLoggedIn) (username.ifBlank { "Akun Kemnaker" }) else "Belum Masuk Akun",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = if (isLoggedIn) "Tersambung ke Monev Kemnaker" else "Login untuk auto-check presensi",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            if (!isLoggedIn) {
-                Button(
-                    onClick = onOpenLogin,
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text("Masuk", fontSize = 12.sp)
-                }
-            }
+            Text(
+                text = "🕒 Waktu Server $currentTime WIB (GMT+7)",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = InfoSkyText
+            )
         }
     }
 }
 
+private fun getCurrentWibTimeString(): String {
+    val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Jakarta"))
+    val sdf = SimpleDateFormat("HH.mm.ss", Locale("id", "ID"))
+    sdf.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
+    return sdf.format(cal.time)
+}
+
+/**
+ * Header Greeting: "Halo, [Username] 👋" with subtitle "Global Digital Niaga"
+ */
 @Composable
-private fun AttendanceHeroCard(
+private fun HeaderGreetingSection(username: String) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        val displayName = username.ifBlank { "Rekan Magang" }
+        Text(
+            text = "Halo, $displayName 👋",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Slate900
+        )
+        Text(
+            text = "Global Digital Niaga",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = Slate600
+        )
+    }
+}
+
+/**
+ * Soft Sky info card ("Izin hingga 3 hari dibayar...")
+ */
+@Composable
+private fun SoftSkyInfoBanner() {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = InfoSkyContainer,
+        border = androidx.compose.foundation.BorderStroke(1.dp, InfoSkyBorder),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = InfoSky,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = "Izin hingga 3 hari dibayar secara proporsional. Izin lebih dari 3 hari tidak dibayarkan uang saku bulanan.",
+                style = MaterialTheme.typography.bodySmall,
+                color = InfoSkyText,
+                lineHeight = 18.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+/**
+ * Soft Amber announcement card ("Batas pengisian logbook 23:59 WIB")
+ */
+@Composable
+private fun SoftAmberAnnouncementBanner() {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = WarningAmberContainer,
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.AccessTime,
+                contentDescription = null,
+                tint = WarningAmber,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = "Batas pengisian logbook 23:59 WIB setiap hari kerja. Lewat dari batas waktu dianggap tidak hadir.",
+                style = MaterialTheme.typography.bodySmall,
+                color = WarningAmberText,
+                lineHeight = 18.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+/**
+ * Main "Hari Ini" Card
+ * - Pure white card with rounded border (20.dp radius)
+ * - Card header: Calendar icon in soft blue square, formatted Date, and pill badge "Aktif" (green)
+ * - Center Status: Large mint circular icon (0xFFDCFCE7) with green clipboard checkmark,
+ *   bold headline "Laporan hari ini sudah diisi", description "Laporan dan kehadiran Anda sudah tercatat."
+ * - Main CTA Button: Emerald Green (0xFF00875A) "Lihat Laporan Hari Ini >"
+ * - Inner deadline box: Light blue container with info icon "Batas pengisian laporan hari ini pukul 23.59 WIB"
+ */
+@Composable
+private fun HariIniCard(
     uiState: AttendanceUiState,
-    onOpenLogin: () -> Unit
+    onOpenLogin: () -> Unit,
+    onOpenPortal: () -> Unit
 ) {
     val status = uiState.attendanceStatus
 
-    val (bgGradientColor, textColor, iconColor, statusTitle, statusSubtitle, statusIcon) = when {
-        !uiState.isLoggedIn -> StatusVisual(
-            bgColor = MaterialTheme.colorScheme.surfaceVariant,
-            textColor = MaterialTheme.colorScheme.onSurface,
-            iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = "Kredensial Belum Terpasang",
-            subtitle = "Masukkan akun SSO Kemnaker untuk memantau status presensi dan logbook harian otomatis.",
-            icon = Icons.Default.Info
-        )
-        status == AttendanceStatus.HADIR -> StatusVisual(
-            bgColor = HadirGreenLight,
-            textColor = HadirGreenText,
-            iconColor = HadirGreenDark,
-            title = "Presensi & Logbook Selesai",
-            subtitle = "Presensi dan laporan harian hari ini sudah tercatat di sistem Monev Kemnaker.",
-            icon = Icons.Default.CheckCircle
-        )
-        status == AttendanceStatus.LIBUR -> StatusVisual(
-            bgColor = LiburSkyContainer,
-            textColor = LiburSkyText,
-            iconColor = LiburSky,
-            title = "Hari Libur / Non-Aktif",
-            subtitle = "Hari ini terjadwal libur atau non-operasional. Tidak diperlukan pengisian logbook.",
-            icon = Icons.Default.Weekend
-        )
-        status == AttendanceStatus.TIDAK_AKTIF -> StatusVisual(
-            bgColor = MaterialTheme.colorScheme.surfaceVariant,
-            textColor = MaterialTheme.colorScheme.onSurface,
-            iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = "Magang Tidak Aktif",
-            subtitle = "Status magang Anda tercatat tidak aktif di sistem Kemnaker.",
-            icon = Icons.Default.Info
-        )
-        status == AttendanceStatus.BELUM_HADIR -> StatusVisual(
-            bgColor = BelumHadirRedContainer,
-            textColor = BelumHadirRedText,
-            iconColor = BelumHadirRed,
-            title = "Belum Presensi & Isi Logbook!",
-            subtitle = "Batas akhir pengisian adalah pukul 23:59 WIB malam ini. Harap segera isi logbook di portal Monev.",
-            icon = Icons.Default.Warning
-        )
-        else -> StatusVisual(
-            bgColor = BelumHadirAmberContainer,
-            textColor = BelumHadirAmberText,
-            iconColor = BelumHadirAmber,
-            title = "Status Belum Diperiksa",
-            subtitle = "Tekan tombol 'Cek Sekarang' di bawah untuk memeriksa kehadiran hari ini.",
-            icon = Icons.Default.Info
-        )
-    }
-
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp)),
-        colors = CardDefaults.cardColors(containerColor = bgGradientColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = PureWhite),
+        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderLight),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Card Header: Calendar icon in soft blue square, formatted Date, and pill badge "Aktif"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Status Badge Chip
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = iconColor.copy(alpha = 0.15f),
-                    modifier = Modifier.padding(bottom = 4.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(KemnakerSkyContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Kalender",
+                            tint = KemnakerSky,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     Text(
-                        text = if (uiState.isLoggedIn) status.label.uppercase() else "PERLU LOGIN",
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = textColor
+                        text = formatDisplayDate(uiState.attendanceData?.date),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Slate900
                     )
                 }
 
-                Icon(
-                    imageVector = statusIcon,
-                    contentDescription = statusTitle,
-                    tint = iconColor,
-                    modifier = Modifier.size(32.dp)
-                )
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = HadirGreenLight
+                ) {
+                    Text(
+                        text = if (uiState.attendanceData?.activeInternship != false) "Aktif" else "Non-Aktif",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = HadirGreenText
+                    )
+                }
             }
 
-            Text(
-                text = statusTitle,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = textColor
-            )
+            // Center Status Content
+            when {
+                !uiState.isLoggedIn -> {
+                    CenterStatusSection(
+                        icon = Icons.Default.Person,
+                        iconContainerColor = KemnakerSkyContainer,
+                        iconColor = KemnakerSky,
+                        title = "Kredensial Belum Terpasang",
+                        description = "Masukkan akun SSO Kemnaker untuk memantau status presensi dan logbook harian otomatis.",
+                        buttonText = "Masuk Akun Kemnaker >",
+                        buttonColor = KemnakerSky,
+                        onButtonClick = onOpenLogin
+                    )
+                }
+                status == AttendanceStatus.HADIR -> {
+                    CenterStatusSection(
+                        icon = Icons.Default.CheckCircle,
+                        iconContainerColor = HadirGreenLight,
+                        iconColor = HadirGreen,
+                        title = "Laporan hari ini sudah diisi",
+                        description = "Laporan dan kehadiran Anda sudah tercatat.",
+                        buttonText = "Lihat Laporan Hari Ini >",
+                        buttonColor = HadirGreen,
+                        onButtonClick = onOpenPortal
+                    )
+                }
+                status == AttendanceStatus.LIBUR -> {
+                    CenterStatusSection(
+                        icon = Icons.Default.Weekend,
+                        iconContainerColor = KemnakerSkyContainer,
+                        iconColor = KemnakerSky,
+                        title = "Hari Libur / Non-Aktif",
+                        description = "Hari ini terjadwal libur atau non-operasional. Tidak diperlukan pengisian logbook.",
+                        buttonText = "Lihat Dashboard Monev >",
+                        buttonColor = KemnakerSky,
+                        onButtonClick = onOpenPortal
+                    )
+                }
+                status == AttendanceStatus.TIDAK_AKTIF -> {
+                    CenterStatusSection(
+                        icon = Icons.Default.Info,
+                        iconContainerColor = InfoSkyContainer,
+                        iconColor = InfoSky,
+                        title = "Magang Tidak Aktif",
+                        description = "Status magang Anda tercatat tidak aktif di sistem Kemnaker.",
+                        buttonText = "Buka Monev Portal >",
+                        buttonColor = KemnakerSky,
+                        onButtonClick = onOpenPortal
+                    )
+                }
+                status == AttendanceStatus.BELUM_HADIR -> {
+                    CenterStatusSection(
+                        icon = Icons.Default.Warning,
+                        iconContainerColor = WarningAmberContainer,
+                        iconColor = WarningAmber,
+                        title = "Laporan hari ini belum diisi",
+                        description = "Laporan dan kehadiran Anda belum tercatat. Segera isi sebelum batas waktu berakhir.",
+                        buttonText = "Isi Laporan Hari Ini >",
+                        buttonColor = HadirGreen,
+                        onButtonClick = onOpenPortal
+                    )
+                }
+                else -> {
+                    CenterStatusSection(
+                        icon = Icons.Default.Info,
+                        iconContainerColor = InfoSkyContainer,
+                        iconColor = InfoSky,
+                        title = "Status Belum Diperiksa",
+                        description = "Tekan tombol 'Cek Sekarang' di bawah untuk memeriksa kehadiran hari ini.",
+                        buttonText = "Buka Monev Portal >",
+                        buttonColor = KemnakerSky,
+                        onButtonClick = onOpenPortal
+                    )
+                }
+            }
 
-            Text(
-                text = statusSubtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = textColor.copy(alpha = 0.9f),
-                lineHeight = 20.sp
-            )
-
-            if (!uiState.isLoggedIn) {
-                Button(
-                    onClick = onOpenLogin,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+            // Inner deadline box: Light blue container with info icon
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = InfoSkyContainer,
+                border = androidx.compose.foundation.BorderStroke(1.dp, InfoSkyBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Masuk Akun Kemnaker")
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = KemnakerSky,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Batas pengisian laporan hari ini pukul 23.59 WIB",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = InfoSkyText
+                    )
                 }
             }
         }
     }
 }
 
+@Composable
+private fun CenterStatusSection(
+    icon: ImageVector,
+    iconContainerColor: Color,
+    iconColor: Color,
+    title: String,
+    description: String,
+    buttonText: String,
+    buttonColor: Color,
+    onButtonClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Large circular icon (76.dp)
+        Box(
+            modifier = Modifier
+                .size(76.dp)
+                .clip(CircleShape)
+                .background(iconContainerColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(42.dp)
+            )
+        }
+
+        // Bold headline
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = Slate900,
+            textAlign = TextAlign.Center
+        )
+
+        // Description
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Slate600,
+            textAlign = TextAlign.Center,
+            lineHeight = 20.sp,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Main CTA Button
+        Button(
+            onClick = onButtonClick,
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+        ) {
+            Text(
+                text = buttonText,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = PureWhite
+            )
+        }
+    }
+}
+
+/**
+ * Next Reminder & Countdown Indicator
+ */
 @Composable
 private fun ReminderStatusCard(
     nextReminderText: String,
@@ -377,13 +605,8 @@ private fun ReminderStatusCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-        )
+        colors = CardDefaults.cardColors(containerColor = PureWhite),
+        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderLight)
     ) {
         Row(
             modifier = Modifier
@@ -392,19 +615,19 @@ private fun ReminderStatusCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Surface(
-                shape = CircleShape,
-                color = if (isReminderEnabled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.size(44.dp)
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (isReminderEnabled) KemnakerSkyContainer else Color(0xFFF1F5F9)),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.NotificationsActive,
-                        contentDescription = "Pengingat",
-                        tint = if (isReminderEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.NotificationsActive,
+                    contentDescription = "Pengingat",
+                    tint = if (isReminderEnabled) KemnakerSky else Slate400,
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
             Column(modifier = Modifier.weight(1f)) {
@@ -415,18 +638,18 @@ private fun ReminderStatusCard(
                     Text(
                         text = "Jadwal Pengingat",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Slate600
                     )
                     Surface(
                         shape = RoundedCornerShape(4.dp),
-                        color = if (isReminderEnabled) HadirGreenLight else MaterialTheme.colorScheme.surfaceVariant
+                        color = if (isReminderEnabled) HadirGreenLight else Color(0xFFF1F5F9)
                     ) {
                         Text(
                             text = if (isReminderEnabled) "AKTIF ($intervalMinutes m)" else "NONAKTIF",
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = if (isReminderEnabled) HadirGreenText else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isReminderEnabled) HadirGreenText else Slate600
                         )
                     }
                 }
@@ -434,28 +657,26 @@ private fun ReminderStatusCard(
                 Text(
                     text = nextReminderText,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Slate900
                 )
             }
         }
     }
 }
 
+/**
+ * Details Breakdown Card
+ */
 @Composable
-private fun AttendanceDetailCard(
-    uiState: AttendanceUiState,
-    formatLastSync: (Long) -> String
-) {
+private fun AttendanceDetailCard(uiState: AttendanceUiState) {
     val data = uiState.attendanceData ?: return
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-        )
+        colors = CardDefaults.cardColors(containerColor = PureWhite),
+        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorderLight)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -465,7 +686,7 @@ private fun AttendanceDetailCard(
                 text = "Rincian Kehadiran",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = KemnakerSky
             )
 
             DetailRow(
@@ -517,19 +738,20 @@ private fun DetailRow(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = Slate600,
                 modifier = Modifier.size(16.dp)
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Slate600
             )
         }
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            color = Slate900
         )
     }
 }
@@ -553,14 +775,14 @@ private fun ActionButtonsSection(
                 .fillMaxWidth()
                 .height(48.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = KemnakerSky
             )
         ) {
             if (isChecking) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = PureWhite
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text("Memeriksa Server Monev...")
@@ -576,11 +798,12 @@ private fun ActionButtonsSection(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .height(48.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSlate)
         ) {
-            Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp), tint = KemnakerSky)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Buka Monev MagangHub Portal", fontWeight = FontWeight.Medium)
+            Text("Buka Monev MagangHub Portal", fontWeight = FontWeight.Medium, color = Slate900)
         }
     }
 }
@@ -592,9 +815,9 @@ private fun BannerCard(
     containerColor: Color,
     contentColor: Color
 ) {
-    Card(
+    Surface(
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
+        color = containerColor,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -618,11 +841,22 @@ private fun BannerCard(
     }
 }
 
-private data class StatusVisual(
-    val bgColor: Color,
-    val textColor: Color,
-    val iconColor: Color,
-    val title: String,
-    val subtitle: String,
-    val icon: ImageVector
-)
+private fun formatDisplayDate(dateStr: String?): String {
+    if (!dateStr.isNullOrBlank()) {
+        try {
+            val sdfInput = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val parsed = sdfInput.parse(dateStr)
+            if (parsed != null) {
+                val sdfOutput = SimpleDateFormat("EEEE, d MMMM yyyy", Locale("id", "ID"))
+                sdfOutput.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
+                return sdfOutput.format(parsed)
+            }
+        } catch (_: Exception) {
+            return dateStr
+        }
+    }
+    val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Jakarta"))
+    val sdfOutput = SimpleDateFormat("EEEE, d MMMM yyyy", Locale("id", "ID"))
+    sdfOutput.timeZone = TimeZone.getTimeZone("Asia/Jakarta")
+    return sdfOutput.format(cal.time)
+}
