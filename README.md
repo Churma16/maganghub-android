@@ -198,10 +198,10 @@ chmod +x gradlew
 # Jalankan Unit Tests
 ./gradlew testDebugUnitTest
 
-# Build Debug APK (output: app/build/outputs/apk/debug/maganghub-v1.0.0-dev.apk)
+# Build Debug APK (output: app/build/outputs/apk/debug/maganghub-v0.1.0-dev.apk)
 ./gradlew assembleDebug
 
-# Build Signed Release APK (output: app/build/outputs/apk/release/maganghub-v1.0.0.apk)
+# Build Signed Release APK (output: app/build/outputs/apk/release/maganghub-v0.1.0.apk)
 ./gradlew assembleRelease
 
 # Build Snapshot APK dengan Version Suffix
@@ -231,8 +231,8 @@ Repositori ini menerapkan siklus rilis berbasis GitHub Actions dan Semantic Vers
 ### 1. Pengembangan dan Pull Request (PR)
 * Jangan mengubah nilai `versionCode` atau `versionName` di `app/build.gradle.kts` secara manual di PR fitur atau perbaikan.
 * Gunakan format commit konvensional:
-  * `feat:` — Fitur baru (menaikkan versi Minor, misal `1.0.0` ke `1.1.0`).
-  * `fix:` — Perbaikan bug (menaikkan versi Patch, misal `1.0.0` ke `1.0.1`).
+  * `feat:` — Fitur baru (menaikkan versi Minor, misal `0.1.0` ke `0.2.0`).
+  * `fix:` — Perbaikan bug (menaikkan versi Patch, misal `0.1.0` ke `0.1.1`).
   * `BREAKING CHANGE:` — Perubahan struktural breaking (menaikkan versi Major).
   * `chore:`, `docs:`, `style:`, `refactor:`, `test:` — Perawatan rutin tanpa menaikkan versi rilis.
 * Script `verify-no-manual-version-bump.js` memverifikasi aturan versi di setiap PR secara otomatis.

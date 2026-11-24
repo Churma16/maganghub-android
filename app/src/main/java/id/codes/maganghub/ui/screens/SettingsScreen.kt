@@ -1,5 +1,7 @@
 package id.codes.maganghub.ui.screens
 
+import id.codes.maganghub.BuildConfig
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -545,7 +547,7 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "MagangHub Presensi Checker v1.0.0",
+                    text = "MagangHub Presensi Checker v${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
