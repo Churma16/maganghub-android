@@ -145,7 +145,7 @@ export async function requestOpenRouterTitle({
   const headers = {
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
-    'HTTP-Referer': repository ? `https://github.com/${repository}` : 'https://github.com/Churma16/maganghub-android',
+    'HTTP-Referer': repository ? `https://github.com/${repository}` : 'https://github.com/Churma16/maganghub-logbook-companion',
     'X-Title': 'MagangHub Release Title Generator'
   };
 
