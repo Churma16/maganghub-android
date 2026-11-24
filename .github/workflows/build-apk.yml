@@ -48,7 +48,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Run Unit Tests & Lint
-        run: ./gradlew testDebugUnitTest --continue || true
+        run: ./gradlew testDebugUnitTest --continue
 
       - name: Restore Release Keystore
         run: |

@@ -33,10 +33,10 @@ class AttendanceViewModelTest {
         private val _reminderSettingsFlow = MutableStateFlow(ReminderSettings())
         override val reminderSettingsFlow: StateFlow<ReminderSettings> = _reminderSettingsFlow
 
-        var cachedHomeData: AttendanceHomeData? = null
-        var cachedStatus: AttendanceStatus = AttendanceStatus.UNKNOWN
-        var cachedTimestamp: Long = 0L
-        var hasCredentialsSaved: Boolean = false
+        private var cachedHomeData: AttendanceHomeData? = null
+        private var cachedStatus: AttendanceStatus = AttendanceStatus.UNKNOWN
+        private var cachedTimestamp: Long = 0L
+        private var hasCredentialsSaved: Boolean = false
 
         override suspend fun login(username: String, password: String): Result<String> {
             _sessionFlow.value = UserSession(username = username, monevAccessToken = "token_abc", isLoggedIn = true)

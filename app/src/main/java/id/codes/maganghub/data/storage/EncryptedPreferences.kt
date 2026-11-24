@@ -35,6 +35,9 @@ class EncryptedPreferences(context: Context) {
         private const val KEY_REMINDER_INTERVAL = "pref_reminder_interval"
         private const val KEY_REMINDER_SOUND = "pref_reminder_sound"
         private const val KEY_REMINDER_VIBRATION = "pref_reminder_vibration"
+
+        private const val KEY_LOGIN_FAILURE_COUNT = "pref_login_failure_count"
+        private const val KEY_DEVICE_JITTER_SEED = "pref_device_jitter_seed_minutes"
     }
 
     private val gson = Gson()
@@ -77,6 +80,30 @@ class EncryptedPreferences(context: Context) {
     }
 
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS_TOKEN, null)?.takeIf { it.isNotBlank() }
+
+    // Auth Circuit Breaker & Rate Limit Protection
+    fun getLoginFailureCount(): Int = prefs.getInt(KEY_LOGIN_FAILURE_COUNT, 0)
+
+    fun incrementLoginFailureCount(): Int {
+        val next = getLoginFailureCount() + 1
+        prefs.edit().putInt(KEY_LOGIN_FAILURE_COUNT, next).apply()
+        return next
+    }
+
+    fun resetLoginFailureCount() {
+        prefs.edit().putInt(KEY_LOGIN_FAILURE_COUNT, 0).apply()
+    }
+
+    fun isLoginCircuitOpen(): Boolean = getLoginFailureCount() >= 3
+
+    // Device Jitter Seed (anti-thundering herd on daily 16:00 window)
+    fun getDeviceJitterSeedMinutes(): Int {
+        val existing = prefs.getInt(KEY_DEVICE_JITTER_SEED, -1)
+        if (existing in 0..7) return existing
+        val newSeed = kotlin.random.Random.nextInt(0, 8)
+        prefs.edit().putInt(KEY_DEVICE_JITTER_SEED, newSeed).apply()
+        return newSeed
+    }
 
     fun getUserSession(): UserSession {
         val username = getUsername().orEmpty()

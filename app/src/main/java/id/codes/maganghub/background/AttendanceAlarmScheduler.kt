@@ -191,7 +191,20 @@ object AttendanceAlarmScheduler {
             cachedHomeData.date == todayDateString &&
             cachedHomeData.hasAttendance
 
-        val nextTrigger = calculateNextTriggerTime(nowWib, hasAttendedToday, settings)
+        val jitterMinutes = kotlin.random.Random.nextInt(-3, 4)
+        val deviceSeed = try {
+            MagangHubApp.instance.encryptedPreferences.getDeviceJitterSeedMinutes()
+        } catch (_: Exception) {
+            0
+        }
+
+        val nextTrigger = calculateNextTriggerTime(
+            nowWib = nowWib,
+            hasAttendedToday = hasAttendedToday,
+            settings = settings,
+            jitterMinutes = jitterMinutes,
+            deviceSeedMinutes = deviceSeed
+        )
         return nextTrigger.toInstant().toEpochMilli()
     }
 
@@ -202,52 +215,49 @@ object AttendanceAlarmScheduler {
     fun calculateNextTriggerTime(
         nowWib: ZonedDateTime,
         hasAttendedToday: Boolean,
-        settings: ReminderSettings
+        settings: ReminderSettings,
+        jitterMinutes: Int = 0,
+        deviceSeedMinutes: Int = 0
     ): ZonedDateTime {
         val todayDate = nowWib.toLocalDate()
         val startHour = settings.startHour
         val endHour = settings.endHour
-        val intervalMinutes = if (settings.intervalMinutes > 0) settings.intervalMinutes else 30
+        val rawInterval = if (settings.intervalMinutes > 0) settings.intervalMinutes else 30
+        val clampedJitter = jitterMinutes.coerceIn(-3, 3)
+        val effectiveInterval = (rawInterval + clampedJitter).coerceAtLeast(10)
+        val clampedSeed = deviceSeedMinutes.coerceIn(0, 7)
+
+        val tomorrowStart = ZonedDateTime.of(
+            todayDate.plusDays(1),
+            LocalTime.of(startHour, clampedSeed),
+            ZONE_WIB
+        )
 
         if (hasAttendedToday) {
-            return ZonedDateTime.of(
-                todayDate.plusDays(1),
-                LocalTime.of(startHour, 0),
-                ZONE_WIB
-            )
+            return tomorrowStart
         }
 
         val currentHour = nowWib.hour
         return when {
-            // Before reminder window (e.g. 08:00 WIB): schedule for startHour WIB today
+            // Before reminder window (e.g. 08:00 WIB): schedule for startHour + deviceSeed WIB today
             currentHour < startHour -> {
                 ZonedDateTime.of(
                     todayDate,
-                    LocalTime.of(startHour, 0),
+                    LocalTime.of(startHour, clampedSeed),
                     ZONE_WIB
                 )
             }
             // Inside active spam reminder window (startHour - endHour WIB)
             currentHour < endHour -> {
-                val nextTrigger = nowWib.plusMinutes(intervalMinutes.toLong())
-                if (nextTrigger.hour >= endHour) {
-                    ZonedDateTime.of(
-                        todayDate.plusDays(1),
-                        LocalTime.of(startHour, 0),
-                        ZONE_WIB
-                    )
+                val nextTrigger = nowWib.plusMinutes(effectiveInterval.toLong())
+                if (nextTrigger.toLocalDate() != todayDate || nextTrigger.hour >= endHour) {
+                    tomorrowStart
                 } else {
                     nextTrigger
                 }
             }
             // Past reminder window (after midnight / >= endHour): schedule for tomorrow
-            else -> {
-                ZonedDateTime.of(
-                    todayDate.plusDays(1),
-                    LocalTime.of(startHour, 0),
-                    ZONE_WIB
-                )
-            }
+            else -> tomorrowStart
         }
     }
 
