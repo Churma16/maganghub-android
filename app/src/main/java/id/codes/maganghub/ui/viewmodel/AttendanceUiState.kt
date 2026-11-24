@@ -10,6 +10,8 @@ import id.codes.maganghub.data.model.ReminderSettings
 data class AttendanceUiState(
     val isLoggedIn: Boolean = false,
     val username: String = "",
+    val fullName: String = "",
+    val photoUrl: String? = null,
     val isLoading: Boolean = false,
     val isChecking: Boolean = false,
     val attendanceStatus: AttendanceStatus = AttendanceStatus.UNKNOWN,

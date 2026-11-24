@@ -7,6 +7,7 @@ import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import id.codes.maganghub.data.storage.EncryptedPreferences
 import kotlinx.coroutines.CoroutineDispatcher
@@ -48,6 +49,12 @@ class AttendanceRepositoryImpl(
                     storage.saveCredentials(username, password)
                     storage.saveAccessToken(token)
                     storage.resetLoginFailureCount()
+                    try {
+                        val profile = apiClient.fetchUserProfile(token)
+                        storage.saveUserProfile(profile.name, profile.photoUrl)
+                    } catch (pe: Exception) {
+                        Log.w(TAG, "Best-effort profile fetch after login failed: ${pe.message}")
+                    }
                     _sessionFlow.value = storage.getUserSession()
                     Log.i(TAG, "Successfully authenticated user $username with Kemnaker SSO")
                     Result.success(token)
@@ -123,6 +130,14 @@ class AttendanceRepositoryImpl(
                 val status = homeData.toAttendanceStatus()
                 val now = System.currentTimeMillis()
                 storage.saveAttendanceCache(homeData, status, now)
+                if (storage.getFullName().isNullOrBlank() || storage.getPhotoUrl().isNullOrBlank()) {
+                    try {
+                        val profile = apiClient.fetchUserProfile(currentToken.orEmpty())
+                        storage.saveUserProfile(profile.name, profile.photoUrl)
+                    } catch (pe: Exception) {
+                        Log.w(TAG, "Best-effort profile fetch during check failed: ${pe.message}")
+                    }
+                }
                 _sessionFlow.value = storage.getUserSession()
 
                 val result = AttendanceCheckResult(
@@ -163,6 +178,23 @@ class AttendanceRepositoryImpl(
             _reminderSettingsFlow.value = settings
         }
     }
+
+    override suspend fun refreshUserProfile(): Result<UserProfileData> =
+        withContext(ioDispatcher) {
+            try {
+                val token = storage.getAccessToken()
+                if (token.isNullOrBlank()) {
+                    return@withContext Result.failure(UnauthorizedSessionException("Belum login"))
+                }
+                val profile = apiClient.fetchUserProfile(token)
+                storage.saveUserProfile(profile.name, profile.photoUrl)
+                _sessionFlow.value = storage.getUserSession()
+                Result.success(profile)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to refresh user profile: ${e.message}")
+                Result.failure(e)
+            }
+        }
 
     override fun getCachedHomeData(): AttendanceHomeData? = storage.getLastHomeData()
 

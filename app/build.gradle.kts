@@ -136,6 +136,9 @@ dependencies {
     // JSON Parsing (Gson)
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // Image Loading (Coil Compose)
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")

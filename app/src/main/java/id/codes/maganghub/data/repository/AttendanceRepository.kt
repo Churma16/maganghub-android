@@ -4,6 +4,7 @@ import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import kotlinx.coroutines.flow.StateFlow
 
@@ -47,6 +48,11 @@ interface AttendanceRepository {
      * Retrieves cached home attendance data without network request.
      */
     fun getCachedHomeData(): AttendanceHomeData?
+
+    /**
+     * Fetches user profile from Monev API and updates cached session.
+     */
+    suspend fun refreshUserProfile(): Result<UserProfileData>
 
     /**
      * Retrieves cached attendance status.

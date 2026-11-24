@@ -54,10 +54,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import id.codes.maganghub.background.NotificationHelper
@@ -195,29 +198,82 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(KemnakerSkyContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = null,
-                                tint = KemnakerSkyOnContainer,
-                                modifier = Modifier.size(24.dp)
+                        if (!uiState.photoUrl.isNullOrBlank()) {
+                            SubcomposeAsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(uiState.photoUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Foto Profil",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(10.dp)),
+                                loading = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(KemnakerSkyContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null,
+                                            tint = KemnakerSkyOnContainer,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                },
+                                error = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(KemnakerSkyContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = null,
+                                            tint = KemnakerSkyOnContainer,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
                             )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(KemnakerSkyContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = KemnakerSkyOnContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
 
                         Column(modifier = Modifier.weight(1f)) {
+                            val displayName = uiState.fullName.ifBlank { uiState.username.ifBlank { "Pengguna Kemnaker" } }
                             Text(
-                                text = uiState.username.ifBlank { "Pengguna Kemnaker" },
+                                text = displayName,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
+                            if (uiState.fullName.isNotBlank() && uiState.username.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(1.dp))
+                                Text(
+                                    text = uiState.username,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
                                 color = HadirGreenLight

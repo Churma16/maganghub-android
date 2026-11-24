@@ -40,6 +40,8 @@ class EncryptedPreferences(context: Context) {
 
         private const val KEY_LOGIN_FAILURE_COUNT = "pref_login_failure_count"
         private const val KEY_DEVICE_JITTER_SEED = "pref_device_jitter_seed_minutes"
+        private const val KEY_FULL_NAME = "pref_user_full_name"
+        private const val KEY_PHOTO_URL = "pref_user_photo_url"
     }
 
     private val gson = Gson()
@@ -107,16 +109,35 @@ class EncryptedPreferences(context: Context) {
         return newSeed
     }
 
+    // User Profile Cache (Name & Avatar Photo)
+    fun saveUserProfile(fullName: String, photoUrl: String?) {
+        val editor = prefs.edit().putString(KEY_FULL_NAME, fullName.trim())
+        if (!photoUrl.isNullOrBlank()) {
+            editor.putString(KEY_PHOTO_URL, photoUrl.trim())
+        } else {
+            editor.remove(KEY_PHOTO_URL)
+        }
+        editor.apply()
+    }
+
+    fun getFullName(): String? = prefs.getString(KEY_FULL_NAME, null)?.takeIf { it.isNotBlank() }
+
+    fun getPhotoUrl(): String? = prefs.getString(KEY_PHOTO_URL, null)?.takeIf { it.isNotBlank() }
+
     fun getUserSession(): UserSession {
         val username = getUsername().orEmpty()
         val token = getAccessToken().orEmpty()
         val isLoggedIn = token.isNotEmpty() || hasCredentials()
         val lastCheck = getLastCheckTimestamp()
+        val fullName = getFullName().orEmpty()
+        val photoUrl = getPhotoUrl()
         return UserSession(
             username = username,
             monevAccessToken = token,
             isLoggedIn = isLoggedIn,
-            lastLoginTimestamp = lastCheck
+            lastLoginTimestamp = lastCheck,
+            fullName = fullName,
+            photoUrl = photoUrl
         )
     }
 
@@ -183,6 +204,8 @@ class EncryptedPreferences(context: Context) {
             .remove(KEY_USERNAME)
             .remove(KEY_PASSWORD)
             .remove(KEY_ACCESS_TOKEN)
+            .remove(KEY_FULL_NAME)
+            .remove(KEY_PHOTO_URL)
             .apply()
     }
 

@@ -7,7 +7,9 @@ data class UserSession(
     val username: String = "",
     val monevAccessToken: String = "",
     val isLoggedIn: Boolean = false,
-    val lastLoginTimestamp: Long = 0L
+    val lastLoginTimestamp: Long = 0L,
+    val fullName: String = "",
+    val photoUrl: String? = null
 )
 
 /**
