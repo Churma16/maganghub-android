@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.OpenInNew
@@ -116,14 +115,6 @@ fun SettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Page Title
-        Text(
-            text = "Pengaturan Presensi",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
         // 1. Top Quick Action Buttons: side-by-side outlined buttons [🔔] Uji notifikasi and [↗] Portal Monev
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -280,33 +271,13 @@ fun SettingsScreen(
             }
         }
 
-        // 3. ⚡ KEANDALAN & AKSES CEPAT Section with Izin Latar Belakang card
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Bolt,
-                    contentDescription = null,
-                    tint = KemnakerSky,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = "KEANDALAN & AKSES CEPAT",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = KemnakerSky
-                )
-            }
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
-            ) {
+        // 3. Izin Latar Belakang card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+        ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -379,7 +350,6 @@ fun SettingsScreen(
                     }
                 }
             }
-        }
 
         // 4. Pengingat Card: Jam mulai chips, Interval chips, 5 toggle switches
         Card(

@@ -36,6 +36,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -91,7 +92,8 @@ fun DashboardScreen(
     onOpenLoginDialog: () -> Unit,
     formatLastSync: (Long) -> String,
     modifier: Modifier = Modifier,
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onDismissMessage: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -224,7 +226,8 @@ fun DashboardScreen(
                 icon = Icons.Default.CheckCircle,
                 message = uiState.successMessage.orEmpty(),
                 containerColor = HadirGreenLight,
-                contentColor = HadirGreenText
+                contentColor = HadirGreenText,
+                onDismiss = onDismissMessage
             )
         }
 
@@ -660,7 +663,8 @@ private fun BannerCard(
     icon: ImageVector,
     message: String,
     containerColor: Color,
-    contentColor: Color
+    contentColor: Color,
+    onDismiss: (() -> Unit)? = null
 ) {
     Surface(
         shape = RoundedCornerShape(10.dp),
@@ -670,20 +674,39 @@ private fun BannerCard(
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodySmall,
-                color = contentColor,
-                fontWeight = FontWeight.Medium
-            )
+            Row(
+                modifier = Modifier.weight(1f, fill = false),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = contentColor,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            if (onDismiss != null) {
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Tutup",
+                        tint = contentColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }
