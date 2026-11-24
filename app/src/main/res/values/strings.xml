@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">MagangHub</string>
+    <string name="channel_attendance_id">maganghub_attendance_channel</string>
+    <string name="channel_attendance_name">Pengingat Absensi MagangHub</string>
+    <string name="channel_attendance_desc">Notifikasi pengingat pengisian kehadiran dan logbook MagangHub</string>
+</resources>
