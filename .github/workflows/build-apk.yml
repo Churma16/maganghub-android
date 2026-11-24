@@ -1,16 +1,9 @@
-name: Build & Release Android APK
+name: CI Build Verification
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - main
-      - master
   workflow_dispatch:
 
 concurrency:
@@ -19,87 +12,75 @@ concurrency:
 
 jobs:
   build:
-    name: Build APK & Bundles
+    name: Build & Verify APK
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout Source Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Java JDK 17
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run Release Scripts Unit Tests
+        run: node --test tests/releaseScripts.test.js
+
+      - name: Verify No Manual Version Bumps in PR
+        if: github.event_name == 'pull_request'
+        run: node .github/scripts/verify-no-manual-version-bump.js
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
+          java-version: "17"
+          distribution: "temurin"
 
-      - name: Grant Execute Permission for Gradle Wrapper
-        run: |
-          if [ -f gradlew ]; then
-            chmod +x gradlew
-          else
-            echo "gradlew not found yet"
-          fi
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x ./gradlew
 
       - name: Run Unit Tests & Lint
+        run: ./gradlew testDebugUnitTest --continue || true
+
+      - name: Restore Release Keystore
         run: |
-          if [ -f gradlew ]; then
-            ./gradlew testDebugUnitTest --continue || true
+          if [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
+            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > release.jks
+            echo "[INFO] Release keystore restored from repository secret."
+          else
+            echo "[WARN] RELEASE_KEYSTORE_BASE64 not set, falling back to dynamic keystore."
+            keytool -genkeypair -v \
+              -keystore release.jks \
+              -alias maganghub \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass maganghub \
+              -keypass maganghub \
+              -dname "CN=MagangHub, OU=Churma, O=Churma, L=Jakarta, ST=Jakarta, C=ID"
           fi
-
-      - name: Build Debug APK
-        run: |
-          if [ -f gradlew ]; then
-            ./gradlew assembleDebug --stacktrace
-          fi
-
-      - name: Build Release APK
-        run: |
-          if [ -f gradlew ]; then
-            ./gradlew assembleRelease --stacktrace || ./gradlew assembleDebug --stacktrace
-          fi
-
-      - name: Locate Generated APKs
-        id: find_apks
-        run: |
-          echo "Scanning for APK files..."
-          find app/build/outputs/apk/ -name "*.apk" || find . -name "*.apk" || true
-          
-          DEBUG_APK=$(find . -name "*debug*.apk" | head -n 1)
-          RELEASE_APK=$(find . -name "*release*.apk" | head -n 1)
-          
-          echo "DEBUG_APK=$DEBUG_APK" >> $GITHUB_ENV
-          echo "RELEASE_APK=$RELEASE_APK" >> $GITHUB_ENV
-
-      - name: Upload Debug APK Artifact
-        uses: actions/upload-artifact@v4
-        if: env.DEBUG_APK != ''
-        with:
-          name: maganghub-debug-apk
-          path: ${{ env.DEBUG_APK }}
-          retention-days: 14
-
-      - name: Upload Release APK Artifact
-        uses: actions/upload-artifact@v4
-        if: env.RELEASE_APK != ''
-        with:
-          name: maganghub-release-apk
-          path: ${{ env.RELEASE_APK }}
-          retention-days: 30
-
-      - name: Create GitHub Release on Tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ env.DEBUG_APK }}
-            ${{ env.RELEASE_APK }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+
+      - name: Build Signed Release APK
+        run: ./gradlew assembleRelease --stacktrace
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: maganghub-pr-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 7

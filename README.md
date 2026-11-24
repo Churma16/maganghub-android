@@ -20,7 +20,8 @@
 5. [Panduan Pengaturan di Android (Anti-Kill OS)](#-panduan-pengaturan-di-android-anti-kill-os)
 6. [Kompilasi & Build dari Source Code](#-kompilasi--build-dari-source-code)
 7. [Keamanan & Privasi Kredensial](#-keamanan--privasi-kredensial)
-8. [CI/CD Workflow](#-cicd-workflow)
+8. [Siklus Rilis & Versioning](#-siklus-rilis--versioning)
+9. [CI/CD Workflow](#-cicd-workflow)
 
 ---
 
@@ -105,7 +106,7 @@ app/src/main/
 ├── AndroidManifest.xml
 ├── java/id/codes/maganghub/
 │   ├── MagangHubApp.kt                     # Application class & DI locator
-│   ├── background/                         # Subistem Penjadwalan & Notifikasi
+│   ├── background/                         # Subsistem Penjadwalan & Notifikasi
 │   │   ├── AttendanceAlarmScheduler.kt     # Pengatur jam exact alarm (WIB UTC+7)
 │   │   ├── AttendanceAlarmReceiver.kt     # Penerima sinyal alarm & aksi tombol notifikasi
 │   │   ├── AttendanceCheckWorker.kt       # CoroutineWorker WorkManager
@@ -139,15 +140,21 @@ app/src/main/
 
 ## 📥 Download & Cara Instalasi APK
 
-### Mengunduh APK Rilis
-1. Kunjungi tab **[Releases](../../releases)** pada repositori ini untuk mengunduh versi rilis APK terbaru (`MagangHub-Release.apk`).
-2. Atau unduh build APK terbaru dari artefak **[GitHub Actions](../../actions)** pada setiap commit.
+### Pilihan Unduhan APK
+1. **Official Release APK (`maganghub-v<version>.apk`)**:
+   - Unduh rilis stabil APK resmi bertanda tangan dari tab **[GitHub Releases](../../releases)**.
+   - Direkomendasikan untuk penggunaan harian oleh seluruh peserta magang.
+2. **Snapshot Pre-Release APK (`maganghub-v<version>-snapshot.<sha>.apk`)**:
+   - Setiap kali terjadi push atau merge kode ke branch `main`, workflow snapshot otomatis mengompilasi dan mempublikasikan preview build di [Releases](../../releases) bertanda tag `v<version>-snapshot.<sha>`.
+   - Cocok untuk menguji fitur atau perbaikan terbaru sebelum rilis resmi diterbitkan.
+3. **CI Build Artifacts (`maganghub-pr-apk`)**:
+   - Pengembang dapat mengunduh artefak APK dari tab **[GitHub Actions](../../actions)** pada setiap pull request dan commit build verification.
 
 ### Menginstal di Smartphone Android
-1. Transfer atau unduh file `.apk` ke ponsel Android Anda.
-2. Buka file `.apk` melalui file manager.
-3. Jika muncul peringatan keamanan *"Instal aplikasi dari sumber tidak dikenal"*, pilih **Izinkan untuk sumber ini**.
-4. Tekan **Instal** dan tunggu hingga proses pemasangan selesai.
+1. Unduh file `.apk` ke ponsel Android Anda.
+2. Buka file `.apk` melalui aplikasi File Manager atau browser download manager.
+3. Jika muncul peringatan keamanan *"Instal aplikasi dari sumber tidak dikenal"*, pilih **Setelan / Settings** lalu aktifkan **Izinkan untuk sumber ini**.
+4. Tekan **Instal** dan tunggu hingga proses instalasi selesai.
 
 ---
 
@@ -186,16 +193,19 @@ chmod +x gradlew
 # Jalankan Unit Tests
 ./gradlew testDebugUnitTest
 
-# Build Debug APK
+# Build Debug APK (output: app/build/outputs/apk/debug/maganghub-v1.0.0-dev.apk)
 ./gradlew assembleDebug
 
-# Build Release APK
+# Build Signed Release APK (output: app/build/outputs/apk/release/maganghub-v1.0.0.apk)
 ./gradlew assembleRelease
+
+# Build Snapshot APK dengan Version Suffix kustom
+./gradlew assembleRelease -PversionSuffix="-snapshot.abc1234"
 ```
 
 File APK yang telah berhasil di-compile akan berada di:
-* Debug APK: `app/build/outputs/apk/debug/app-debug.apk`
-* Release APK: `app/build/outputs/apk/release/app-release.apk`
+* Debug APK: `app/build/outputs/apk/debug/maganghub-v<version>-dev.apk`
+* Release APK: `app/build/outputs/apk/release/maganghub-v<version>.apk`
 
 ---
 
@@ -209,16 +219,50 @@ File APK yang telah berhasil di-compile akan berada di:
 
 ---
 
+## 🔄 Siklus Rilis & Versioning
+
+Repositori ini menerapkan siklus rilis dan manajemen versi otomatis berbasis GitHub Actions dan Semantic Versioning:
+
+### 1. Pengembangan & Pull Request (PR)
+* **Kerapian Versi**: Jangan mengubah field `versionCode` atau `versionName` di `app/build.gradle.kts` secara manual dalam PR fitur atau bugfix.
+* **Conventional Commits**: Selalu gunakan format commit konvensional:
+  * `feat:` — Fitur baru (memicu kenaikan versi Minor, misal `1.0.0` -> `1.1.0`).
+  * `fix:` — Perbaikan bug (memicu kenaikan versi Patch, misal `1.0.0` -> `1.0.1`).
+  * `BREAKING CHANGE:` atau tanda seru `!` — Perubahan struktural breaking (memicu kenaikan versi Major, misal `1.0.0` -> `2.0.0`).
+  * `chore:`, `docs:`, `style:`, `refactor:`, `test:` — Perawatan rutin tanpa kenaikan versi langsung.
+* **Gating CI**: Workflow pull request menjalankan `Verify No Manual Version Bumps in PR` untuk memastikan integritas versi build.
+
+### 2. Snapshot Builds (Otomatis pada Push/Merge ke `main`)
+* Setiap commit yang di-merge ke branch `main` secara otomatis memicu workflow **Snapshot Pre-Release**.
+* Parameter `-PversionSuffix="-snapshot.${GITHUB_SHA::7}"` diteruskan ke Gradle untuk menghasilkan APK pratinjau `maganghub-v<version>-snapshot.<sha>.apk`.
+* Diterbitkan secara otomatis sebagai GitHub Pre-Release untuk memudahkan verifikasi dan pengujian tim.
+
+### 3. Official Releases (Manual Workflow Dispatch)
+* Rilis resmi diterbitkan via workflow **Manual Release** pada tab GitHub Actions (`workflow_dispatch`).
+* Workflow mengevaluasi commit sejak rilis stabil terakhir:
+  * Menentukan tipe bump (`patch`, `minor`, atau `major`).
+  * Menambah `versionCode` secara bertahap (+1) dan memperbarui `versionName` di `app/build.gradle.kts`.
+  * Memperbarui `CHANGELOG.md` dengan daftar commit yang relevan.
+  * Menghasilkan judul dan rangkuman rilis deskriptif.
+  * Mengompilasi signed release APK `maganghub-v<version>.apk`.
+  * Membuat git tag `v<version>`, commit versi, dan mempublikasikan GitHub Release resmi.
+
+---
+
 ## 🤖 CI/CD Workflow
 
-Proyek ini telah dikonfigurasi dengan pipeline CI/CD otomatis berbasis GitHub Actions (`.github/workflows/build-apk.yml`):
-* **Triggers**: Berjalan otomatis pada setiap push ke branch `main`, pull request, serta pembuatan release tag (`v*`).
-* **Automated Steps**:
-  1. Setup environment JDK 17 & Gradle Caching.
-  2. Eksekusi Unit Test suite (`testDebugUnitTest`).
-  3. Kompilasi otomatis `assembleDebug` dan `assembleRelease`.
-  4. Pengunggahan APK artifacts ke tab GitHub Actions (tersedia untuk diunduh langsung).
-  5. Otomatis mempublikasikan GitHub Release dan melampirkan file APK jika terdeteksi tag rilis (misal `v1.0.0`).
+Proyek ini telah dikonfigurasi dengan pipeline CI/CD otomatis berbasis GitHub Actions:
+* **CI Verification (`.github/workflows/build-apk.yml`)**:
+  1. Validasi skrip rilis dengan unit test Node.js (`tests/releaseScripts.test.js`).
+  2. Pengecekan guardrail versi PR (`verify-no-manual-version-bump.js`).
+  3. Setup JDK 17 & Gradle Caching.
+  4. Kompilasi Release APK (`assembleRelease`) dengan keystore signing fallback.
+  5. Pengunggahan artefak APK build verification.
+* **Snapshot Release (`.github/workflows/snapshot-release.yml`)**:
+  - Berjalan saat push ke `main`, mengompilasi release snapshot APK dengan suffix `-PversionSuffix="-snapshot.${GITHUB_SHA::7}"`, membuat pre-release tag `v<version>-snapshot.<sha>`, dan mengunggah APK.
+* **Manual Release (`.github/workflows/manual-release.yml`)**:
+  - Dijalankan secara manual (`workflow_dispatch`) dengan opsi bump `auto`, `patch`, `minor`, atau `major`.
+  - Mengotomasi seluruh siklus SemVer bump, changelog update, git tagging, APK compilation, dan penerbitan GitHub Release resmi.
 
 ---
 

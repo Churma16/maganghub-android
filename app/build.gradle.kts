@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val versionSuffix = project.findProperty("versionSuffix") as? String
+
 android {
     namespace = "id.codes.maganghub"
     compileSdk = 34
@@ -20,18 +22,43 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("${project.rootDir}/release.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "maganghub"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "maganghub"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "maganghub"
+            } else {
+                initWith(getByName("debug"))
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            isDebuggable = true
+            versionNameSuffix = versionSuffix?.takeIf { it.isNotBlank() } ?: "-dev"
+        }
         release {
             isMinifyEnabled = false
+            if (!versionSuffix.isNullOrBlank()) {
+                versionNameSuffix = versionSuffix
+            }
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
         }
-        debug {
-            applicationIdSuffix = ".debug"
-            isDebuggable = true
+    }
+
+    applicationVariants.all {
+        outputs.all {
+            val outputImpl = this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            outputImpl?.outputFileName = "maganghub-v${versionName}.apk"
         }
     }
 
