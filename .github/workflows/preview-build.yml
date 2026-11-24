@@ -88,32 +88,41 @@ jobs:
           echo "VERSION_SUFFIX=$VERSION_SUFFIX" >> $GITHUB_ENV
           echo "[INFO] Computed preview tag: $PREVIEW_TAG"
 
-      - name: Restore Release Keystore
+      - name: Restore Preview Signing Keystore
         run: |
-          if [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
+          if [ -n "$PREVIEW_KEYSTORE_BASE64" ]; then
+            echo "$PREVIEW_KEYSTORE_BASE64" | base64 -d > release.jks
+            echo "[INFO] Dedicated preview keystore restored from repository secret."
+          elif [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
             echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > release.jks
-            echo "[INFO] Release keystore restored from repository secret."
+            echo "[INFO] Fallback to release keystore."
           else
-            echo "[WARN] RELEASE_KEYSTORE_BASE64 not set, falling back to dynamic keystore."
+            echo "[WARN] No keystore secret found, generating dynamic preview keystore."
             keytool -genkeypair -v \
               -keystore release.jks \
-              -alias maganghub \
+              -alias maganghub-preview \
               -keyalg RSA \
               -keysize 2048 \
               -validity 10000 \
-              -storepass maganghub \
-              -keypass maganghub \
-              -dname "CN=MagangHub, OU=Churma, O=Churma, L=Jakarta, ST=Jakarta, C=ID"
+              -storepass "maganghub-preview" \
+              -keypass "maganghub-preview" \
+              -dname "CN=MagangHub Preview, OU=Preview, O=Codes, L=Jakarta, ST=DKI Jakarta, C=ID"
           fi
         env:
+          PREVIEW_KEYSTORE_BASE64: ${{ secrets.PREVIEW_KEYSTORE_BASE64 }}
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
 
-      - name: Build Signed Release APK
-        run: ./gradlew assembleRelease -PversionSuffix="${{ env.VERSION_SUFFIX }}" --stacktrace
+      - name: Build Signed Preview APK (Isolated Package & Key)
+        run: |
+          ./gradlew assembleRelease \
+            -PapplicationIdSuffix=".preview" \
+            -PappName="MagangHub (PR #${{ env.PR_NUMBER }})" \
+            -PversionSuffix="${{ env.VERSION_SUFFIX }}" \
+            --stacktrace
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'maganghub' }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'maganghub' }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'maganghub' }}
+          KEYSTORE_PASSWORD: ${{ secrets.PREVIEW_KEYSTORE_PASSWORD || 'maganghub-preview' }}
+          KEY_ALIAS: ${{ secrets.PREVIEW_KEY_ALIAS || 'maganghub-preview' }}
+          KEY_PASSWORD: ${{ secrets.PREVIEW_KEY_PASSWORD || 'maganghub-preview' }}
 
       - name: Package Preview APK
         run: |
@@ -138,9 +147,10 @@ jobs:
             This is an automated preview release built from commit `${{ env.SHORT_SHA }}` on PR #${{ env.PR_NUMBER }}.
 
             * **Pull Request:** https://github.com/${{ github.repository }}/pull/${{ env.PR_NUMBER }}
+            * **Package ID:** `id.codes.maganghub.preview` (Isolated package, can be installed side-by-side with official release)
             * **Direct APK Download:** [${{ env.PREVIEW_APK }}](https://github.com/${{ github.repository }}/releases/download/${{ env.PREVIEW_TAG }}/${{ env.PREVIEW_APK }})
 
-            Signed with the official MagangHub keystore. Install directly to test on Android.
+            Signed with dedicated preview keystore. Install directly to test on Android without overwriting your main app.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -149,7 +159,7 @@ jobs:
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.PREVIEW_TAG }}/${{ env.PREVIEW_APK }}"
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ env.PREVIEW_TAG }}"
 
-          COMMENT_BODY=$(printf "### 📱 Preview APK Ready for Testing!\n\n* **PR:** #%s\n* **Commit:** \`%s\`\n* **Release:** [%s](%s)\n* **Download APK:** [%s](%s)\n\n> Ditandatangani dengan keystore resmi — siap diunduh dan dipasang di HP tanpa perlu login GitHub.\n" \
+          COMMENT_BODY=$(printf "### 📱 Preview APK Ready for Testing!\n\n* **PR:** #%s\n* **Commit:** \`%s\`\n* **Package ID:** \`id.codes.maganghub.preview\` (Bisa diinstall berdampingan tanpa bentrok)\n* **Release:** [%s](%s)\n* **Download APK:** [%s](%s)\n\n> Ditandatangani dengan keystore preview terisolasi — aman dipasang di HP tanpa menimpa aplikasi rilis utama.\n" \
             "${{ env.PR_NUMBER }}" \
             "${{ env.SHORT_SHA }}" \
             "${{ env.PREVIEW_TAG }}" \
