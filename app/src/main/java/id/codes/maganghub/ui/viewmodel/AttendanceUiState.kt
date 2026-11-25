@@ -3,6 +3,7 @@ package id.codes.maganghub.ui.viewmodel
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.data.model.ThemeMode
 
 /**
  * State representing current UI presentation in MagangHub.
@@ -19,6 +20,7 @@ data class AttendanceUiState(
     val lastSyncTimestamp: Long = 0L,
     val nextReminderFormatted: String = "Menghitung jadwal...",
     val reminderSettings: ReminderSettings = ReminderSettings(),
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val isLoginDialogOpen: Boolean = false

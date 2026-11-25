@@ -1,6 +1,7 @@
 package id.codes.maganghub.ui.screens
 
 import id.codes.maganghub.BuildConfig
+import id.codes.maganghub.data.model.ThemeMode
 
 import android.content.Context
 import android.content.Intent
@@ -32,6 +33,12 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.DesktopWindows
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -306,7 +313,79 @@ fun SettingsScreen(
             }
         }
 
-        // 3. Izin Latar Belakang card
+        // 3. Tampilan Card (Theme Mode Override)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Tampilan",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                // 3-Option Segmented Control
+                val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isDark) {
+                        Color(0xFF0B1422)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    },
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        ThemeSegmentButton(
+                            modifier = Modifier.weight(1f),
+                            selected = uiState.themeMode == ThemeMode.SYSTEM,
+                            icon = Icons.Outlined.DesktopWindows,
+                            label = "Sistem",
+                            onClick = { viewModel.setThemeMode(ThemeMode.SYSTEM) }
+                        )
+                        ThemeSegmentButton(
+                            modifier = Modifier.weight(1f),
+                            selected = uiState.themeMode == ThemeMode.LIGHT,
+                            icon = Icons.Outlined.LightMode,
+                            label = "Terang",
+                            onClick = { viewModel.setThemeMode(ThemeMode.LIGHT) }
+                        )
+                        ThemeSegmentButton(
+                            modifier = Modifier.weight(1f),
+                            selected = uiState.themeMode == ThemeMode.DARK,
+                            icon = Icons.Outlined.DarkMode,
+                            label = "Gelap",
+                            onClick = { viewModel.setThemeMode(ThemeMode.DARK) }
+                        )
+                    }
+                }
+
+                Text(
+                    text = when (uiState.themeMode) {
+                        ThemeMode.SYSTEM -> "Mengikuti pengaturan tema di HP kamu."
+                        ThemeMode.LIGHT -> "Tema terang selalu aktif."
+                        ThemeMode.DARK -> "Tema gelap selalu aktif."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // 4. Izin Latar Belakang card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -673,5 +752,57 @@ private fun ReminderToggleRow(
                 uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
             )
         )
+    }
+}
+
+/**
+ * Single segmented pill item for theme mode selection.
+ */
+@Composable
+private fun ThemeSegmentButton(
+    modifier: Modifier = Modifier,
+    selected: Boolean,
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val backgroundColor = if (selected) {
+        if (isDark) Color.White else MaterialTheme.colorScheme.primary
+    } else {
+        Color.Transparent
+    }
+
+    val contentColor = if (selected) {
+        if (isDark) Color(0xFF0F1E36) else MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier.height(38.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = backgroundColor
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = contentColor
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = contentColor
+            )
+        }
     }
 }

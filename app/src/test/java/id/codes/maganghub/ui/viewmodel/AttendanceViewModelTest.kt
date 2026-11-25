@@ -4,6 +4,7 @@ import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import id.codes.maganghub.data.repository.AttendanceRepository
@@ -33,6 +34,9 @@ class AttendanceViewModelTest {
 
         private val _reminderSettingsFlow = MutableStateFlow(ReminderSettings())
         override val reminderSettingsFlow: StateFlow<ReminderSettings> = _reminderSettingsFlow
+
+        private val _themeModeFlow = MutableStateFlow(ThemeMode.SYSTEM)
+        override val themeModeFlow: StateFlow<ThemeMode> = _themeModeFlow
 
         private var cachedHomeData: AttendanceHomeData? = null
         private var cachedStatus: AttendanceStatus = AttendanceStatus.UNKNOWN
@@ -64,6 +68,10 @@ class AttendanceViewModelTest {
 
         override suspend fun updateReminderSettings(settings: ReminderSettings) {
             _reminderSettingsFlow.value = settings
+        }
+
+        override suspend fun setThemeMode(themeMode: ThemeMode) {
+            _themeModeFlow.value = themeMode
         }
 
         override suspend fun refreshUserProfile(): Result<UserProfileData> {
@@ -165,5 +173,22 @@ class AttendanceViewModelTest {
 
         assertEquals("Fathan", viewModel.uiState.value.fullName)
         assertEquals("https://example.com/photo.jpg", viewModel.uiState.value.photoUrl)
+    }
+
+    @Test
+    fun testThemeModeSelectionUpdatesUiState() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(ThemeMode.SYSTEM, viewModel.uiState.value.themeMode)
+
+        viewModel.setThemeMode(ThemeMode.DARK)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(ThemeMode.DARK, viewModel.uiState.value.themeMode)
+
+        viewModel.setThemeMode(ThemeMode.LIGHT)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(ThemeMode.LIGHT, viewModel.uiState.value.themeMode)
     }
 }

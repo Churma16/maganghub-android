@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import id.codes.maganghub.MagangHubApp
+import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.background.AttendanceAlarmScheduler
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.ui.screens.DashboardScreen
@@ -75,7 +77,15 @@ class MainActivity : ComponentActivity() {
         AttendanceAlarmScheduler.scheduleNextAlarm(applicationContext)
 
         setContent {
-            MagangHubTheme {
+            val uiState by viewModel.uiState.collectAsState()
+            val isSystemDark = isSystemInDarkTheme()
+            val darkTheme = when (uiState.themeMode) {
+                ThemeMode.SYSTEM -> isSystemDark
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+
+            MagangHubTheme(darkTheme = darkTheme) {
                 MainContent(viewModel = viewModel)
             }
         }
