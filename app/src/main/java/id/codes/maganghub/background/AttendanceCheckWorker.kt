@@ -176,7 +176,7 @@ class AttendanceCheckWorker(
         if (homeData.hasAttendance) {
             // Attendance is confirmed
             if (!AttendanceAlarmScheduler.isCongratulationsSentToday(appContext)) {
-                NotificationHelper.showSuccessNotification(appContext, homeData.date)
+                NotificationHelper.showSuccessNotification(appContext)
                 AttendanceAlarmScheduler.markCongratulationsSent(appContext)
             } else {
                 NotificationHelper.cancelReminder(appContext)
@@ -214,9 +214,6 @@ class AttendanceCheckWorker(
 
         NotificationHelper.showReminderNotification(
             context = appContext,
-            reminderIndex = reminderCount,
-            currentTimeWib = currentTimeString,
-            dateFormatted = homeData.date,
             soundEnabled = settings.soundEnabled,
             vibrationEnabled = settings.vibrationEnabled,
             intervalMinutes = settings.intervalMinutes

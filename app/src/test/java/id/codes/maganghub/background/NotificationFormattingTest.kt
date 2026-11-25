@@ -67,4 +67,13 @@ class NotificationFormattingTest {
         val result = NotificationHelper.formatRemainingTimeToDeadline(time)
         assertEquals("7 jam 59 menit", result)
     }
+
+    @Test
+    fun testFormatRemainingTimeToDeadline_NonWibTimezone() {
+        // 00:15 WIT on Nov 26 is equivalent to 22:15 WIB on Nov 25 -> 1 hour 44 minutes until 23:59 WIB
+        val witZone = ZoneId.of("Asia/Jayapura")
+        val timeWit = ZonedDateTime.of(LocalDate.of(2026, 11, 26), LocalTime.of(0, 15, 0), witZone)
+        val result = NotificationHelper.formatRemainingTimeToDeadline(timeWit)
+        assertEquals("1 jam 44 menit", result)
+    }
 }

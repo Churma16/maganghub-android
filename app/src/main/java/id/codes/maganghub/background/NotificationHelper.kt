@@ -130,8 +130,9 @@ object NotificationHelper {
      * Example: "2 jam 59 menit", "45 menit", or "kurang dari 1 menit".
      */
     fun formatRemainingTimeToDeadline(nowWib: ZonedDateTime = ZonedDateTime.now(AttendanceAlarmScheduler.ZONE_WIB)): String {
-        val deadline = nowWib.toLocalDate().atTime(23, 59).atZone(AttendanceAlarmScheduler.ZONE_WIB)
-        val diffSeconds = Duration.between(nowWib, deadline).seconds
+        val wib = nowWib.withZoneSameInstant(AttendanceAlarmScheduler.ZONE_WIB)
+        val deadline = wib.toLocalDate().atTime(23, 59).atZone(AttendanceAlarmScheduler.ZONE_WIB)
+        val diffSeconds = Duration.between(wib, deadline).seconds
         if (diffSeconds <= 0) return "kurang dari 1 menit"
         val totalMinutes = (diffSeconds + 30) / 60
         val hours = totalMinutes / 60
@@ -149,9 +150,6 @@ object NotificationHelper {
      */
     fun showReminderNotification(
         context: Context,
-        reminderIndex: Int = 1,
-        currentTimeWib: String? = null,
-        dateFormatted: String? = null,
         soundEnabled: Boolean = true,
         vibrationEnabled: Boolean = true,
         intervalMinutes: Int = 30,
@@ -220,7 +218,6 @@ object NotificationHelper {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(false)
             .setOngoing(false)
-            .setOnlyAlertOnce(true)
             .setContentIntent(openAppPendingIntent)
             .addAction(0, "Buka Monev", monevWebPendingIntent)
             .addAction(0, snoozeLabel, snoozePendingIntent)
@@ -246,7 +243,7 @@ object NotificationHelper {
      * Shows brief confirmation notification when attendance has been fulfilled,
      * which auto-cancels after a few seconds.
      */
-    fun showSuccessNotification(context: Context, dateFormatted: String = "") {
+    fun showSuccessNotification(context: Context) {
         createNotificationChannels(context)
 
         // Cancel existing reminder notification
