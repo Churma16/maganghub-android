@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +55,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -64,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.ui.theme.AccentSkyDark
 import id.codes.maganghub.ui.theme.AccentSkyLight
 import id.codes.maganghub.ui.theme.HeroCompleteBgDark
@@ -154,7 +156,12 @@ fun DashboardScreen(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val scrollState = rememberScrollState()
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val isSystemDark = isSystemInDarkTheme()
+    val isDark = when (uiState.themeMode) {
+        ThemeMode.SYSTEM -> isSystemDark
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
 
     val openMonevPortal: () -> Unit = {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_MONEV_DASHBOARD)).apply {
@@ -296,11 +303,15 @@ fun DashboardScreen(
         // 4. Hero Status Card (Purpose-First Utility)
         HeroStatusCard(
             uiState = uiState,
-            remainingTimeText = remainingTimeText
+            remainingTimeText = remainingTimeText,
+            isDark = isDark
         )
 
         // 5. Mini Status Cards (Status Magang & Jenis Hari)
-        MiniStatusCards(uiState = uiState)
+        MiniStatusCards(
+            uiState = uiState,
+            isDark = isDark
+        )
 
         // 6. Pengingat Card with "Atur" Shortcut
         PengingatCard(
@@ -325,7 +336,7 @@ fun DashboardScreen(
             Text(
                 text = "Terakhir diperbarui: ${formatLastSync(uiState.lastSyncTimestamp)}",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isDark) TextSecondaryDark else TextSecondaryLight
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -339,10 +350,10 @@ fun DashboardScreen(
 @Composable
 private fun HeroStatusCard(
     uiState: AttendanceUiState,
-    remainingTimeText: String
+    remainingTimeText: String,
+    isDark: Boolean
 ) {
     val isComplete = uiState.attendanceData?.hasAttendance == true || uiState.attendanceStatus == AttendanceStatus.HADIR
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
     val containerColor = when {
         isDark && isComplete -> HeroCompleteBgDark
@@ -517,25 +528,21 @@ private fun HeroStatusCard(
  * Mini Status Cards: Status Magang & Jenis Hari
  */
 @Composable
-private fun MiniStatusCards(uiState: AttendanceUiState) {
+private fun MiniStatusCards(uiState: AttendanceUiState, isDark: Boolean) {
     val isActive = uiState.attendanceData?.activeInternship != false
     val isHoliday = uiState.attendanceData?.isHoliday == true
     val isOffDay = uiState.attendanceData?.isScheduledOffDay == true
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val isLibur = isHoliday || isOffDay
 
-    val cardBorder = BorderStroke(1.dp, if (isDark) OutlineDark else OutlineLight)
-    val cardBg = if (isDark) SurfaceDark else SurfaceLight
-    val cardElevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        // Card 1: Status Magang
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = cardBg),
-            border = cardBorder,
-            elevation = cardElevation
-        ) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column {
+            // Row 1: Status Magang
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -563,12 +570,12 @@ private fun MiniStatusCards(uiState: AttendanceUiState) {
                         text = "Status magang",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isDark) TextPrimaryDark else TextPrimaryLight
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (isActive) "Magang aktif" else "Tidak aktif",
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (isDark) TextSecondaryDark else TextSecondaryLight
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -577,7 +584,7 @@ private fun MiniStatusCards(uiState: AttendanceUiState) {
                     color = if (isActive) {
                         if (isDark) StatusSuccessBgDark else StatusSuccessBgLight
                     } else {
-                        if (isDark) OutlineDark else OutlineLight
+                        MaterialTheme.colorScheme.surfaceVariant
                     }
                 ) {
                     Text(
@@ -588,23 +595,19 @@ private fun MiniStatusCards(uiState: AttendanceUiState) {
                         color = if (isActive) {
                             if (isDark) StatusSuccessTextDark else StatusSuccessTextLight
                         } else {
-                            if (isDark) TextSecondaryDark else TextSecondaryLight
+                            MaterialTheme.colorScheme.onSurfaceVariant
                         }
                     )
                 }
             }
-        }
 
-        // Card 2: Jenis Hari
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = cardBg),
-            border = cardBorder,
-            elevation = cardElevation
-        ) {
-            val isLibur = isHoliday || isOffDay
+            Divider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.outline,
+                thickness = 1.dp
+            )
 
+            // Row 2: Jenis Hari
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -642,7 +645,7 @@ private fun MiniStatusCards(uiState: AttendanceUiState) {
                         text = "Jenis hari",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isDark) TextPrimaryDark else TextPrimaryLight
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = when {
@@ -651,7 +654,7 @@ private fun MiniStatusCards(uiState: AttendanceUiState) {
                             else -> "Hari kerja normal"
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (isDark) TextSecondaryDark else TextSecondaryLight
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -692,13 +695,11 @@ private fun PengingatCard(
     onNavigateToSettings: () -> Unit,
     haptic: HapticFeedback
 ) {
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = if (isDark) SurfaceDark else SurfaceLight),
-        border = BorderStroke(1.dp, if (isDark) OutlineDark else OutlineLight),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
@@ -712,13 +713,13 @@ private fun PengingatCard(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isDark) OutlineDark else SegmentedTrackLight),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Pengingat",
-                    tint = if (isDark) OutlineButtonIconDark else OutlineButtonIconLight,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -732,13 +733,13 @@ private fun PengingatCard(
                     },
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (isDark) TextPrimaryDark else TextPrimaryLight
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "Tiap ${uiState.reminderSettings.intervalMinutes} menit sampai 23:59. Berhenti otomatis jika sudah lengkap.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (isDark) TextSecondaryDark else TextSecondaryLight,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp
                 )
             }
@@ -753,7 +754,7 @@ private fun PengingatCard(
                     text = "Atur",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    color = if (isDark) AccentSkyDark else AccentSkyLight
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -768,8 +769,6 @@ private fun BottomCtaSection(
     openMonevPortal: () -> Unit,
     haptic: HapticFeedback
 ) {
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -801,8 +800,8 @@ private fun BottomCtaSection(
 
         Surface(
             shape = RoundedCornerShape(14.dp),
-            color = if (isDark) SurfaceDark else SurfaceLight,
-            border = BorderStroke(1.dp, if (isDark) OutlineButtonBorderDark else OutlineButtonBorderLight),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             shadowElevation = 0.dp,
             modifier = Modifier.size(52.dp),
             onClick = {
@@ -814,7 +813,7 @@ private fun BottomCtaSection(
                 Icon(
                     imageVector = Icons.Default.OpenInNew,
                     contentDescription = "Buka Monev Portal",
-                    tint = if (isDark) OutlineButtonIconDark else OutlineButtonIconLight,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(22.dp)
                 )
             }

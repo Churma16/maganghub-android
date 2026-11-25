@@ -256,11 +256,13 @@ Repositori ini menerapkan siklus rilis berbasis GitHub Actions dan Semantic Vers
   4. Eksekusi unit test dan linting Android (`./gradlew testDebugUnitTest`).
   5. Kompilasi signed APK berjalan on-demand hanya jika PR memiliki label `build-apk` atau dipicu via `workflow_dispatch`.
 * **Snapshot Release (`.github/workflows/snapshot-release.yml`)**:
-  - Berjalan otomatis saat ada push/merge ke `main`, membuat rilis snapshot, dan mengunggah APK.
+  - Berjalan otomatis saat ada push/merge ke `main`: menjalankan unit test dan kompilasi signed APK secara paralel di dua runner terpisah, lalu mempublikasikan rilis snapshot jika keduanya lulus.
 * **Manual Release (`.github/workflows/manual-release.yml`)**:
   - Dijalankan manual (`workflow_dispatch`) untuk menerbitkan versi rilis stabil resmi.
 * **PR Preview Build (`.github/workflows/preview-build.yml`)**:
   - Dijalankan on-demand saat PR diberi label `build-preview` untuk menghasilkan APK pratinjau terisolasi (`id.codes.maganghub.preview`).
+* **Cleanup PR Preview (`.github/workflows/cleanup-preview.yml`)**:
+  - Berjalan otomatis saat PR di-merge atau ditutup untuk menghapus pre-release dan tag preview terkait agar daftar rilis tetap bersih.
 
 ---
 

@@ -123,18 +123,7 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Quick Action 2: "Cek Ulang"
-        val checkNowIntent = Intent(context, AttendanceAlarmReceiver::class.java).apply {
-            action = ACTION_CHECK_NOW
-        }
-        val checkNowPendingIntent = PendingIntent.getBroadcast(
-            context,
-            2,
-            checkNowIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Quick Action 3: "Snooze 30m"
+        // Quick Action 2: "Snooze 30m"
         val snoozeIntent = Intent(context, AttendanceAlarmReceiver::class.java).apply {
             action = ACTION_SNOOZE_30
         }
@@ -165,9 +154,8 @@ object NotificationHelper {
             .setAutoCancel(false)
             .setOngoing(false)
             .setContentIntent(openAppPendingIntent)
-            .addAction(0, "🌐 Buka Monev", monevWebPendingIntent)
-            .addAction(0, "🔄 Cek Ulang", checkNowPendingIntent)
-            .addAction(0, "⏱️ Snooze 30 Menit", snoozePendingIntent)
+            .addAction(0, "Buka Monev", monevWebPendingIntent)
+            .addAction(0, "Snooze 30 Menit", snoozePendingIntent)
 
         if (!soundEnabled) {
             builder.setSilent(true)
@@ -218,7 +206,7 @@ object NotificationHelper {
             )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
-            .addAction(0, "🌐 Lihat Dashboard", monevWebPendingIntent)
+            .addAction(0, "Buka Monev", monevWebPendingIntent)
 
         try {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_CONFIRMATION, builder.build())

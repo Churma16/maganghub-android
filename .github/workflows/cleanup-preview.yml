@@ -1,0 +1,59 @@
+name: Cleanup PR Preview Release
+
+on:
+  pull_request_target:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull Request number to cleanup preview releases for"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    name: Cleanup Preview Releases & Tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve PR Number
+        id: meta
+        env:
+          INPUT_PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PR_NUM=$(echo "$INPUT_PR_NUMBER" | tr -dc '0-9')
+          else
+            PR_NUM="$EVENT_PR_NUMBER"
+          fi
+
+          if [ -z "$PR_NUM" ]; then
+            echo "[ERROR] Invalid or empty PR number."
+            exit 1
+          fi
+
+          echo "PR_NUMBER=$PR_NUM" >> $GITHUB_ENV
+          echo "[INFO] Targeting PR #$PR_NUM for preview cleanup"
+
+      - name: Delete Associated PR Preview Releases & Tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUM="${{ env.PR_NUMBER }}"
+          echo "[INFO] Searching for preview releases associated with PR #$PR_NUM..."
+
+          # Find preview releases matching pattern -pr<PR_NUM>.
+          RELEASES=$(gh release list --repo "${{ github.repository }}" --limit 1000 --json tagName,isPrerelease --jq ".[] | select(.tagName | test(\"-pr${PR_NUM}\\\\.\")) | .tagName")
+
+          if [ -z "$RELEASES" ]; then
+            echo "[INFO] No preview releases found for PR #$PR_NUM. Nothing to clean up."
+          else
+            for TAG in $RELEASES; do
+              echo "[INFO] Deleting preview release and underlying git tag: $TAG"
+              gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag
+            done
+            echo "[INFO] Successfully cleaned up preview releases for PR #$PR_NUM."
+          fi
