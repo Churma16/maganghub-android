@@ -3,6 +3,7 @@ package id.codes.maganghub.data.api
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import id.codes.maganghub.BuildConfig
 import id.codes.maganghub.data.model.FeedbackRequest
 import id.codes.maganghub.data.model.FeedbackResponse
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,7 @@ interface FeedbackApiClient {
  */
 class FeedbackApiClientImpl(
     private val endpointUrl: String = DEFAULT_FEEDBACK_ENDPOINT,
+    private val apiKey: String = DEFAULT_FORWARDER_API_KEY,
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
@@ -35,7 +37,8 @@ class FeedbackApiClientImpl(
 
     companion object {
         private const val TAG = "FeedbackApiClient"
-        const val DEFAULT_FEEDBACK_ENDPOINT = "https://feedback.churma.codes/api/v1/feedback"
+        const val DEFAULT_FEEDBACK_ENDPOINT = "https://feedback-mctf.churma.codes/api/v1/feedback"
+        const val DEFAULT_FORWARDER_API_KEY = "mctf_4e02cfa934ecbff0149a213607575fea"
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
     }
 
@@ -43,18 +46,23 @@ class FeedbackApiClientImpl(
         return withContext(Dispatchers.IO) {
             try {
                 val jsonPayload = gson.toJson(request)
-                val httpRequest = Request.Builder()
+                val httpRequestBuilder = Request.Builder()
                     .url(endpointUrl)
                     .post(jsonPayload.toRequestBody(JSON_MEDIA_TYPE))
                     .header("Accept", "application/json")
-                    .build()
+
+                if (apiKey.isNotBlank()) {
+                    httpRequestBuilder.header("X-Forwarder-Key", apiKey)
+                }
+
+                val httpRequest = httpRequestBuilder.build()
 
                 client.newCall(httpRequest).execute().use { response ->
                     val responseBody = response.body?.string().orEmpty()
                     if (!response.isSuccessful) {
                         val errorMsg = try {
-                            gson.fromJson(responseBody, FeedbackResponse::class.java)?.message
-                                ?: "HTTP ${response.code}: Gagal mengirim masukan"
+                            val parsedError = gson.fromJson(responseBody, FeedbackResponse::class.java)
+                            parsedError?.error ?: parsedError?.message ?: "HTTP ${response.code}: Gagal mengirim masukan"
                         } catch (_: Exception) {
                             "HTTP ${response.code}: Gagal mengirim masukan"
                         }
@@ -70,7 +78,9 @@ class FeedbackApiClientImpl(
                     Result.success(parsed)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to send feedback: ${e.message}", e)
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "Failed to send feedback: ${e.message}")
+                }
                 Result.failure(e)
             }
         }

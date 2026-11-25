@@ -83,6 +83,7 @@ class FeedbackApiClientTest {
         val recordedRequest = server.takeRequest()
         assertEquals("/api/v1/feedback", recordedRequest.path)
         assertEquals("POST", recordedRequest.method)
+        assertEquals(FeedbackApiClientImpl.DEFAULT_FORWARDER_API_KEY, recordedRequest.getHeader("X-Forwarder-Key"))
         assertTrue(recordedRequest.body.readUtf8().contains("Tambahkan widget homescreen"))
     }
 
@@ -105,6 +106,27 @@ class FeedbackApiClientTest {
         val result = client.sendFeedback(request)
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull()?.message?.contains("Internal bot bridge error") == true)
+    }
+
+    @Test
+    fun testSendFeedbackHttpError_WithErrorField() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(400)
+                .setBody("""{"error":"request timestamp expired","message":"request timestamp expired"}""")
+        )
+
+        val request = FeedbackRequest(
+            type = FeedbackType.OTHER,
+            message = "Tanya sesuatu",
+            appVersion = "v1.0.0",
+            deviceModel = "Pixel 7",
+            osVersion = "Android 14"
+        )
+
+        val result = client.sendFeedback(request)
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("request timestamp expired") == true)
     }
 
     @Test
