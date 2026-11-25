@@ -619,7 +619,144 @@ fun SettingsScreen(
             }
         }
 
-        // 6. Footer: MagangHub Logbook Companion with explanatory text
+        // 6. Pengingat Mentor Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = cardBorder,
+            elevation = cardElevation
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Pengingat Mentor",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Beri tahu jika laporan belum ditinjau mentor setelah beberapa hari",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Switch row: "Ingatkan mentor otomatis"
+                ReminderToggleRow(
+                    title = "Ingatkan mentor otomatis",
+                    subtitle = "Notifikasi berkala jika ada laporan menunggu peninjauan",
+                    checked = settings.mentorReminderEnabled,
+                    isDark = isDark,
+                    onCheckedChange = { checked ->
+                        onUpdateReminderSettings(settings.copy(mentorReminderEnabled = checked))
+                    }
+                )
+
+                if (settings.mentorReminderEnabled) {
+                    Divider(color = cardBorderColor)
+
+                    // Row 1: Batas hari belum ditinjau
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Batas hari belum ditinjau",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf(
+                                "3 hari" to 3,
+                                "5 hari" to 5,
+                                "7 hari" to 7,
+                                "10 hari" to 10
+                            ).forEach { (label, days) ->
+                                val selected = settings.mentorReviewThresholdDays == days
+                                val chipBg = if (selected) Color(0xFFDBEAFE) else (if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7))
+                                val chipText = if (selected) Color(0xFF1E3A8A) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B))
+                                val chipBorder = if (selected) null else BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
+
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(40.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = chipBg,
+                                    border = chipBorder,
+                                    onClick = {
+                                        onUpdateReminderSettings(settings.copy(mentorReviewThresholdDays = days))
+                                    }
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                            color = chipText
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Row 2: Ulangi pengingat setiap
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Ulangi pengingat setiap",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf(
+                                "30 mnt" to 30,
+                                "1 jam" to 60,
+                                "3 jam" to 180,
+                                "1 hari" to 1440
+                            ).forEach { (label, minutes) ->
+                                val selected = settings.mentorRepeatIntervalMinutes == minutes
+                                val chipBg = if (selected) Color(0xFFDBEAFE) else (if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7))
+                                val chipText = if (selected) Color(0xFF1E3A8A) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B))
+                                val chipBorder = if (selected) null else BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
+
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(40.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = chipBg,
+                                    border = chipBorder,
+                                    onClick = {
+                                        onUpdateReminderSettings(settings.copy(mentorRepeatIntervalMinutes = minutes))
+                                    }
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                            color = chipText
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 7. Footer: MagangHub Logbook Companion with explanatory text
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
