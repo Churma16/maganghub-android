@@ -52,7 +52,6 @@ jobs:
     if: "!startsWith(github.event.head_commit.message, 'chore(release):')"
     outputs:
       snapshot_tag: ${{ steps.snapshot_meta.outputs.snapshot_tag }}
-      snapshot_apk: ${{ steps.snapshot_meta.outputs.snapshot_apk }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -84,7 +83,6 @@ jobs:
           VERSION_SUFFIX="-snapshot.${SHORT_SHA}"
           SNAPSHOT_APK="maganghub-${SNAPSHOT_TAG}.apk"
           echo "snapshot_tag=$SNAPSHOT_TAG" >> $GITHUB_OUTPUT
-          echo "snapshot_apk=$SNAPSHOT_APK" >> $GITHUB_OUTPUT
           echo "VERSION_SUFFIX=$VERSION_SUFFIX" >> $GITHUB_ENV
           echo "SNAPSHOT_TAG=$SNAPSHOT_TAG" >> $GITHUB_ENV
           echo "SNAPSHOT_APK=$SNAPSHOT_APK" >> $GITHUB_ENV
@@ -149,7 +147,8 @@ jobs:
           target_commitish: ${{ github.sha }}
           prerelease: true
           generate_release_notes: true
-          files: ${{ needs.build.outputs.snapshot_apk }}
+          files: "*.apk"
+          fail_on_unmatched_files: true
           body: |
             ### Snapshot Preview Build
 
