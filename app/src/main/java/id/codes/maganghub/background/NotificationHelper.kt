@@ -32,6 +32,8 @@ object NotificationHelper {
     const val ACTION_SNOOZE_MENTOR_ONE_DAY = "id.codes.maganghub.ACTION_SNOOZE_MENTOR_ONE_DAY"
 
     const val URL_MONEV_DASHBOARD = "https://monev.maganghub.kemnaker.go.id/dashboard"
+    const val URL_PRIVACY_POLICY = "https://github.com/Churma16/maganghub-logbook-companion/blob/main/PRIVACY_POLICY.md"
+    const val URL_TERMS = "https://github.com/Churma16/maganghub-logbook-companion/blob/main/TERMS.md"
 
     /**
      * Initializes notification channels required for Android O+ (API 26+).
