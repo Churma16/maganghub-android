@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-11-24
+## [0.1.0] - 2026-11-25
 
 ### Added
 - **SIAPkerja Kemnaker SSO Integration**: Automated 4-step OAuth2 login (GET login, CSRF token extraction, POST credentials, authorization code exchange for Bearer token) with transparent auto re-login on 401 Unauthorized.

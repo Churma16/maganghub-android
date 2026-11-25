@@ -28,6 +28,17 @@ export function verifyNoManualVersionBump() {
     );
 
     if (hasVersionModifications(diff)) {
+      const commitMessages = execFileSync(
+        'git',
+        ['log', `${baseRef}...HEAD`, '--pretty=format:%s'],
+        { encoding: 'utf8' }
+      );
+
+      if (/chore\((?:version|release)\):|\[allow-version-bump\]/i.test(commitMessages)) {
+        console.log('[INFO] Allowed version bump commit detected in PR. Skipping check.');
+        return;
+      }
+
       console.error(
         '[ERROR] Manual modifications to versionCode or versionName in app/build.gradle.kts are prohibited in PRs.'
       );
