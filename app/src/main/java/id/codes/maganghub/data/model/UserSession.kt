@@ -20,11 +20,13 @@ data class AttendanceCheckResult(
     val data: AttendanceHomeData? = null,
     val checkedAt: Long = System.currentTimeMillis(),
     val isSuccess: Boolean = true,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val pendingMentorReviewCount: Int = 0
 )
 
 /**
- * Configuration for spam reminders between 16:00 and 23:59 WIB.
+ * Configuration for spam reminders between 16:00 and 23:59 WIB,
+ * and mentor review reminders.
  */
 data class ReminderSettings(
     val isEnabled: Boolean = true,
@@ -34,5 +36,9 @@ data class ReminderSettings(
     val endHour: Int = 24,
     val intervalMinutes: Int = 30,
     val soundEnabled: Boolean = true,
-    val vibrationEnabled: Boolean = true
+    val vibrationEnabled: Boolean = true,
+    val mentorReminderEnabled: Boolean = true,
+    val mentorReviewThresholdDays: Int = 5,
+    val mentorRepeatIntervalMinutes: Int = 180,
+    val mentorSnoozedUntil: Long = 0L
 )

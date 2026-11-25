@@ -17,6 +17,7 @@ data class AttendanceUiState(
     val isChecking: Boolean = false,
     val attendanceStatus: AttendanceStatus = AttendanceStatus.UNKNOWN,
     val attendanceData: AttendanceHomeData? = null,
+    val pendingMentorReviewCount: Int = 0,
     val lastSyncTimestamp: Long = 0L,
     val nextReminderFormatted: String = "Menghitung jadwal...",
     val reminderSettings: ReminderSettings = ReminderSettings(),
