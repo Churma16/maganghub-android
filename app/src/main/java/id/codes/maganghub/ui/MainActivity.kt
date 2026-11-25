@@ -237,6 +237,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
         FeedbackBottomSheet(
             isOpen = uiState.isFeedbackSheetOpen,
             isSubmitting = uiState.isSubmittingFeedback,
+            errorMessage = uiState.errorMessage,
             onDismiss = { viewModel.setFeedbackSheetOpen(false) },
             onSubmit = { type, message ->
                 viewModel.submitFeedback(type, message)

@@ -88,6 +88,7 @@ import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.ui.theme.ChipSelectedText
 import id.codes.maganghub.ui.theme.HadirGreenLight
 import id.codes.maganghub.ui.theme.HadirGreenText
+import id.codes.maganghub.ui.theme.KemnakerSky
 import id.codes.maganghub.ui.theme.NavActivePillBg
 import id.codes.maganghub.ui.theme.PureWhite
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState

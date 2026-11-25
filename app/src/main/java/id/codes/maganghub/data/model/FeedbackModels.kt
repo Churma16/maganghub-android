@@ -14,12 +14,6 @@ enum class FeedbackType(val serializedName: String, val displayName: String) {
 
     @SerializedName("other")
     OTHER("other", "Lainnya");
-
-    companion object {
-        fun fromSerialized(value: String): FeedbackType {
-            return entries.firstOrNull { it.serializedName.equals(value, ignoreCase = true) } ?: OTHER
-        }
-    }
 }
 
 /**

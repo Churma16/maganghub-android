@@ -106,4 +106,24 @@ class FeedbackApiClientTest {
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull()?.message?.contains("Internal bot bridge error") == true)
     }
+
+    @Test
+    fun testSendFeedbackMalformedJsonResponse() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("<html>Login portal required</html>")
+        )
+
+        val request = FeedbackRequest(
+            type = FeedbackType.BUG,
+            message = "Test captive portal",
+            appVersion = "v1.0.0",
+            deviceModel = "Pixel 7",
+            osVersion = "Android 14"
+        )
+
+        val result = client.sendFeedback(request)
+        assertTrue(result.isFailure)
+    }
 }

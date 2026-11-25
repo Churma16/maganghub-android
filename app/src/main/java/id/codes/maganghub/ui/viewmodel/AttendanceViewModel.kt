@@ -236,7 +236,7 @@ class AttendanceViewModel(
      * Opens or closes the feedback bottom sheet.
      */
     fun setFeedbackSheetOpen(open: Boolean) {
-        _uiState.update { it.copy(isFeedbackSheetOpen = open) }
+        _uiState.update { it.copy(isFeedbackSheetOpen = open, errorMessage = null) }
     }
 
     /**

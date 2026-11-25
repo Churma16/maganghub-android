@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -39,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import id.codes.maganghub.data.model.FeedbackType
+import id.codes.maganghub.ui.theme.DangerRed
 import id.codes.maganghub.ui.theme.KemnakerSky
 import id.codes.maganghub.ui.theme.PureWhite
 
@@ -51,6 +51,7 @@ import id.codes.maganghub.ui.theme.PureWhite
 fun FeedbackBottomSheet(
     isOpen: Boolean,
     isSubmitting: Boolean,
+    errorMessage: String? = null,
     onDismiss: () -> Unit,
     onSubmit: (type: FeedbackType, message: String) -> Unit
 ) {
@@ -188,6 +189,16 @@ fun FeedbackBottomSheet(
                     text = "Versi app dan tipe HP ikut terkirim otomatis.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Error message display if any
+            if (!errorMessage.isNullOrBlank()) {
+                Text(
+                    text = errorMessage,
+                    color = DangerRed,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium
                 )
             }
 

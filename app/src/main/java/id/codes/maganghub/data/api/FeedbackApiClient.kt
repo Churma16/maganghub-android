@@ -2,6 +2,7 @@ package id.codes.maganghub.data.api
 
 import android.util.Log
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import id.codes.maganghub.data.model.FeedbackRequest
 import id.codes.maganghub.data.model.FeedbackResponse
 import kotlinx.coroutines.Dispatchers
@@ -11,8 +12,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
-import java.net.ConnectException
-import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -64,21 +63,15 @@ class FeedbackApiClientImpl(
 
                     val parsed = try {
                         gson.fromJson(responseBody, FeedbackResponse::class.java)
-                            ?: FeedbackResponse(success = true)
-                    } catch (_: Exception) {
-                        FeedbackResponse(success = true)
-                    }
+                    } catch (e: JsonSyntaxException) {
+                        return@withContext Result.failure(IOException("Format respons server tidak valid", e))
+                    } ?: return@withContext Result.failure(IOException("Respons server kosong"))
+
                     Result.success(parsed)
                 }
             } catch (e: Exception) {
-                // While microservice is pending deployment, log and accept locally so flow isn't broken
-                if (e is UnknownHostException || e is ConnectException) {
-                    Log.w(TAG, "Feedback backend pending or unreachable. Accepted locally for contract testing: ${e.message}")
-                    Result.success(FeedbackResponse(success = true, message = "Masukan diterima (offline)"))
-                } else {
-                    Log.e(TAG, "Failed to send feedback", e)
-                    Result.failure(e)
-                }
+                Log.e(TAG, "Failed to send feedback: ${e.message}", e)
+                Result.failure(e)
             }
         }
     }

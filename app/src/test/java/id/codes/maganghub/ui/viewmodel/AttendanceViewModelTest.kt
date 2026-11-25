@@ -89,8 +89,10 @@ class AttendanceViewModelTest {
         override fun getLastCheckTimestamp(): Long = cachedTimestamp
         override fun hasSavedCredentials(): Boolean = hasCredentialsSaved
 
+        var submitFeedbackResult: Result<FeedbackResponse> = Result.success(FeedbackResponse(success = true))
+
         override suspend fun submitFeedback(request: FeedbackRequest): Result<FeedbackResponse> {
-            return Result.success(FeedbackResponse(success = true))
+            return submitFeedbackResult
         }
     }
 
@@ -206,6 +208,35 @@ class AttendanceViewModelTest {
         assertFalse(viewModel.uiState.value.isFeedbackSheetOpen)
         assertFalse(viewModel.uiState.value.isSubmittingFeedback)
         assertEquals("Terima kasih! Masukanmu berhasil dikirim.", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun testSubmitFeedbackFailure() = runTest {
+        val repo = FakeAttendanceRepository()
+        repo.submitFeedbackResult = Result.failure(java.io.IOException("Jaringan bermasalah"))
+        val viewModel = AttendanceViewModel(repo)
+
+        viewModel.setFeedbackSheetOpen(true)
+        assertTrue(viewModel.uiState.value.isFeedbackSheetOpen)
+
+        var errorCalled = false
+        var capturedError: String? = null
+        viewModel.submitFeedback(
+            type = FeedbackType.BUG,
+            message = "Ada bug fatal",
+            onError = {
+                errorCalled = true
+                capturedError = it
+            }
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(errorCalled)
+        assertEquals("Jaringan bermasalah", capturedError)
+        // Sheet stays open on failure so message is not lost
+        assertTrue(viewModel.uiState.value.isFeedbackSheetOpen)
+        assertFalse(viewModel.uiState.value.isSubmittingFeedback)
+        assertEquals("Jaringan bermasalah", viewModel.uiState.value.errorMessage)
     }
 
     @Test
