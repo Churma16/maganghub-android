@@ -33,6 +33,7 @@ class AttendanceViewModel(
             photoUrl = repository.sessionFlow.value.photoUrl,
             attendanceStatus = repository.getCachedStatus(),
             attendanceData = repository.getCachedHomeData(),
+            pendingMentorReviewCount = repository.getCachedPendingMentorReviewCount(),
             lastSyncTimestamp = repository.getLastCheckTimestamp(),
             reminderSettings = repository.reminderSettingsFlow.value,
             themeMode = repository.themeModeFlow.value
@@ -103,6 +104,7 @@ class AttendanceViewModel(
                             isChecking = false,
                             attendanceStatus = checkResult.status,
                             attendanceData = checkResult.data,
+                            pendingMentorReviewCount = checkResult.pendingMentorReviewCount,
                             lastSyncTimestamp = checkResult.checkedAt,
                             successMessage = if (!silent) "Presensi berhasil dicek!" else null,
                             errorMessage = null
@@ -166,6 +168,7 @@ class AttendanceViewModel(
                     username = "",
                     attendanceStatus = AttendanceStatus.UNKNOWN,
                     attendanceData = null,
+                    pendingMentorReviewCount = 0,
                     lastSyncTimestamp = 0L,
                     reminderSettings = repository.reminderSettingsFlow.value,
                     successMessage = "Berhasil logout dari sistem"
@@ -285,6 +288,16 @@ class AttendanceViewModel(
     fun setThemeMode(themeMode: ThemeMode) {
         viewModelScope.launch {
             repository.setThemeMode(themeMode)
+        }
+    }
+
+    /**
+     * Postpones mentor review reminders for 24 hours.
+     */
+    fun snoozeMentorReminderOneDay() {
+        viewModelScope.launch {
+            repository.snoozeMentorReminderOneDay()
+            _uiState.update { it.copy(successMessage = "Pengingat mentor ditunda 1 hari") }
         }
     }
 }

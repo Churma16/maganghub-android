@@ -1,7 +1,9 @@
 package id.codes.maganghub.ui.screens
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -34,6 +36,8 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,7 +45,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -151,7 +157,8 @@ fun DashboardScreen(
     formatLastSync: (Long) -> String,
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
-    onDismissMessage: () -> Unit = {}
+    onDismissMessage: () -> Unit = {},
+    onSnoozeMentorReminder: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -313,7 +320,16 @@ fun DashboardScreen(
             isDark = isDark
         )
 
-        // 6. Pengingat Card with "Atur" Shortcut
+        // 6. Mentor Review Card (when pending reviews > 0)
+        if (uiState.pendingMentorReviewCount > 0) {
+            MentorReviewCard(
+                uiState = uiState,
+                isDark = isDark,
+                onSnoozeMentorReminder = onSnoozeMentorReminder
+            )
+        }
+
+        // 7. Pengingat Card with "Atur" Shortcut
         PengingatCard(
             uiState = uiState,
             onNavigateToSettings = onNavigateToSettings,
@@ -871,6 +887,208 @@ private fun BannerCard(
                         modifier = Modifier.size(16.dp)
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Mentor Review Card displayed when uiState.pendingMentorReviewCount > 0.
+ * Normal State: subtle blue card, clock icon, progress toward reminder threshold.
+ * Warning State: subtle amber card, warning icon, snooze 1 day action, copy template, share intent, and footer.
+ */
+@Composable
+private fun MentorReviewCard(
+    uiState: AttendanceUiState,
+    isDark: Boolean,
+    onSnoozeMentorReminder: () -> Unit
+) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val pendingCount = uiState.pendingMentorReviewCount
+    val threshold = uiState.reminderSettings.mentorReviewThresholdDays.coerceIn(1, 5)
+    val isWarning = pendingCount >= threshold
+
+    // Design tokens matching Kemnaker Monev theme
+    val containerColor = if (isWarning) {
+        if (isDark) Color(0xFF2E1B05) else Color(0xFFFFFBEB)
+    } else {
+        if (isDark) Color(0xFF0F2642) else Color(0xFFF0F9FF)
+    }
+
+    val borderColor = if (isWarning) {
+        if (isDark) Color(0xFF78450F) else Color(0xFFFDE68A)
+    } else {
+        if (isDark) Color(0xFF1E4268) else Color(0xFFBAE6FD)
+    }
+
+    val iconBoxBg = if (isWarning) {
+        if (isDark) Color(0xFF78350F) else Color(0xFFFEF3C7)
+    } else {
+        if (isDark) Color(0xFF075985) else Color(0xFFE0F2FE)
+    }
+
+    val iconTint = if (isWarning) {
+        if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706)
+    } else {
+        if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
+    }
+
+    val titleColor = if (isWarning) {
+        if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
+    } else {
+        if (isDark) TextPrimaryDark else Color(0xFF0C4A6E)
+    }
+
+    val subtitleColor = if (isWarning) {
+        if (isDark) Color(0xFFFDE68A).copy(alpha = 0.85f) else Color(0xFF78350F)
+    } else {
+        if (isDark) TextSecondaryDark else TextSecondaryLight
+    }
+
+    val progressColor = if (isWarning) {
+        Color(0xFFF59E0B)
+    } else {
+        if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
+    }
+
+    val progressTrackColor = if (isWarning) {
+        if (isDark) Color(0xFF451A03) else Color(0xFFFDE68A)
+    } else {
+        if (isDark) Color(0xFF162033) else Color(0xFFE0F2FE)
+    }
+
+    val progressValue = if (isWarning) 1f else (pendingCount / threshold.toFloat()).coerceIn(0f, 1f)
+
+    val intervalText = when (uiState.reminderSettings.mentorRepeatIntervalMinutes) {
+        30 -> "30 mnt"
+        60 -> "1 jam"
+        180 -> "3 jam"
+        1440 -> "1 hari"
+        else -> "${uiState.reminderSettings.mentorRepeatIntervalMinutes} mnt"
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Header Row: Left Circle Icon + Title & Subtitle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(iconBoxBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isWarning) Icons.Default.Warning else Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (isWarning) "Saatnya ingatkan Mentor" else "Menunggu peninjauan Mentor",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = titleColor
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (isWarning) {
+                            "$pendingCount kehadiran dan laporan menunggu peninjauan, sudah mencapai batas pengingat."
+                        } else {
+                            "$pendingCount kehadiran dan laporan sudah dikirim. Tidak ada tindakan yang perlu kamu lakukan."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = subtitleColor,
+                        lineHeight = 18.sp
+                    )
+                }
+            }
+
+            // Progress Section
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "$pendingCount hari menunggu",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isWarning) titleColor else subtitleColor
+                    )
+                    Text(
+                        text = if (isWarning) "Batas $threshold hari tercapai" else "Batas pengingat $threshold hari",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = subtitleColor
+                    )
+                }
+
+                LinearProgressIndicator(
+                    progress = { progressValue },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = progressColor,
+                    trackColor = progressTrackColor
+                )
+            }
+
+            // Warning State Action Button & Footer
+            if (isWarning) {
+                OutlinedButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSnoozeMentorReminder()
+                        Toast.makeText(context, "Pengingat mentor ditunda 1 hari", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFFB45309) else Color(0xFFD97706)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Tunda 1 hari",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                // Footer text: Pengingat otomatis diulang tiap ${intervalText}.
+                Text(
+                    text = "Pengingat otomatis diulang tiap $intervalText.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = subtitleColor
+                )
             }
         }
     }

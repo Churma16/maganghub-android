@@ -320,4 +320,59 @@ class MagangHubApiClientTest {
         assertTrue("User agent should indicate Android Mobile, got: $userAgent", userAgent?.contains("Android") == true)
         assertTrue("User agent should indicate Mobile, got: $userAgent", userAgent?.contains("Mobile") == true)
     }
+
+    @Test
+    fun testCalculatePendingMentorReviewCount() {
+        val items = listOf(
+            AttendanceItem(id = "1", date = "2026-11-20", status = "PRESENT", approvalStatus = "SUBMITTED"),
+            AttendanceItem(id = "2", date = "2026-11-20", status = "PRESENT", approvalStatus = "submitted"),
+            AttendanceItem(id = "3", date = "2026-11-21", status = "ABSENT", approvalStatus = "SUBMITTED"),
+            AttendanceItem(id = "4", date = "2026-11-22", status = "DAYOFF", approvalStatus = "SUBMITTED"),
+            AttendanceItem(id = "5", date = "2026-11-23", status = "PRESENT", approvalStatus = "APPROVED"),
+            AttendanceItem(id = "6", date = "2026-11-24", status = "PRESENT", approvalStatus = "SUBMITTED")
+        )
+        val count = MagangHubApiClient.calculatePendingMentorReviewCount(items)
+        assertEquals(2, count)
+    }
+
+    @Test
+    fun testFetchAttendancesSuccess() = runBlocking {
+        val responseBody = """
+            {
+                "data": [
+                    {
+                        "id": "att-1",
+                        "date": "2026-11-24",
+                        "status": "PRESENT",
+                        "approval_status": "SUBMITTED"
+                    },
+                    {
+                        "id": "att-2",
+                        "date": "2026-11-23",
+                        "status": "PRESENT",
+                        "approval_status": "APPROVED"
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        mockServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(responseBody)
+        )
+
+        val attendances = client.fetchAttendances("valid_token")
+        assertEquals(2, attendances.size)
+        assertEquals("att-1", attendances[0].id)
+        assertEquals("2026-11-24", attendances[0].date)
+        assertEquals("PRESENT", attendances[0].status)
+        assertEquals("SUBMITTED", attendances[0].approvalStatus)
+        assertEquals("SUBMITTED", attendances[0].approval_status)
+
+        val recorded = mockServer.takeRequest()
+        assertEquals("/api/v1/attendances?limit=100", recorded.path)
+        assertEquals("Bearer valid_token", recorded.getHeader("Authorization"))
+    }
 }

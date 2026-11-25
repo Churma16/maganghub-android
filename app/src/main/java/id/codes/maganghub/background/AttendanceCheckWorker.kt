@@ -126,6 +126,45 @@ class AttendanceCheckWorker(
         }
 
         val resultData = checkResult.getOrNull()
+
+        // Mentor review reminder verification
+        if (settings.mentorReminderEnabled) {
+            val pendingCount = resultData?.pendingMentorReviewCount?.takeIf { it > 0 }
+                ?: try {
+                    repository.getCachedPendingMentorReviewCount()
+                } catch (e: Throwable) {
+                    try {
+                        MagangHubApp.instance.encryptedPreferences.getPendingMentorReviewCount()
+                    } catch (e2: Throwable) {
+                        0
+                    }
+                }
+
+            val nowMillis = System.currentTimeMillis()
+            val lastMentorNotificationTime = AttendanceAlarmScheduler.getLastMentorReminderTimeMillis(appContext)
+
+            if (AttendanceAlarmScheduler.shouldTriggerMentorReminder(
+                    mentorReminderEnabled = settings.mentorReminderEnabled,
+                    pendingCount = pendingCount,
+                    thresholdDays = settings.mentorReviewThresholdDays,
+                    snoozedUntil = settings.mentorSnoozedUntil,
+                    lastMentorReminderTime = lastMentorNotificationTime,
+                    repeatIntervalMinutes = settings.mentorRepeatIntervalMinutes,
+                    currentTimeMillis = nowMillis
+                )
+            ) {
+                Log.i(TAG, "Dispatching mentor review reminder (pendingCount=$pendingCount, threshold=${settings.mentorReviewThresholdDays})")
+                NotificationHelper.showMentorReviewReminderNotification(
+                    context = appContext,
+                    pendingCount = pendingCount,
+                    thresholdDays = settings.mentorReviewThresholdDays,
+                    soundEnabled = settings.soundEnabled,
+                    vibrationEnabled = settings.vibrationEnabled
+                )
+                AttendanceAlarmScheduler.updateLastMentorReminderTimeMillis(appContext, nowMillis)
+            }
+        }
+
         val homeData = resultData?.data
         if (homeData == null) {
             AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
