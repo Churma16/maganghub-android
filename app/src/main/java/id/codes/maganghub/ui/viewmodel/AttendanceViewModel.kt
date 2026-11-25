@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.repository.AttendanceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +32,8 @@ class AttendanceViewModel(
             attendanceStatus = repository.getCachedStatus(),
             attendanceData = repository.getCachedHomeData(),
             lastSyncTimestamp = repository.getLastCheckTimestamp(),
-            reminderSettings = repository.reminderSettingsFlow.value
+            reminderSettings = repository.reminderSettingsFlow.value,
+            themeMode = repository.themeModeFlow.value
         )
     )
     val uiState: StateFlow<AttendanceUiState> = _uiState.asStateFlow()
@@ -63,6 +65,13 @@ class AttendanceViewModel(
                     current.copy(reminderSettings = settings)
                 }
                 updateNextReminderString()
+            }
+        }
+
+        // Collect theme display mode
+        viewModelScope.launch {
+            repository.themeModeFlow.collect { mode ->
+                _uiState.update { it.copy(themeMode = mode) }
             }
         }
 
@@ -261,6 +270,15 @@ class AttendanceViewModel(
         }
 
         _uiState.update { it.copy(nextReminderFormatted = text) }
+    }
+
+    /**
+     * Updates theme mode override selection (System, Light, Dark).
+     */
+    fun setThemeMode(themeMode: ThemeMode) {
+        viewModelScope.launch {
+            repository.setThemeMode(themeMode)
+        }
     }
 }
 

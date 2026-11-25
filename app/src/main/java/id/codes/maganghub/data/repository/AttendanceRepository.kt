@@ -4,6 +4,7 @@ import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,11 @@ interface AttendanceRepository {
      * Observable stream of reminder settings.
      */
     val reminderSettingsFlow: StateFlow<ReminderSettings>
+
+    /**
+     * Observable stream of theme display mode.
+     */
+    val themeModeFlow: StateFlow<ThemeMode>
 
     /**
      * Authenticates with Kemnaker credentials and stores monev access token.
@@ -43,6 +49,11 @@ interface AttendanceRepository {
      * Updates background reminder configurations.
      */
     suspend fun updateReminderSettings(settings: ReminderSettings)
+
+    /**
+     * Updates theme display mode preference.
+     */
+    suspend fun setThemeMode(themeMode: ThemeMode)
 
     /**
      * Retrieves cached home attendance data without network request.

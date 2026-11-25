@@ -1,5 +1,7 @@
 package id.codes.maganghub.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -48,10 +52,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import id.codes.maganghub.ui.theme.DangerRed
-import id.codes.maganghub.ui.theme.InfoSkyBorder
-import id.codes.maganghub.ui.theme.InfoSkyContainer
-import id.codes.maganghub.ui.theme.InfoSkyText
-import id.codes.maganghub.ui.theme.KemnakerSky
 import id.codes.maganghub.ui.theme.PureWhite
 
 @Composable
@@ -69,6 +69,7 @@ fun LoginDialog(
     var passwordVisible by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
+    val ctaColor = Color(0xFF0369A1)
 
     AlertDialog(
         onDismissRequest = {
@@ -77,7 +78,8 @@ fun LoginDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 20.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         containerColor = MaterialTheme.colorScheme.surface,
         title = {
@@ -88,7 +90,7 @@ fun LoginDialog(
                 Icon(
                     imageVector = Icons.Default.Lock,
                     contentDescription = null,
-                    tint = KemnakerSky,
+                    tint = ctaColor,
                     modifier = Modifier.size(24.dp)
                 )
                 Text(
@@ -114,9 +116,9 @@ fun LoginDialog(
                 Card(
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = InfoSkyContainer
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, InfoSkyBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -127,14 +129,14 @@ fun LoginDialog(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = KemnakerSky,
+                            tint = ctaColor,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = "Kredensial disimpan terenkripsi di perangkat (AES-256) menggunakan Android Keystore.",
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 11.sp,
-                            color = InfoSkyText
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -155,6 +157,10 @@ fun LoginDialog(
                     leadingIcon = {
                         Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ctaColor,
+                        focusedLabelColor = ctaColor
+                    ),
                     singleLine = true,
                     enabled = !isLoading,
                     keyboardOptions = KeyboardOptions(
@@ -183,6 +189,10 @@ fun LoginDialog(
                             )
                         }
                     },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = ctaColor,
+                        focusedLabelColor = ctaColor
+                    ),
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     singleLine = true,
                     enabled = !isLoading,
@@ -212,7 +222,7 @@ fun LoginDialog(
                 enabled = !isLoading && username.isNotBlank() && password.isNotBlank(),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = KemnakerSky,
+                    containerColor = ctaColor,
                     disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                     disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 )
@@ -224,9 +234,9 @@ fun LoginDialog(
                         color = PureWhite
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Memverifikasi...")
+                    Text("Memverifikasi...", color = PureWhite)
                 } else {
-                    Text("Masuk")
+                    Text("Masuk", color = PureWhite)
                 }
             }
         },

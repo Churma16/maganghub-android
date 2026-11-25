@@ -9,6 +9,7 @@ import com.google.gson.Gson
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UserSession
 
 /**
@@ -42,6 +43,7 @@ class EncryptedPreferences(context: Context) {
         private const val KEY_DEVICE_JITTER_SEED = "pref_device_jitter_seed_minutes"
         private const val KEY_FULL_NAME = "pref_user_full_name"
         private const val KEY_PHOTO_URL = "pref_user_photo_url"
+        private const val KEY_THEME_MODE = "pref_theme_mode"
     }
 
     private val gson = Gson()
@@ -198,6 +200,16 @@ class EncryptedPreferences(context: Context) {
         )
     }
 
+    // Theme display mode
+    fun getThemeMode(): ThemeMode {
+        val raw = prefs.getString(KEY_THEME_MODE, ThemeMode.SYSTEM.value)
+        return ThemeMode.fromValue(raw)
+    }
+
+    fun saveThemeMode(mode: ThemeMode) {
+        prefs.edit().putString(KEY_THEME_MODE, mode.value).apply()
+    }
+
     // Reset / Logout
     fun clearCredentials() {
         prefs.edit()
@@ -210,6 +222,7 @@ class EncryptedPreferences(context: Context) {
     }
 
     fun clearAll() {
-        prefs.edit().clear().apply()
+        val currentTheme = getThemeMode()
+        prefs.edit().clear().putString(KEY_THEME_MODE, currentTheme.value).apply()
     }
 }

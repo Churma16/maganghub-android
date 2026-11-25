@@ -8,6 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,13 +41,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import id.codes.maganghub.MagangHubApp
+import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.background.AttendanceAlarmScheduler
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.ui.screens.DashboardScreen
 import id.codes.maganghub.ui.screens.LoginDialog
 import id.codes.maganghub.ui.screens.SettingsScreen
 import id.codes.maganghub.ui.theme.KemnakerSky
-import id.codes.maganghub.ui.theme.KemnakerSkyContainer
+import id.codes.maganghub.ui.theme.NavActivePillBg
+import id.codes.maganghub.ui.theme.NavActivePillIcon
 import id.codes.maganghub.ui.theme.MagangHubTheme
 import id.codes.maganghub.ui.viewmodel.AttendanceViewModel
 import id.codes.maganghub.ui.viewmodel.AttendanceViewModelFactory
@@ -75,7 +80,15 @@ class MainActivity : ComponentActivity() {
         AttendanceAlarmScheduler.scheduleNextAlarm(applicationContext)
 
         setContent {
-            MagangHubTheme {
+            val uiState by viewModel.uiState.collectAsState()
+            val isSystemDark = isSystemInDarkTheme()
+            val darkTheme = when (uiState.themeMode) {
+                ThemeMode.SYSTEM -> isSystemDark
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+
+            MagangHubTheme(darkTheme = darkTheme) {
                 MainContent(viewModel = viewModel)
             }
         }
@@ -141,36 +154,42 @@ fun MainContent(viewModel: AttendanceViewModel) {
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-                    label = { Text("Dashboard") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = KemnakerSky,
-                        selectedTextColor = KemnakerSky,
-                        indicatorColor = KemnakerSkyContainer,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            Column {
+                Divider(
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outline
                 )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Pengaturan") },
-                    label = { Text("Pengaturan") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = KemnakerSky,
-                        selectedTextColor = KemnakerSky,
-                        indicatorColor = KemnakerSkyContainer,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp
+                ) {
+                    NavigationBarItem(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
+                        label = { Text("Dashboard") },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = NavActivePillIcon,
+                            selectedTextColor = NavActivePillIcon,
+                            indicatorColor = NavActivePillBg,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        icon = { Icon(Icons.Default.Settings, contentDescription = "Pengaturan") },
+                        label = { Text("Pengaturan") },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = NavActivePillIcon,
+                            selectedTextColor = NavActivePillIcon,
+                            indicatorColor = NavActivePillBg,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -189,6 +208,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
             1 -> SettingsScreen(
                 uiState = uiState,
                 onUpdateReminderSettings = { viewModel.updateReminderSettings(it) },
+                onSetThemeMode = { viewModel.setThemeMode(it) },
                 onOpenLoginDialog = { viewModel.setLoginDialogOpen(true) },
                 onLogout = { viewModel.logout() },
                 onTestNotification = {

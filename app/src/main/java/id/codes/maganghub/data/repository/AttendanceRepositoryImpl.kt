@@ -7,6 +7,7 @@ import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import id.codes.maganghub.data.storage.EncryptedPreferences
@@ -40,6 +41,9 @@ class AttendanceRepositoryImpl(
 
     private val _reminderSettingsFlow = MutableStateFlow(storage.getReminderSettings())
     override val reminderSettingsFlow: StateFlow<ReminderSettings> = _reminderSettingsFlow.asStateFlow()
+
+    private val _themeModeFlow = MutableStateFlow(storage.getThemeMode())
+    override val themeModeFlow: StateFlow<ThemeMode> = _themeModeFlow.asStateFlow()
 
     override suspend fun login(username: String, password: String): Result<String> =
         withContext(ioDispatcher) {
@@ -178,6 +182,13 @@ class AttendanceRepositoryImpl(
         withContext(ioDispatcher) {
             storage.saveReminderSettings(settings)
             _reminderSettingsFlow.value = settings
+        }
+    }
+
+    override suspend fun setThemeMode(themeMode: ThemeMode) {
+        withContext(ioDispatcher) {
+            storage.saveThemeMode(themeMode)
+            _themeModeFlow.value = themeMode
         }
     }
 
