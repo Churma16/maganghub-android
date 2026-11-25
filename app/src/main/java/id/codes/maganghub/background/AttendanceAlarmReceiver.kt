@@ -28,7 +28,12 @@ class AttendanceAlarmReceiver : BroadcastReceiver() {
                 AttendanceCheckWorker.enqueueImmediateCheck(context)
             }
             NotificationHelper.ACTION_CHECK_NOW -> {
-                Log.i(TAG, "User triggered 'Cek Ulang' from notification action")
+                Log.i(TAG, "User triggered 'Sudah isi' / 'Cek Ulang' from notification action")
+                try {
+                    android.widget.Toast.makeText(context, "Memeriksa status presensi...", android.widget.Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not show check toast", e)
+                }
                 AttendanceCheckWorker.enqueueImmediateCheck(context)
             }
             NotificationHelper.ACTION_SNOOZE_30 -> {
@@ -36,7 +41,12 @@ class AttendanceAlarmReceiver : BroadcastReceiver() {
                     MagangHubApp.instance.encryptedPreferences.getReminderSettings().intervalMinutes
                 } catch (e: Exception) { 30 }
                 val effectiveInterval = if (interval > 0) interval else 30
-                Log.i(TAG, "User triggered 'Snooze' from notification action ($effectiveInterval minutes)")
+                Log.i(TAG, "User triggered 'Tunda' from notification action ($effectiveInterval minutes)")
+                try {
+                    android.widget.Toast.makeText(context, "Pengingat ditunda $effectiveInterval menit", android.widget.Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not show snooze toast", e)
+                }
                 AttendanceAlarmScheduler.snooze(context, effectiveInterval)
             }
             NotificationHelper.ACTION_SNOOZE_MENTOR_ONE_DAY -> {
