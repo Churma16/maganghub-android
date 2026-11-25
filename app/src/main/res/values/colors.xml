@@ -7,4 +7,14 @@
     <color name="error">#DC2626</color>
     <color name="attended_emerald">#00875A</color>
     <color name="missing_amber">#D97706</color>
+
+    <!-- Widget Preview Colors (SUDAH_ABSEN Dark Theme) -->
+    <color name="widget_preview_bg">#0D2818</color>
+    <color name="widget_preview_border">#064E3B</color>
+    <color name="widget_preview_accent">#10B981</color>
+    <color name="widget_preview_icon">#34D399</color>
+    <color name="widget_preview_text_title">#FFFFFF</color>
+    <color name="widget_preview_text_subtitle">#BFD1FAE5</color>
+    <color name="widget_preview_text_date">#6EE7B7</color>
+    <color name="widget_preview_text_secondary">#99A7F3D0</color>
 </resources>
