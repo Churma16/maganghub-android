@@ -15,6 +15,7 @@ import id.codes.maganghub.data.model.FeedbackType
 import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
+import id.codes.maganghub.data.model.UpdateCheckState
 import id.codes.maganghub.data.repository.AttendanceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +42,8 @@ class AttendanceViewModel(
             pendingMentorReviewCount = repository.getCachedPendingMentorReviewCount(),
             lastSyncTimestamp = repository.getLastCheckTimestamp(),
             reminderSettings = repository.reminderSettingsFlow.value,
-            themeMode = repository.themeModeFlow.value
+            themeMode = repository.themeModeFlow.value,
+            lastUpdateCheckTimestamp = repository.getLastUpdateCheckTimestamp()
         )
     )
     val uiState: StateFlow<AttendanceUiState> = _uiState.asStateFlow()
@@ -380,6 +382,51 @@ class AttendanceViewModel(
         viewModelScope.launch {
             repository.snoozeMentorReminderOneDay()
             _uiState.update { it.copy(successMessage = "Pengingat mentor ditunda 1 hari") }
+        }
+    }
+
+    /**
+     * Checks GitHub releases for a new version and updates the updateCheckState in UI state.
+     */
+    fun checkForUpdates() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(updateCheckState = UpdateCheckState.Checking) }
+            val result = repository.checkForUpdates()
+            result.fold(
+                onSuccess = { state ->
+                    _uiState.update {
+                        it.copy(
+                            updateCheckState = state,
+                            lastUpdateCheckTimestamp = repository.getLastUpdateCheckTimestamp()
+                        )
+                    }
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(
+                            updateCheckState = UpdateCheckState.Error(e.message ?: "Gagal memeriksa pembaruan"),
+                            lastUpdateCheckTimestamp = repository.getLastUpdateCheckTimestamp()
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /**
+     * Formats the last update check timestamp to a human-readable Indonesian string.
+     * Returns "Terakhir dicek hari ini, HH:mm WIB" or "Terakhir dicek dd MMM, HH:mm WIB".
+     */
+    fun formatLastUpdateCheck(timestamp: Long): String {
+        if (timestamp <= 0L) return ""
+        val zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), wibZoneId)
+        val now = ZonedDateTime.now(wibZoneId)
+        val timeStr = zdt.format(timeFormatter)
+        return if (zdt.toLocalDate() == now.toLocalDate()) {
+            "Terakhir dicek hari ini, $timeStr WIB"
+        } else {
+            val dateStr = zdt.format(DateTimeFormatter.ofPattern("dd MMM", Locale("id", "ID")))
+            "Terakhir dicek $dateStr, $timeStr WIB"
         }
     }
 }

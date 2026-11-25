@@ -7,6 +7,7 @@ import id.codes.maganghub.data.model.FeedbackRequest
 import id.codes.maganghub.data.model.FeedbackResponse
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
+import id.codes.maganghub.data.model.UpdateCheckState
 import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import kotlinx.coroutines.flow.StateFlow
@@ -96,4 +97,14 @@ interface AttendanceRepository {
      * Retrieves cached pending mentor review count without network call.
      */
     fun getCachedPendingMentorReviewCount(): Int
+
+    /**
+     * Checks GitHub releases for a newer app version.
+     */
+    suspend fun checkForUpdates(): Result<UpdateCheckState>
+
+    /**
+     * Returns timestamp of the last update check in millis (0 if never checked).
+     */
+    fun getLastUpdateCheckTimestamp(): Long
 }

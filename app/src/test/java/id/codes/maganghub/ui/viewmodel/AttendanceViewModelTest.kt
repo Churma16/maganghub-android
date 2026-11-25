@@ -9,6 +9,8 @@ import id.codes.maganghub.data.model.FeedbackType
 import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
+import id.codes.maganghub.data.model.UpdateCheckState
+import id.codes.maganghub.data.model.UpdateInfo
 import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import id.codes.maganghub.data.repository.AttendanceRepository
@@ -116,6 +118,16 @@ class AttendanceViewModelTest {
         fun setCachedPendingMentorReviewCount(count: Int) {
             cachedPendingMentorCount = count
         }
+
+        var checkForUpdatesResult: Result<UpdateCheckState> = Result.success(UpdateCheckState.UpToDate)
+        var lastUpdateCheckTimestamp: Long = 0L
+
+        override suspend fun checkForUpdates(): Result<UpdateCheckState> {
+            lastUpdateCheckTimestamp = 1732543200000L
+            return checkForUpdatesResult
+        }
+
+        override fun getLastUpdateCheckTimestamp(): Long = lastUpdateCheckTimestamp
     }
 
     @Before
@@ -401,5 +413,67 @@ class AttendanceViewModelTest {
 
         viewModel.dismissLegalDocument()
         assertNull(viewModel.uiState.value.activeLegalDocument)
+    }
+
+    @Test
+    fun testCheckForUpdatesAvailable() = runTest {
+        val repo = FakeAttendanceRepository()
+        val updateInfo = UpdateInfo(
+            versionName = "1.1.0",
+            changelog = "Pengingat mentor dan mode terang",
+            downloadUrl = "https://github.com/example/maganghub.apk"
+        )
+        repo.checkForUpdatesResult = Result.success(UpdateCheckState.Available(updateInfo))
+        val viewModel = AttendanceViewModel(repo)
+
+        assertEquals(UpdateCheckState.Idle, viewModel.uiState.value.updateCheckState)
+
+        viewModel.checkForUpdates()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.updateCheckState is UpdateCheckState.Available)
+        val state = viewModel.uiState.value.updateCheckState as UpdateCheckState.Available
+        assertEquals("1.1.0", state.updateInfo.versionName)
+        assertEquals("Pengingat mentor dan mode terang", state.updateInfo.changelog)
+        assertEquals("https://github.com/example/maganghub.apk", state.updateInfo.downloadUrl)
+        assertEquals(1732543200000L, viewModel.uiState.value.lastUpdateCheckTimestamp)
+    }
+
+    @Test
+    fun testCheckForUpdatesUpToDate() = runTest {
+        val repo = FakeAttendanceRepository()
+        repo.checkForUpdatesResult = Result.success(UpdateCheckState.UpToDate)
+        val viewModel = AttendanceViewModel(repo)
+
+        viewModel.checkForUpdates()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(UpdateCheckState.UpToDate, viewModel.uiState.value.updateCheckState)
+        assertEquals(1732543200000L, viewModel.uiState.value.lastUpdateCheckTimestamp)
+    }
+
+    @Test
+    fun testCheckForUpdatesFailure() = runTest {
+        val repo = FakeAttendanceRepository()
+        repo.checkForUpdatesResult = Result.failure(RuntimeException("Network error"))
+        val viewModel = AttendanceViewModel(repo)
+
+        viewModel.checkForUpdates()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.updateCheckState is UpdateCheckState.Error)
+        val state = viewModel.uiState.value.updateCheckState as UpdateCheckState.Error
+        assertEquals("Network error", state.message)
+    }
+
+    @Test
+    fun testFormatLastUpdateCheck() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        assertEquals("", viewModel.formatLastUpdateCheck(0L))
+        val formatted = viewModel.formatLastUpdateCheck(System.currentTimeMillis())
+        assertTrue(formatted.startsWith("Terakhir dicek hari ini"))
+        assertTrue(formatted.endsWith("WIB"))
     }
 }

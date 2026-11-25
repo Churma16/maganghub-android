@@ -223,6 +223,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
                     viewModel.testNotification(MagangHubApp.instance.applicationContext)
                 },
                 onOpenFeedback = { viewModel.setFeedbackSheetOpen(true) },
+                onCheckForUpdates = { viewModel.checkForUpdates() },
+                formatLastUpdateCheck = { viewModel.formatLastUpdateCheck(it) },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
