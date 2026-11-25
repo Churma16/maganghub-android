@@ -83,6 +83,7 @@ class FeedbackApiClientTest {
         val recordedRequest = server.takeRequest()
         assertEquals("/api/v1/feedback", recordedRequest.path)
         assertEquals("POST", recordedRequest.method)
+        assertEquals(FeedbackApiClientImpl.DEFAULT_FORWARDER_API_KEY, recordedRequest.getHeader("X-Forwarder-Key"))
         assertTrue(recordedRequest.body.readUtf8().contains("Tambahkan widget homescreen"))
     }
 
