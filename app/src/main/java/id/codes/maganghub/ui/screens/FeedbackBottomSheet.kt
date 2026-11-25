@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,12 +56,21 @@ fun FeedbackBottomSheet(
     onDismiss: () -> Unit,
     onSubmit: (type: FeedbackType, message: String) -> Unit
 ) {
-    if (!isOpen) return
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedType by remember { mutableStateOf(FeedbackType.BUG) }
     var message by remember { mutableStateOf("") }
     val isDark = isSystemInDarkTheme()
+
+    // Automatically clean up form fields when the sheet is closed or dismissed.
+    LaunchedEffect(isOpen) {
+        if (!isOpen) {
+            message = ""
+            selectedType = FeedbackType.BUG
+        }
+    }
+
+    if (!isOpen) return
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val sheetBg = if (isDark) Color(0xFF131D31) else MaterialTheme.colorScheme.surface
     val inputBg = if (isDark) Color(0xFF0B1220) else Color(0xFFF8FAFC)
@@ -141,15 +151,30 @@ fun FeedbackBottomSheet(
 
             // Section: Ceritakan masukanmu
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Ceritakan masukanmu",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Ceritakan masukanmu",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "${message.length}/2000",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (message.length >= 1900) DangerRed else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 OutlinedTextField(
                     value = message,
-                    onValueChange = { message = it },
+                    onValueChange = {
+                        if (it.length <= 2000) {
+                            message = it
+                        }
+                    },
                     placeholder = {
                         Text(
                             text = "Contoh: pengingat tidak muncul saat HP terkunci.",
