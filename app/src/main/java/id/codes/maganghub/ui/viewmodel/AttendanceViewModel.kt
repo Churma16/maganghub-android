@@ -226,7 +226,8 @@ class AttendanceViewModel(
                 currentTimeWib = timeWib,
                 dateFormatted = dateFormatted,
                 soundEnabled = settings.soundEnabled,
-                vibrationEnabled = settings.vibrationEnabled
+                vibrationEnabled = settings.vibrationEnabled,
+                intervalMinutes = settings.intervalMinutes
             )
         }
 
