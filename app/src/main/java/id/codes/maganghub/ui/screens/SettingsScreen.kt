@@ -9,6 +9,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -76,8 +77,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -132,8 +135,22 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     val scrollState = rememberScrollState()
     var showLogoutConfirm by remember { mutableStateOf(false) }
+    var currentToast by remember { mutableStateOf<Toast?>(null) }
+
+    val showFeedbackToast: (String) -> Unit = { message ->
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        currentToast?.cancel()
+        currentToast = Toast.makeText(context, message, Toast.LENGTH_SHORT).apply { show() }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            currentToast?.cancel()
+        }
+    }
 
     val settings = uiState.reminderSettings
 
@@ -518,7 +535,10 @@ fun SettingsScreen(
                                 color = chipBg,
                                 border = chipBorder,
                                 onClick = {
-                                    onUpdateReminderSettings(settings.copy(startHour = hour))
+                                    if (!selected) {
+                                        onUpdateReminderSettings(settings.copy(startHour = hour))
+                                        showFeedbackToast("Notifikasi dimulai pukul $hour:00 WIB")
+                                    }
                                 }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -560,7 +580,10 @@ fun SettingsScreen(
                                 color = chipBg,
                                 border = chipBorder,
                                 onClick = {
-                                    onUpdateReminderSettings(settings.copy(intervalMinutes = interval))
+                                    if (!selected) {
+                                        onUpdateReminderSettings(settings.copy(intervalMinutes = interval))
+                                        showFeedbackToast("Interval notifikasi diatur tiap $interval menit")
+                                    }
                                 }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -587,6 +610,7 @@ fun SettingsScreen(
                     isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(isEnabled = checked))
+                        showFeedbackToast(if (checked) "Notifikasi berulang diaktifkan" else "Notifikasi berulang dinonaktifkan")
                     }
                 )
 
@@ -598,6 +622,7 @@ fun SettingsScreen(
                     isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(morningReminderEnabled = checked))
+                        showFeedbackToast(if (checked) "Notifikasi pagi diaktifkan" else "Notifikasi pagi dinonaktifkan")
                     }
                 )
 
@@ -609,6 +634,7 @@ fun SettingsScreen(
                     isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(skipHolidays = checked))
+                        showFeedbackToast(if (checked) "Lewati hari libur diaktifkan" else "Lewati hari libur dinonaktifkan")
                     }
                 )
 
@@ -620,6 +646,7 @@ fun SettingsScreen(
                     isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(soundEnabled = checked))
+                        showFeedbackToast(if (checked) "Bunyi notifikasi diaktifkan" else "Bunyi notifikasi dinonaktifkan")
                     }
                 )
 
@@ -631,6 +658,7 @@ fun SettingsScreen(
                     isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(vibrationEnabled = checked))
+                        showFeedbackToast(if (checked) "Getar notifikasi diaktifkan" else "Getar notifikasi dinonaktifkan")
                     }
                 )
             }
@@ -670,6 +698,7 @@ fun SettingsScreen(
                     isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(mentorReminderEnabled = checked))
+                        showFeedbackToast(if (checked) "Notifikasi mentor diaktifkan" else "Notifikasi mentor dinonaktifkan")
                     }
                 )
 
@@ -706,7 +735,10 @@ fun SettingsScreen(
                                     color = chipBg,
                                     border = chipBorder,
                                     onClick = {
-                                        onUpdateReminderSettings(settings.copy(mentorReviewThresholdDays = days))
+                                        if (!selected) {
+                                            onUpdateReminderSettings(settings.copy(mentorReviewThresholdDays = days))
+                                            showFeedbackToast("Batas review mentor diatur $label")
+                                        }
                                     }
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
@@ -753,7 +785,10 @@ fun SettingsScreen(
                                     color = chipBg,
                                     border = chipBorder,
                                     onClick = {
-                                        onUpdateReminderSettings(settings.copy(mentorRepeatIntervalMinutes = minutes))
+                                        if (!selected) {
+                                            onUpdateReminderSettings(settings.copy(mentorRepeatIntervalMinutes = minutes))
+                                            showFeedbackToast("Notifikasi mentor diulang tiap $label")
+                                        }
                                     }
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
