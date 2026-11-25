@@ -445,10 +445,10 @@ class WidgetDataSnapshotTest {
         assertEquals("tersisa", belum.getRightLabel1x5())
 
         val menunggu = sudah.copy(status = WidgetStatus.MENUNGGU_KERJA)
-        assertEquals("mulai kerja", menunggu.getRightLabel1x5())
+        assertEquals("Menunggu", menunggu.getRightLabel1x5())
 
         val bekerja = sudah.copy(status = WidgetStatus.SEDANG_BEKERJA)
-        assertEquals("notifikasi dimulai", bekerja.getRightLabel1x5())
+        assertEquals("Bekerja", bekerja.getRightLabel1x5())
     }
 
     @Test
@@ -467,10 +467,10 @@ class WidgetDataSnapshotTest {
         )
         assertEquals("Menunggu jam kerja", menunggu.getTitle1x5())
         assertEquals("Menunggu", menunggu.getTitle1x3())
-        assertEquals("Mulai 08:00 • Notifikasi dimulai 16:00 WIB", menunggu.getSubtext1x5())
+        assertEquals("Jam kerja dimulai pukul 08:00 WIB", menunggu.getSubtext1x5())
         assertEquals("Mulai 08:00", menunggu.getSubtext1x3())
-        assertEquals("08:00", menunggu.getRightValue1x5())
-        assertEquals("mulai kerja", menunggu.getRightLabel1x5())
+        assertEquals("Rab, 25 Nov", menunggu.getRightValue1x5())
+        assertEquals("Menunggu", menunggu.getRightLabel1x5())
         assertFalse(menunggu.showActionButton())
         assertEquals(R.drawable.ic_widget_clock, menunggu.getInlineIconResId())
 
@@ -481,10 +481,10 @@ class WidgetDataSnapshotTest {
         )
         assertEquals("Selamat bekerja", bekerja.getTitle1x5())
         assertEquals("Bekerja", bekerja.getTitle1x3())
-        assertEquals("Aktivitas magang • Notifikasi dimulai 16:00 WIB", bekerja.getSubtext1x5())
-        assertEquals("Notif 16:00", bekerja.getSubtext1x3())
-        assertEquals("16:00", bekerja.getRightValue1x5())
-        assertEquals("notifikasi dimulai", bekerja.getRightLabel1x5())
+        assertEquals("Selamat menjalani aktivitas magang", bekerja.getSubtext1x5())
+        assertEquals("Rab, 25 Nov", bekerja.getSubtext1x3())
+        assertEquals("Rab, 25 Nov", bekerja.getRightValue1x5())
+        assertEquals("Bekerja", bekerja.getRightLabel1x5())
         assertFalse(bekerja.showActionButton())
         assertEquals(R.drawable.ic_widget_clock, bekerja.getInlineIconResId())
     }

@@ -79,12 +79,10 @@ data class WidgetDataSnapshot(
         WidgetStatus.SESI_BERAKHIR -> "Ketuk untuk masuk kembali ke SSO"
         WidgetStatus.MENUNGGU_KERJA -> {
             val workTime = String.format(Locale.ROOT, "%02d:%02d", workStartHour, workStartMinute)
-            val reportTime = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
-            "Mulai $workTime • Notifikasi dimulai $reportTime WIB"
+            "Jam kerja dimulai pukul $workTime WIB"
         }
         WidgetStatus.SEDANG_BEKERJA -> {
-            val reportTime = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
-            "Aktivitas magang • Notifikasi dimulai $reportTime WIB"
+            "Selamat menjalani aktivitas magang"
         }
     }
 
@@ -111,16 +109,13 @@ data class WidgetDataSnapshot(
             "Mulai $workTime"
         }
         WidgetStatus.SEDANG_BEKERJA -> {
-            val reportTime = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
-            "Notif $reportTime"
+            formattedDate
         }
     }
 
     fun getRightValue1x5(): String = when (status) {
-        WidgetStatus.SUDAH_ABSEN -> formattedDate
-        WidgetStatus.HARI_LIBUR -> formattedDate
-        WidgetStatus.MENUNGGU_KERJA -> String.format(Locale.ROOT, "%02d:%02d", workStartHour, workStartMinute)
-        WidgetStatus.SEDANG_BEKERJA -> String.format(Locale.ROOT, "%02d:00", reminderStartHour)
+        WidgetStatus.SUDAH_ABSEN, WidgetStatus.HARI_LIBUR -> formattedDate
+        WidgetStatus.MENUNGGU_KERJA, WidgetStatus.SEDANG_BEKERJA -> formattedDate
         WidgetStatus.BELUM_ABSEN, WidgetStatus.MENDESAK -> remainingTimeText
         WidgetStatus.SESI_BERAKHIR -> ""
     }
@@ -128,8 +123,8 @@ data class WidgetDataSnapshot(
     fun getRightLabel1x5(): String = when (status) {
         WidgetStatus.SUDAH_ABSEN -> "Lengkap"
         WidgetStatus.HARI_LIBUR -> "Hari Off"
-        WidgetStatus.MENUNGGU_KERJA -> "mulai kerja"
-        WidgetStatus.SEDANG_BEKERJA -> "notifikasi dimulai"
+        WidgetStatus.MENUNGGU_KERJA -> "Menunggu"
+        WidgetStatus.SEDANG_BEKERJA -> "Bekerja"
         WidgetStatus.BELUM_ABSEN, WidgetStatus.MENDESAK -> "tersisa"
         WidgetStatus.SESI_BERAKHIR -> ""
     }
