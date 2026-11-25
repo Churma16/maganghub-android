@@ -32,6 +32,7 @@ object AttendanceAlarmScheduler {
     private const val KEY_STATE_DATE = "state_date"
     private const val KEY_STATE_REMINDER_COUNT = "state_reminder_count"
     private const val KEY_STATE_LAST_REMINDER_TIME = "state_last_reminder_time"
+    private const val KEY_STATE_LAST_MENTOR_REMINDER_TIME = "state_last_mentor_reminder_time"
     private const val KEY_STATE_CONGRATS_SENT = "state_congrats_sent"
     private const val KEY_STATE_AUTH_ALERT_SENT = "state_auth_alert_sent"
 
@@ -91,6 +92,36 @@ object AttendanceAlarmScheduler {
     fun getLastReminderSentTimeMillis(context: Context): Long {
         val prefs = context.getSharedPreferences(PREFS_SCHEDULER_STATE, Context.MODE_PRIVATE)
         return prefs.getLong(KEY_STATE_LAST_REMINDER_TIME, 0L)
+    }
+
+    fun getLastMentorReminderTimeMillis(context: Context): Long {
+        val prefs = context.getSharedPreferences(PREFS_SCHEDULER_STATE, Context.MODE_PRIVATE)
+        return prefs.getLong(KEY_STATE_LAST_MENTOR_REMINDER_TIME, 0L)
+    }
+
+    fun updateLastMentorReminderTimeMillis(context: Context, timeMillis: Long = System.currentTimeMillis()) {
+        val prefs = context.getSharedPreferences(PREFS_SCHEDULER_STATE, Context.MODE_PRIVATE)
+        prefs.edit().putLong(KEY_STATE_LAST_MENTOR_REMINDER_TIME, timeMillis).apply()
+    }
+
+    /**
+     * Determines whether mentor review reminder notification should be triggered.
+     * Pure function for clean unit testing without Android context.
+     */
+    fun shouldTriggerMentorReminder(
+        mentorReminderEnabled: Boolean,
+        pendingCount: Int,
+        thresholdDays: Int,
+        snoozedUntil: Long,
+        lastMentorReminderTime: Long,
+        repeatIntervalMinutes: Int,
+        currentTimeMillis: Long = System.currentTimeMillis()
+    ): Boolean {
+        if (!mentorReminderEnabled) return false
+        if (pendingCount < thresholdDays) return false
+        if (currentTimeMillis < snoozedUntil) return false
+        val intervalMillis = repeatIntervalMinutes * 60 * 1000L
+        return (lastMentorReminderTime + intervalMillis <= currentTimeMillis)
     }
 
     /**

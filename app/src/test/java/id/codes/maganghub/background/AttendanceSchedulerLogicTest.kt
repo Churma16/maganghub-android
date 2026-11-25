@@ -3,6 +3,7 @@ package id.codes.maganghub.background
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.ReminderSettings
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
@@ -130,5 +131,114 @@ class AttendanceSchedulerLogicTest {
         )
         assertEquals(16, triggerClampedSeed.hour)
         assertEquals(7, triggerClampedSeed.minute)
+    }
+
+    @Test
+    fun testShouldTriggerMentorReminder_DisabledInSettings() {
+        val shouldTrigger = AttendanceAlarmScheduler.shouldTriggerMentorReminder(
+            mentorReminderEnabled = false,
+            pendingCount = 6,
+            thresholdDays = 5,
+            snoozedUntil = 0L,
+            lastMentorReminderTime = 0L,
+            repeatIntervalMinutes = 180,
+            currentTimeMillis = 1000000L
+        )
+        assertFalse(shouldTrigger)
+    }
+
+    @Test
+    fun testShouldTriggerMentorReminder_BelowThreshold() {
+        val shouldTrigger = AttendanceAlarmScheduler.shouldTriggerMentorReminder(
+            mentorReminderEnabled = true,
+            pendingCount = 4,
+            thresholdDays = 5,
+            snoozedUntil = 0L,
+            lastMentorReminderTime = 0L,
+            repeatIntervalMinutes = 180,
+            currentTimeMillis = 1000000L
+        )
+        assertFalse(shouldTrigger)
+    }
+
+    @Test
+    fun testShouldTriggerMentorReminder_AtOrAboveThreshold() {
+        val shouldTrigger = AttendanceAlarmScheduler.shouldTriggerMentorReminder(
+            mentorReminderEnabled = true,
+            pendingCount = 5,
+            thresholdDays = 5,
+            snoozedUntil = 0L,
+            lastMentorReminderTime = 0L,
+            repeatIntervalMinutes = 180,
+            currentTimeMillis = 1000000L
+        )
+        assertTrue(shouldTrigger)
+    }
+
+    @Test
+    fun testShouldTriggerMentorReminder_ActiveSnoozeSuppressesNotification() {
+        val now = 1000000L
+        val activeSnooze = now + (24 * 60 * 60 * 1000L) // Snoozed 24h into future
+
+        val shouldTrigger = AttendanceAlarmScheduler.shouldTriggerMentorReminder(
+            mentorReminderEnabled = true,
+            pendingCount = 7,
+            thresholdDays = 5,
+            snoozedUntil = activeSnooze,
+            lastMentorReminderTime = 0L,
+            repeatIntervalMinutes = 180,
+            currentTimeMillis = now
+        )
+        assertFalse(shouldTrigger)
+    }
+
+    @Test
+    fun testShouldTriggerMentorReminder_ExpiredSnoozeAllowsNotification() {
+        val now = 2000000L
+        val expiredSnooze = now - 1000L // Snooze ended in past
+
+        val shouldTrigger = AttendanceAlarmScheduler.shouldTriggerMentorReminder(
+            mentorReminderEnabled = true,
+            pendingCount = 7,
+            thresholdDays = 5,
+            snoozedUntil = expiredSnooze,
+            lastMentorReminderTime = 0L,
+            repeatIntervalMinutes = 180,
+            currentTimeMillis = now
+        )
+        assertTrue(shouldTrigger)
+    }
+
+    @Test
+    fun testShouldTriggerMentorReminder_RepeatIntervalThrottling() {
+        val lastReminderTime = 1000000L
+        val intervalMinutes = 180 // 3 hours
+        val intervalMillis = intervalMinutes * 60 * 1000L
+
+        // Before interval expires (e.g. 2 hours after last reminder)
+        val beforeInterval = lastReminderTime + (120 * 60 * 1000L)
+        val shouldTriggerBefore = AttendanceAlarmScheduler.shouldTriggerMentorReminder(
+            mentorReminderEnabled = true,
+            pendingCount = 6,
+            thresholdDays = 5,
+            snoozedUntil = 0L,
+            lastMentorReminderTime = lastReminderTime,
+            repeatIntervalMinutes = intervalMinutes,
+            currentTimeMillis = beforeInterval
+        )
+        assertFalse(shouldTriggerBefore)
+
+        // Exactly when or after interval expires
+        val afterInterval = lastReminderTime + intervalMillis
+        val shouldTriggerAfter = AttendanceAlarmScheduler.shouldTriggerMentorReminder(
+            mentorReminderEnabled = true,
+            pendingCount = 6,
+            thresholdDays = 5,
+            snoozedUntil = 0L,
+            lastMentorReminderTime = lastReminderTime,
+            repeatIntervalMinutes = intervalMinutes,
+            currentTimeMillis = afterInterval
+        )
+        assertTrue(shouldTriggerAfter)
     }
 }
