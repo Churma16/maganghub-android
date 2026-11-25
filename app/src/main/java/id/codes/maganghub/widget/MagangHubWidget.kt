@@ -105,7 +105,8 @@ private fun WidgetLayout1x5(
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(start = 14.dp, end = 14.dp, top = 7.dp, bottom = 4.dp)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         // --- Baris Utama: Status, Subteks, dan Aksi Kanan ---
         Row(
@@ -268,8 +269,8 @@ private fun WidgetLayout1x5(
             }
         }
 
-        // Pendorong ke area bawah kartu
-        Spacer(modifier = GlanceModifier.defaultWeight())
+        // Jarak proporsional antara konten status dan divider (dipersempit)
+        Spacer(modifier = GlanceModifier.height(6.dp))
 
         // Pemisah garis tipis (subtle divider)
         Box(
@@ -279,7 +280,7 @@ private fun WidgetLayout1x5(
                 .background(ColorProvider(colors.footerDivider))
         ) {}
 
-        Spacer(modifier = GlanceModifier.height(4.dp))
+        Spacer(modifier = GlanceModifier.height(5.dp))
 
         // --- Baris Footer: Status Notifikasi & Waktu Terakhir Dicek ---
         Row(
@@ -323,7 +324,8 @@ private fun WidgetLayout1x3(
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 4.dp)
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         // --- Baris Utama: Status Ringkas & Aksi ---
         Row(
@@ -396,8 +398,8 @@ private fun WidgetLayout1x3(
             }
         }
 
-        // Pendorong ke area bawah kartu
-        Spacer(modifier = GlanceModifier.defaultWeight())
+        // Jarak proporsional antara konten status dan divider (dipersempit)
+        Spacer(modifier = GlanceModifier.height(5.dp))
 
         // Pemisah garis tipis (subtle divider)
         Box(
@@ -407,7 +409,7 @@ private fun WidgetLayout1x3(
                 .background(ColorProvider(colors.footerDivider))
         ) {}
 
-        Spacer(modifier = GlanceModifier.height(3.dp))
+        Spacer(modifier = GlanceModifier.height(4.dp))
 
         // --- Baris Footer Ringkas: Status Notifikasi & Waktu Dicek ---
         Row(
