@@ -77,22 +77,19 @@ class UpdateApiClientImpl(
                     return@withContext Result.failure(IOException("Failed to parse releases JSON", e))
                 }
 
-                // Pick the first non-draft release (prerelease is acceptable as an update)
-                val release = releases.firstOrNull { !it.draft }
+                // Pick the first non-draft, non-PR-preview release
+                val release = releases.firstOrNull { !it.draft && !it.tagName.contains("-pr") }
                     ?: return@withContext Result.failure(IOException("No published releases found"))
 
                 val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
                 val downloadUrl = apkAsset?.browserDownloadUrl?.takeIf { it.isNotBlank() }
                     ?: release.htmlUrl
-                val apkSize = apkAsset?.size ?: 0L
 
                 Result.success(
                     UpdateInfo(
                         versionName = release.tagName,
                         changelog = extractChangelog(release.body, release.name),
-                        downloadUrl = downloadUrl,
-                        publishedAt = release.publishedAt,
-                        apkSize = apkSize
+                        downloadUrl = downloadUrl
                     )
                 )
             }
@@ -115,13 +112,13 @@ class UpdateApiClientImpl(
         if (!body.isNullOrBlank()) {
             val lines = body.lines().map { it.trim() }.filter { it.isNotBlank() }
 
-            // 1. "Yang baru:" / "What's new:" line
+            // 1. "Yang baru:" / "What's new:" line (strip prefix to prevent duplication in UI)
             val yangBaru = lines.firstOrNull { line ->
                 line.startsWith("Yang baru:", ignoreCase = true) ||
                     line.startsWith("What's new:", ignoreCase = true) ||
                     line.startsWith("Whats new:", ignoreCase = true)
             }
-            if (yangBaru != null) return yangBaru.take(200)
+            if (yangBaru != null) return yangBaru.substringAfter(':').trim().take(200)
 
             // 2. First bullet point
             val bullet = lines.firstOrNull { it.startsWith("-") || it.startsWith("*") || it.startsWith("•") }

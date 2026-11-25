@@ -116,4 +116,10 @@ class VersionComparatorTest {
     fun `stable current remote is older snapshot returns false`() {
         assertFalse(VersionComparator.isUpdateAvailable("1.1.0", "v1.0.0-snapshot.abc"))
     }
+
+    @Test
+    fun `stable current remote is newer snapshot returns false`() {
+        // Stable users must NEVER be offered unstable development snapshot builds
+        assertFalse(VersionComparator.isUpdateAvailable("1.0.0", "v1.1.0-snapshot.abc"))
+    }
 }

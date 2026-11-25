@@ -276,7 +276,7 @@ class AttendanceRepositoryImpl(
                 }
             },
             onFailure = { e ->
-                storage.saveLastUpdateCheckTimestamp(System.currentTimeMillis())
+                // Do not update timestamp on network/API failure so last successful check is preserved
                 Result.failure(e)
             }
         )

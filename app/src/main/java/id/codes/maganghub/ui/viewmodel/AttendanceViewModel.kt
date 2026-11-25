@@ -433,6 +433,7 @@ class AttendanceViewModel(
      * Checks GitHub releases for a new version and updates the updateCheckState in UI state.
      */
     fun checkForUpdates() {
+        if (_uiState.value.updateCheckState is UpdateCheckState.Checking) return
         viewModelScope.launch {
             _uiState.update { it.copy(updateCheckState = UpdateCheckState.Checking) }
             val result = repository.checkForUpdates()

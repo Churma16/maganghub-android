@@ -6,9 +6,7 @@ package id.codes.maganghub.data.model
 data class UpdateInfo(
     val versionName: String,
     val changelog: String,
-    val downloadUrl: String,
-    val publishedAt: String = "",
-    val apkSize: Long = 0L
+    val downloadUrl: String
 )
 
 /**

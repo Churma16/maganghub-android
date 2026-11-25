@@ -29,18 +29,22 @@ object VersionComparator {
         val (currentCore, currentPreRelease) = parse(currentVersion)
         val (remoteCore, remotePreRelease) = parse(remoteVersion)
 
+        val currentIsPreRelease = currentPreRelease != null
+        val remoteIsPreRelease = remotePreRelease != null
+
+        // If current app build is a stable release, never offer unstable development snapshots
+        if (!currentIsPreRelease && remoteIsPreRelease) return false
+
         val cmp = compareCores(currentCore, remoteCore)
         return when {
             cmp < 0 -> true   // remote is strictly newer
             cmp > 0 -> false  // current is somehow newer than remote
             else -> {
                 // Core versions are equal; decide based on pre-release
-                val currentIsPreRelease = currentPreRelease != null
-                val remoteIsPreRelease = remotePreRelease != null
                 when {
                     // current snapshot → remote stable: update available
                     currentIsPreRelease && !remoteIsPreRelease -> true
-                    // both pre-release with same suffix: identical snapshot build
+                    // both pre-release with different suffix: newer snapshot build
                     currentIsPreRelease && remoteIsPreRelease -> currentPreRelease != remotePreRelease
                     // both stable and equal
                     else -> false

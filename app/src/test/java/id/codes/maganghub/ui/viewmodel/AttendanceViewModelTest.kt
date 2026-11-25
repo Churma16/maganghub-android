@@ -490,5 +490,21 @@ class AttendanceViewModelTest {
         assertTrue(formatted.startsWith("Terakhir dicek hari ini"))
         assertTrue(formatted.endsWith("WIB"))
     }
+
+    @Test
+    fun testCheckForUpdatesReentranceGuard() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        // Set state to Checking
+        viewModel.checkForUpdates()
+        assertEquals(UpdateCheckState.Checking, viewModel.uiState.value.updateCheckState)
+
+        // Attempt second check while already Checking - should be ignored
+        viewModel.checkForUpdates()
+        assertEquals(UpdateCheckState.Checking, viewModel.uiState.value.updateCheckState)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(UpdateCheckState.UpToDate, viewModel.uiState.value.updateCheckState)
     }
 }

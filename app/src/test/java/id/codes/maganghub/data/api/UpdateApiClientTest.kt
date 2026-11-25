@@ -75,8 +75,6 @@ class UpdateApiClientTest {
         val info = result.getOrThrow()
         assertEquals("v1.1.0", info.versionName)
         assertEquals("https://github.com/example/releases/download/v1.1.0/maganghub-v1.1.0.apk", info.downloadUrl)
-        assertEquals(12345678L, info.apkSize)
-        assertEquals("2026-11-01T00:00:00Z", info.publishedAt)
         // First bullet should be extracted
         assertTrue(info.changelog.contains("Perbaikan bug notifikasi"))
     }
@@ -86,16 +84,16 @@ class UpdateApiClientTest {
         enqueueReleasesResponse(
             """
             [
-              {
-                "tag_name": "v1.0.0",
-                "name": "Release 1.0.0",
-                "body": null,
-                "draft": false,
-                "prerelease": false,
-                "html_url": "https://github.com/example/releases/tag/v1.0.0",
-                "published_at": "2026-10-01T00:00:00Z",
-                "assets": []
-              }
+                {
+                    "tag_name": "v1.0.0",
+                    "name": "Release 1.0.0",
+                    "body": null,
+                    "draft": false,
+                    "prerelease": false,
+                    "html_url": "https://github.com/example/releases/tag/v1.0.0",
+                    "published_at": "2026-10-01T00:00:00Z",
+                    "assets": []
+                }
             ]
             """.trimIndent()
         )
@@ -104,9 +102,42 @@ class UpdateApiClientTest {
         assertTrue(result.isSuccess)
         val info = result.getOrThrow()
         assertEquals("https://github.com/example/releases/tag/v1.0.0", info.downloadUrl)
-        assertEquals(0L, info.apkSize)
         // Fallback changelog = release name
         assertEquals("Release 1.0.0", info.changelog)
+    }
+
+    @Test
+    fun `ignores PR preview releases and picks subsequent valid release`() = runTest {
+        enqueueReleasesResponse(
+            """
+            [
+                {
+                    "tag_name": "v0.1.0-pr25.0e5cf3d",
+                    "name": "PR #25 Preview",
+                    "body": "Preview build",
+                    "draft": false,
+                    "prerelease": true,
+                    "html_url": "https://github.com/example/releases/tag/v0.1.0-pr25.0e5cf3d",
+                    "assets": []
+                },
+                {
+                    "tag_name": "v0.1.0-snapshot.7f3f79f",
+                    "name": "v0.1.0-snapshot.7f3f79f",
+                    "body": "Yang baru: Pengingat mentor otomatis",
+                    "draft": false,
+                    "prerelease": true,
+                    "html_url": "https://github.com/example/releases/tag/v0.1.0-snapshot.7f3f79f",
+                    "assets": []
+                }
+            ]
+            """.trimIndent()
+        )
+
+        val result = client.getLatestRelease()
+        assertTrue(result.isSuccess)
+        val info = result.getOrThrow()
+        assertEquals("v0.1.0-snapshot.7f3f79f", info.versionName)
+        assertEquals("Pengingat mentor otomatis", info.changelog)
     }
 
     @Test
