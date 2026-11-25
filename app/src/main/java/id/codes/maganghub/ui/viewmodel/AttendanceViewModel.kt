@@ -17,6 +17,7 @@ import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UpdateCheckState
 import id.codes.maganghub.data.repository.AttendanceRepository
+import id.codes.maganghub.widget.AttendanceWidgetHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,6 +52,14 @@ class AttendanceViewModel(
     private val wibZoneId = ZoneId.of("Asia/Jakarta")
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
     private val fullDateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm 'WIB'", Locale("id", "ID"))
+
+    private fun triggerWidgetUpdate() {
+        try {
+            AttendanceWidgetHelper.updateWidgetAsync(MagangHubApp.instance)
+        } catch (_: Throwable) {
+            // Safe when running unit tests without application context
+        }
+    }
 
     init {
         // Collect repository session
@@ -90,6 +99,7 @@ class AttendanceViewModel(
             checkAttendanceNow(silent = true)
         } else {
             updateNextReminderString()
+            triggerWidgetUpdate()
         }
     }
 
@@ -128,6 +138,7 @@ class AttendanceViewModel(
                 }
             )
             updateNextReminderString()
+            triggerWidgetUpdate()
         }
     }
 
@@ -182,6 +193,7 @@ class AttendanceViewModel(
                 )
             }
             updateNextReminderString()
+            triggerWidgetUpdate()
         }
     }
 
@@ -193,6 +205,7 @@ class AttendanceViewModel(
             repository.updateReminderSettings(settings)
             _uiState.update { it.copy(reminderSettings = settings) }
             updateNextReminderString()
+            triggerWidgetUpdate()
             try {
                 AttendanceAlarmScheduler.scheduleNextAlarm(MagangHubApp.instance.applicationContext)
             } catch (_: Exception) {
@@ -416,6 +429,7 @@ class AttendanceViewModel(
     fun setThemeMode(themeMode: ThemeMode) {
         viewModelScope.launch {
             repository.setThemeMode(themeMode)
+            triggerWidgetUpdate()
         }
     }
 

@@ -3,4 +3,5 @@
     <string name="channel_attendance_id">maganghub_attendance_channel</string>
     <string name="channel_attendance_name">Pengingat Absensi MagangHub</string>
     <string name="channel_attendance_desc">Notifikasi pengingat pengisian kehadiran dan logbook MagangHub</string>
+    <string name="widget_description">Widget status presensi dan pengingat MagangHub</string>
 </resources>
