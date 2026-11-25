@@ -42,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -70,12 +69,6 @@ fun LoginDialog(
     var passwordVisible by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-
-    val dialogBorderColor = if (isDark) Color(0xFF263450) else Color(0xFFD5DDEA)
-    val infoContainerBg = if (isDark) Color(0xFF0B1220) else Color(0xFFF0F9FF)
-    val infoBorderColor = if (isDark) Color(0xFF263450) else Color(0xFFBAE6FD)
-    val infoTextColor = if (isDark) Color(0xFFE2E8F0) else Color(0xFF0369A1)
     val ctaColor = Color(0xFF0369A1)
 
     AlertDialog(
@@ -86,7 +79,7 @@ fun LoginDialog(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
-            .border(1.dp, dialogBorderColor, RoundedCornerShape(16.dp)),
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         containerColor = MaterialTheme.colorScheme.surface,
         title = {
@@ -123,9 +116,9 @@ fun LoginDialog(
                 Card(
                     shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = infoContainerBg
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
-                    border = BorderStroke(1.dp, infoBorderColor),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -143,7 +136,7 @@ fun LoginDialog(
                             text = "Kredensial disimpan terenkripsi di perangkat (AES-256) menggunakan Android Keystore.",
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 11.sp,
-                            color = infoTextColor
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -252,7 +245,7 @@ fun LoginDialog(
                 onClick = onDismiss,
                 enabled = !isLoading
             ) {
-                Text("Batal", color = if (isDark) Color(0xFFA8B3C7) else Color(0xFF475569))
+                Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )

@@ -223,7 +223,6 @@ class EncryptedPreferences(context: Context) {
 
     fun clearAll() {
         val currentTheme = getThemeMode()
-        prefs.edit().clear().apply()
-        saveThemeMode(currentTheme)
+        prefs.edit().clear().putString(KEY_THEME_MODE, currentTheme.value).apply()
     }
 }

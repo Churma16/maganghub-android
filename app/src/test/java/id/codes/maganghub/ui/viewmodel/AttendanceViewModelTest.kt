@@ -191,4 +191,16 @@ class AttendanceViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(ThemeMode.LIGHT, viewModel.uiState.value.themeMode)
     }
+
+    @Test
+    fun testThemeModeFromValueParsingAndFallbacks() {
+        assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue("system"))
+        assertEquals(ThemeMode.LIGHT, ThemeMode.fromValue("light"))
+        assertEquals(ThemeMode.DARK, ThemeMode.fromValue("dark"))
+        assertEquals(ThemeMode.LIGHT, ThemeMode.fromValue("LIGHT"))
+        assertEquals(ThemeMode.DARK, ThemeMode.fromValue("DaRk"))
+        assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue("unknown_mode"))
+        assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue(null))
+        assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue(""))
+    }
 }

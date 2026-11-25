@@ -44,8 +44,9 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DesktopWindows
 import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -81,26 +82,26 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.ReminderSettings
-import id.codes.maganghub.ui.theme.HadirGreen
+import id.codes.maganghub.ui.theme.ChipSelectedText
 import id.codes.maganghub.ui.theme.HadirGreenLight
 import id.codes.maganghub.ui.theme.HadirGreenText
+import id.codes.maganghub.ui.theme.NavActivePillBg
 import id.codes.maganghub.ui.theme.PureWhite
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
 
 @Composable
 private fun DefaultAvatarPlaceholder(modifier: Modifier = Modifier) {
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     Box(
         modifier = modifier
             .size(44.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(if (isDark) Color(0xFF0B1220) else Color(0xFFDBEAFE)),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = Icons.Default.Person,
             contentDescription = null,
-            tint = Color(0xFF0369A1),
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(24.dp)
         )
     }
@@ -141,16 +142,19 @@ fun SettingsScreen(
         }
     }
 
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    // Exact Token Mapping:
-    // Card border / divider: Dark #263450 | Light #D5DDEA
-    val cardBorderColor = if (isDark) Color(0xFF263450) else Color(0xFFD5DDEA)
+    val isSystemDark = isSystemInDarkTheme()
+    val isDark = when (uiState.themeMode) {
+        ThemeMode.SYSTEM -> isSystemDark
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+    val cardBorderColor = MaterialTheme.colorScheme.outline
     val cardBorder = BorderStroke(1.dp, cardBorderColor)
     val cardElevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
 
-    // Quick action outline buttons: border #3B4B6B / #94A3B8, icon #E2E8F0 / #334155
-    val quickActionBorder = BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
-    val quickActionIcon = if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155)
+    // Quick action outline buttons
+    val quickActionBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+    val quickActionIcon = MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(
         modifier = modifier
@@ -355,7 +359,6 @@ fun SettingsScreen(
                 ThemeSegmentedSlider(
                     currentMode = uiState.themeMode,
                     isDark = isDark,
-                    cardBorderColor = cardBorderColor,
                     onSelectMode = onSetThemeMode
                 )
 
@@ -740,10 +743,9 @@ private fun ReminderToggleRow(
 private fun ThemeSegmentedSlider(
     currentMode: ThemeMode,
     isDark: Boolean,
-    cardBorderColor: Color,
     onSelectMode: (ThemeMode) -> Unit
 ) {
-    val trackBg = if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7)
+    val trackBg = MaterialTheme.colorScheme.surfaceVariant
     val selectedIndex = when (currentMode) {
         ThemeMode.SYSTEM -> 0
         ThemeMode.LIGHT -> 1
@@ -754,7 +756,7 @@ private fun ThemeSegmentedSlider(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = trackBg,
-        border = BorderStroke(1.dp, cardBorderColor)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         BoxWithConstraints(
             modifier = Modifier
@@ -775,10 +777,10 @@ private fun ThemeSegmentedSlider(
             Surface(
                 modifier = Modifier
                     .width(pillWidth)
-                    .height(38.dp)
+                    .height(40.dp)
                     .offset(x = animatedOffset),
                 shape = RoundedCornerShape(8.dp),
-                color = Color(0xFFDBEAFE),
+                color = NavActivePillBg,
                 border = BorderStroke(1.dp, Color(0xFF93C5FD).copy(alpha = 0.5f))
             ) {}
 
@@ -786,7 +788,7 @@ private fun ThemeSegmentedSlider(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(38.dp),
+                    .height(40.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 listOf(
@@ -796,7 +798,7 @@ private fun ThemeSegmentedSlider(
                 ).forEachIndexed { index, (mode, icon, label) ->
                     val selected = currentMode == mode
                     val targetTextColor = when {
-                        selected -> Color(0xFF1E3A8A)
+                        selected -> ChipSelectedText
                         isDark -> Color(0xFFA8B3C7)
                         else -> Color(0xFF475569)
                     }
@@ -810,7 +812,9 @@ private fun ThemeSegmentedSlider(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .clickable(
+                            .selectable(
+                                selected = selected,
+                                role = Role.RadioButton,
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) {
