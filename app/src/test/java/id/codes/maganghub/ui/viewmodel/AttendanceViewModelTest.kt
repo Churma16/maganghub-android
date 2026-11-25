@@ -402,4 +402,18 @@ class AttendanceViewModelTest {
         viewModel.dismissLegalDocument()
         assertNull(viewModel.uiState.value.activeLegalDocument)
     }
+
+    @Test
+    fun testTestNotificationSheetState() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        assertFalse(viewModel.uiState.value.isTestNotificationSheetOpen)
+
+        viewModel.setTestNotificationSheetOpen(true)
+        assertTrue(viewModel.uiState.value.isTestNotificationSheetOpen)
+
+        viewModel.setTestNotificationSheetOpen(false)
+        assertFalse(viewModel.uiState.value.isTestNotificationSheetOpen)
+    }
 }

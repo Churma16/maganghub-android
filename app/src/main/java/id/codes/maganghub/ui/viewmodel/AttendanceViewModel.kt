@@ -299,24 +299,68 @@ class AttendanceViewModel(
         }
     }
 
+    val isPreviewOrDebugBuild: Boolean
+        get() = try {
+            BuildConfig.DEBUG || MagangHubApp.instance.packageName.endsWith(".preview")
+        } catch (_: Throwable) {
+            BuildConfig.DEBUG
+        }
+
+    /**
+     * Toggles the preview QA test notification bottom sheet.
+     */
+    fun setTestNotificationSheetOpen(open: Boolean) {
+        _uiState.update { it.copy(isTestNotificationSheetOpen = open) }
+    }
+
+    /**
+     * Triggers the daily reminder notification mockup ("Presensi dan logbook belum lengkap").
+     */
+    fun testDailyReminderNotification(context: Context) {
+        val settings = _uiState.value.reminderSettings
+        NotificationHelper.showReminderNotification(
+            context = context,
+            soundEnabled = settings.soundEnabled,
+            vibrationEnabled = settings.vibrationEnabled,
+            intervalMinutes = settings.intervalMinutes
+        )
+        _uiState.update { it.copy(successMessage = "Notifikasi pengingat harian dikirim!") }
+    }
+
+    /**
+     * Triggers the mentor review reminder notification mockup ("Peninjauan mentor tertunda").
+     */
+    fun testMentorReviewNotification(context: Context) {
+        val settings = _uiState.value.reminderSettings
+        NotificationHelper.showMentorReviewReminderNotification(
+            context = context,
+            pendingCount = 5,
+            thresholdDays = settings.mentorReviewThresholdDays,
+            soundEnabled = settings.soundEnabled,
+            vibrationEnabled = settings.vibrationEnabled
+        )
+        _uiState.update { it.copy(successMessage = "Notifikasi peninjauan mentor dikirim!") }
+    }
+
+    /**
+     * Triggers the completion notification mockup ("Semua beres hari ini").
+     */
+    fun testSuccessNotification(context: Context) {
+        NotificationHelper.showSuccessNotification(context)
+        _uiState.update { it.copy(successMessage = "Notifikasi 'Semua beres hari ini' dikirim (auto-dismiss 12s)!") }
+    }
+
     /**
      * Fires a local test notification to verify channel and sound configurations.
      */
     fun testNotification(context: Context) {
-        val now = ZonedDateTime.now(wibZoneId)
-        val timeWib = now.format(timeFormatter)
-        val dateFormatted = now.format(DateTimeFormatter.ofPattern("EEEE, dd MMMM yyyy", Locale("id", "ID")))
-
         val currentStatus = _uiState.value.attendanceStatus
         if (currentStatus == AttendanceStatus.HADIR) {
-            NotificationHelper.showSuccessNotification(context, dateFormatted)
+            NotificationHelper.showSuccessNotification(context)
         } else {
             val settings = _uiState.value.reminderSettings
             NotificationHelper.showReminderNotification(
                 context = context,
-                reminderIndex = 1,
-                currentTimeWib = timeWib,
-                dateFormatted = dateFormatted,
                 soundEnabled = settings.soundEnabled,
                 vibrationEnabled = settings.vibrationEnabled,
                 intervalMinutes = settings.intervalMinutes

@@ -50,6 +50,7 @@ import id.codes.maganghub.ui.screens.FeedbackBottomSheet
 import id.codes.maganghub.ui.screens.LegalDocumentBottomSheet
 import id.codes.maganghub.ui.screens.LoginDialog
 import id.codes.maganghub.ui.screens.SettingsScreen
+import id.codes.maganghub.ui.screens.TestNotificationBottomSheet
 import id.codes.maganghub.ui.theme.KemnakerSky
 import id.codes.maganghub.ui.theme.NavActivePillBg
 import id.codes.maganghub.ui.theme.NavActivePillIcon
@@ -222,6 +223,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 onTestNotification = {
                     viewModel.testNotification(MagangHubApp.instance.applicationContext)
                 },
+                isPreviewBuild = viewModel.isPreviewOrDebugBuild,
+                onOpenTestNotificationSheet = { viewModel.setTestNotificationSheetOpen(true) },
                 onOpenFeedback = { viewModel.setFeedbackSheetOpen(true) },
                 modifier = Modifier
                     .fillMaxSize()
@@ -258,5 +261,24 @@ fun MainContent(viewModel: AttendanceViewModel) {
             documentType = uiState.activeLegalDocument,
             onDismiss = { viewModel.dismissLegalDocument() }
         )
+
+        // Preview QA: Test Notification State Bottom Sheet overlay
+        if (uiState.isTestNotificationSheetOpen) {
+            TestNotificationBottomSheet(
+                onDismiss = { viewModel.setTestNotificationSheetOpen(false) },
+                onTriggerDailyReminder = {
+                    viewModel.testDailyReminderNotification(MagangHubApp.instance.applicationContext)
+                    viewModel.setTestNotificationSheetOpen(false)
+                },
+                onTriggerMentorReminder = {
+                    viewModel.testMentorReviewNotification(MagangHubApp.instance.applicationContext)
+                    viewModel.setTestNotificationSheetOpen(false)
+                },
+                onTriggerSuccess = {
+                    viewModel.testSuccessNotification(MagangHubApp.instance.applicationContext)
+                    viewModel.setTestNotificationSheetOpen(false)
+                }
+            )
+        }
     }
 }
