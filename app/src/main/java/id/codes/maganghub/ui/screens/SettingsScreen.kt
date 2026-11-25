@@ -54,7 +54,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -564,7 +564,7 @@ fun SettingsScreen(
                     }
                 }
 
-                Divider(color = cardBorderColor)
+                HorizontalDivider(color = cardBorderColor)
 
                 // Switch 1: Pengingat berulang
                 // Toggles: Track on #0369A1, off #3B4B6B / #64748B, knob #FFFFFF
@@ -662,7 +662,7 @@ fun SettingsScreen(
                 )
 
                 if (settings.mentorReminderEnabled) {
-                    Divider(color = cardBorderColor)
+                    HorizontalDivider(color = cardBorderColor)
 
                     // Row 1: Batas hari belum di-approve
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -829,7 +829,7 @@ fun SettingsScreen(
                     )
                 }
 
-                Divider(
+                HorizontalDivider(
                     color = cardBorderColor,
                     thickness = 1.dp,
                     modifier = Modifier.padding(horizontal = 16.dp)
@@ -863,7 +863,7 @@ fun SettingsScreen(
                     )
                 }
 
-                Divider(
+                HorizontalDivider(
                     color = cardBorderColor,
                     thickness = 1.dp,
                     modifier = Modifier.padding(horizontal = 16.dp)

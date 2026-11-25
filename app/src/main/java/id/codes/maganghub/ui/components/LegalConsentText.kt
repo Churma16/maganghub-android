@@ -55,6 +55,7 @@ fun LegalConsentText(
         append(".")
     }
 
+    @Suppress("DEPRECATION")
     ClickableText(
         text = annotatedText,
         modifier = modifier,
