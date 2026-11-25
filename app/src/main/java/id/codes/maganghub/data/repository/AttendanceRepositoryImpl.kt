@@ -144,13 +144,28 @@ class AttendanceRepositoryImpl(
                         Log.w(TAG, "Best-effort profile fetch during check failed: ${pe.message}")
                     }
                 }
+
+                // Best-effort fetch attendances to calculate and cache pending mentor review count
+                var pendingCount = storage.getPendingMentorReviewCount()
+                try {
+                    val validToken = storage.getAccessToken().orEmpty()
+                    if (validToken.isNotBlank()) {
+                        val attendances = apiClient.fetchAttendances(validToken)
+                        pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
+                        storage.savePendingMentorReviewCount(pendingCount)
+                    }
+                } catch (ae: Exception) {
+                    Log.w(TAG, "Best-effort attendances fetch for mentor review count failed: ${ae.message}")
+                }
+
                 _sessionFlow.value = storage.getUserSession()
 
                 val result = AttendanceCheckResult(
                     status = status,
                     data = homeData,
                     checkedAt = now,
-                    isSuccess = true
+                    isSuccess = true,
+                    pendingMentorReviewCount = pendingCount
                 )
                 Result.success(result)
             } catch (e: Exception) {
@@ -158,13 +173,15 @@ class AttendanceRepositoryImpl(
                 val cachedStatus = storage.getLastAttendanceStatus()
                 val cachedData = storage.getLastHomeData()
                 val cachedTime = storage.getLastCheckTimestamp()
+                val cachedPendingCount = storage.getPendingMentorReviewCount()
 
                 val fallbackResult = AttendanceCheckResult(
                     status = cachedStatus,
                     data = cachedData,
                     checkedAt = if (cachedTime > 0) cachedTime else System.currentTimeMillis(),
                     isSuccess = false,
-                    errorMessage = e.message ?: "Gagal mengambil data kehadiran"
+                    errorMessage = e.message ?: "Gagal mengambil data kehadiran",
+                    pendingMentorReviewCount = cachedPendingCount
                 )
                 Result.failure(e)
             }
@@ -216,4 +233,17 @@ class AttendanceRepositoryImpl(
     override fun getLastCheckTimestamp(): Long = storage.getLastCheckTimestamp()
 
     override fun hasSavedCredentials(): Boolean = storage.hasCredentials()
+
+    override suspend fun snoozeMentorReminderOneDay() {
+        withContext(ioDispatcher) {
+            val snoozeUntil = System.currentTimeMillis() + 24 * 60 * 60 * 1000L
+            storage.saveMentorSnoozedUntil(snoozeUntil)
+            val updatedSettings = storage.getReminderSettings().copy(mentorSnoozedUntil = snoozeUntil)
+            storage.saveReminderSettings(updatedSettings)
+            _reminderSettingsFlow.value = updatedSettings
+            Log.i(TAG, "Snoozed mentor review reminder until $snoozeUntil")
+        }
+    }
+
+    override fun getCachedPendingMentorReviewCount(): Int = storage.getPendingMentorReviewCount()
 }

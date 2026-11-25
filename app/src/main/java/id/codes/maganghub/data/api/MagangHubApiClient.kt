@@ -3,6 +3,8 @@ package id.codes.maganghub.data.api
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.google.gson.annotations.SerializedName
+import com.google.gson.reflect.TypeToken
 import id.codes.maganghub.data.model.ApiErrorResponse
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceHomeResponse
@@ -81,6 +83,22 @@ class MagangHubApiClient(
             } catch (_: Exception) {
                 defaultSeconds
             }
+        }
+
+        /**
+         * Calculates pending mentor review count matching Kemnaker Monev Nuxt frontend logic:
+         * Filters attendances that are SUBMITTED and not ABSENT or DAYOFF, then counts distinct dates.
+         */
+        fun calculatePendingMentorReviewCount(attendances: List<AttendanceItem>): Int {
+            return attendances
+                .filter {
+                    it.approvalStatus.equals("SUBMITTED", ignoreCase = true) &&
+                        !it.status.equals("ABSENT", ignoreCase = true) &&
+                        !it.status.equals("DAYOFF", ignoreCase = true)
+                }
+                .map { it.date }
+                .distinct()
+                .size
         }
     }
 
@@ -550,4 +568,130 @@ class MagangHubApiClient(
         val state = parsed.queryParameter("state") ?: baseSsoUrl.queryParameter("state")
         return Pair(code, state)
     }
+
+    /**
+     * Calls GET /api/v1/attendances to retrieve attendance history logs for mentor review checking.
+     */
+    suspend fun fetchAttendances(
+        monevAccessToken: String,
+        participantId: String? = null,
+        startDate: String? = null,
+        endDate: String? = null,
+        limit: Int = 100
+    ): List<AttendanceItem> = withContext(Dispatchers.IO) {
+        val cleanToken = cleanBearerToken(monevAccessToken)
+        if (cleanToken.isEmpty()) {
+            throw UnauthorizedSessionException("Access token is empty")
+        }
+
+        val urlBuilder = "${apiBaseUrl.trimEnd('/')}/attendances".toHttpUrlOrNull()?.newBuilder()
+            ?: throw IOException("Invalid attendances URL")
+
+        if (!participantId.isNullOrBlank()) {
+            urlBuilder.addQueryParameter("participant_id", participantId)
+        }
+        if (!startDate.isNullOrBlank()) {
+            urlBuilder.addQueryParameter("start_date", startDate)
+        }
+        if (!endDate.isNullOrBlank()) {
+            urlBuilder.addQueryParameter("end_date", endDate)
+        }
+        urlBuilder.addQueryParameter("limit", limit.toString())
+
+        val request = Request.Builder()
+            .url(urlBuilder.build())
+            .get()
+            .header("Authorization", "Bearer $cleanToken")
+            .header("Accept", "application/json")
+            .header("User-Agent", userAgentString)
+            .build()
+
+        val response = baseHttpClient.newCall(request).execute()
+        val responseBody = response.body?.string().orEmpty()
+
+        when (response.code) {
+            200 -> parseAttendancesResponseBody(responseBody)
+            401 -> {
+                val errorEnvelope = try {
+                    gson.fromJson(responseBody, ApiErrorResponse::class.java)
+                } catch (e: Exception) {
+                    null
+                }
+                val msg = errorEnvelope?.message?.takeIf { it.isNotEmpty() }
+                    ?: "Monev access token is expired or invalid (HTTP 401)"
+                throw UnauthorizedSessionException(msg)
+            }
+            403 -> throw ForbiddenException()
+            404 -> throw NotFoundException()
+            429 -> {
+                val retrySec = parseRetryAfter(response.header("Retry-After"))
+                throw RateLimitedException(retrySec)
+            }
+            else -> throw MagangHubApiException(response.code, responseBody)
+        }
+    }
+
+    fun parseAttendancesResponseBody(responseBody: String): List<AttendanceItem> {
+        return try {
+            val element = JsonParser.parseString(responseBody)
+            when {
+                element.isJsonArray -> {
+                    val listType = object : TypeToken<List<AttendanceItem>>() {}.type
+                    gson.fromJson(element, listType) ?: emptyList()
+                }
+                element.isJsonObject -> {
+                    val obj = element.asJsonObject
+                    if (obj.has("data")) {
+                        val dataElement = obj.get("data")
+                        if (dataElement.isJsonArray) {
+                            val listType = object : TypeToken<List<AttendanceItem>>() {}.type
+                            gson.fromJson(dataElement, listType) ?: emptyList()
+                        } else if (dataElement.isJsonObject && dataElement.asJsonObject.has("data")) {
+                            val innerData = dataElement.asJsonObject.get("data")
+                            val listType = object : TypeToken<List<AttendanceItem>>() {}.type
+                            gson.fromJson(innerData, listType) ?: emptyList()
+                        } else {
+                            emptyList()
+                        }
+                    } else {
+                        emptyList()
+                    }
+                }
+                else -> emptyList()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun calculatePendingMentorReviewCount(attendances: List<AttendanceItem>): Int =
+        Companion.calculatePendingMentorReviewCount(attendances)
 }
+
+/**
+ * Attendance item in /attendances list response.
+ */
+data class AttendanceItem(
+    @SerializedName("id")
+    val id: String = "",
+
+    @SerializedName("date")
+    val date: String = "",
+
+    @SerializedName("status")
+    val status: String = "",
+
+    @SerializedName("approval_status", alternate = ["approvalStatus"])
+    val approvalStatus: String = ""
+) {
+    val approval_status: String
+        get() = approvalStatus
+}
+
+/**
+ * Envelope response wrapper for /attendances endpoint.
+ */
+data class AttendancesResponse(
+    @SerializedName("data")
+    val data: List<AttendanceItem> = emptyList()
+)

@@ -79,4 +79,14 @@ interface AttendanceRepository {
      * Whether valid username and password credentials are saved locally.
      */
     fun hasSavedCredentials(): Boolean
+
+    /**
+     * Postpones mentor review reminder notifications for 24 hours.
+     */
+    suspend fun snoozeMentorReminderOneDay()
+
+    /**
+     * Retrieves cached pending mentor review count without network call.
+     */
+    fun getCachedPendingMentorReviewCount(): Int
 }

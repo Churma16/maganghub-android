@@ -19,8 +19,20 @@ data class UserProfileData(
     val company: String? = null,
 
     @SerializedName("internship_company")
-    val internshipCompany: String? = null
-)
+    val internshipCompany: String? = null,
+
+    @SerializedName("internship_start_date")
+    val internshipStartDate: String? = null,
+
+    @SerializedName("internship_end_date")
+    val internshipEndDate: String? = null
+) {
+    val internship_start_date: String?
+        get() = internshipStartDate
+
+    val internship_end_date: String?
+        get() = internshipEndDate
+}
 
 /**
  * Envelope response wrapper for /users/me endpoint.

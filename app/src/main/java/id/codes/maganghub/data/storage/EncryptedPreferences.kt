@@ -44,6 +44,12 @@ class EncryptedPreferences(context: Context) {
         private const val KEY_FULL_NAME = "pref_user_full_name"
         private const val KEY_PHOTO_URL = "pref_user_photo_url"
         private const val KEY_THEME_MODE = "pref_theme_mode"
+
+        const val KEY_MENTOR_REMINDER_ENABLED = "pref_mentor_reminder_enabled"
+        const val KEY_MENTOR_THRESHOLD = "pref_mentor_review_threshold_days"
+        const val KEY_MENTOR_INTERVAL = "pref_mentor_repeat_interval_minutes"
+        const val KEY_MENTOR_SNOOZED_UNTIL = "pref_mentor_snoozed_until"
+        const val KEY_MENTOR_PENDING_COUNT = "pref_mentor_pending_count"
     }
 
     private val gson = Gson()
@@ -184,6 +190,10 @@ class EncryptedPreferences(context: Context) {
             .putInt(KEY_REMINDER_INTERVAL, settings.intervalMinutes)
             .putBoolean(KEY_REMINDER_SOUND, settings.soundEnabled)
             .putBoolean(KEY_REMINDER_VIBRATION, settings.vibrationEnabled)
+            .putBoolean(KEY_MENTOR_REMINDER_ENABLED, settings.mentorReminderEnabled)
+            .putInt(KEY_MENTOR_THRESHOLD, settings.mentorReviewThresholdDays)
+            .putInt(KEY_MENTOR_INTERVAL, settings.mentorRepeatIntervalMinutes)
+            .putLong(KEY_MENTOR_SNOOZED_UNTIL, settings.mentorSnoozedUntil)
             .apply()
     }
 
@@ -196,9 +206,28 @@ class EncryptedPreferences(context: Context) {
             endHour = prefs.getInt(KEY_REMINDER_END_HOUR, 24),
             intervalMinutes = prefs.getInt(KEY_REMINDER_INTERVAL, 30),
             soundEnabled = prefs.getBoolean(KEY_REMINDER_SOUND, true),
-            vibrationEnabled = prefs.getBoolean(KEY_REMINDER_VIBRATION, true)
+            vibrationEnabled = prefs.getBoolean(KEY_REMINDER_VIBRATION, true),
+            mentorReminderEnabled = prefs.getBoolean(KEY_MENTOR_REMINDER_ENABLED, true),
+            mentorReviewThresholdDays = prefs.getInt(KEY_MENTOR_THRESHOLD, 5),
+            mentorRepeatIntervalMinutes = prefs.getInt(KEY_MENTOR_INTERVAL, 180),
+            mentorSnoozedUntil = prefs.getLong(KEY_MENTOR_SNOOZED_UNTIL, 0L)
         )
     }
+
+    // Mentor Review Reminder Cache
+    fun savePendingMentorReviewCount(count: Int) {
+        prefs.edit().putInt(KEY_MENTOR_PENDING_COUNT, count).apply()
+    }
+
+    fun getPendingMentorReviewCount(): Int = prefs.getInt(KEY_MENTOR_PENDING_COUNT, 0)
+
+    fun saveMentorSnoozedUntil(snoozedUntil: Long) {
+        prefs.edit().putLong(KEY_MENTOR_SNOOZED_UNTIL, snoozedUntil).apply()
+    }
+
+    fun setMentorSnoozedUntil(timestampMillis: Long) = saveMentorSnoozedUntil(timestampMillis)
+
+    fun getMentorSnoozedUntil(): Long = prefs.getLong(KEY_MENTOR_SNOOZED_UNTIL, 0L)
 
     // Theme display mode
     fun getThemeMode(): ThemeMode {
