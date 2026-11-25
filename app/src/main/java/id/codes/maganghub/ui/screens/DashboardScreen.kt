@@ -419,8 +419,8 @@ private fun HeroStatusCard(
     val statusDescription = when (phase) {
         DailyWorkPhase.COMPLETED -> "Presensi dan kehadiran Anda hari ini sudah tercatat lengkap."
         DailyWorkPhase.HOLIDAY -> "Hari ini hari libur atau off day terjadwal. Tidak ada kewajiban presensi."
-        DailyWorkPhase.BEFORE_WORK -> "Jam kerja dimulai pukul $workStartTimeStr WIB. Pengisian laporan presensi dibuka pukul $reportStartTimeStr WIB."
-        DailyWorkPhase.WORKING -> "Fokus dulu dengan kegiatan magangmu hari ini. Pengisian laporan presensi dibuka pukul $reportStartTimeStr WIB."
+        DailyWorkPhase.BEFORE_WORK -> "Jam kerja dimulai pukul $workStartTimeStr WIB. Notifikasi laporan presensi dimulai pukul $reportStartTimeStr WIB."
+        DailyWorkPhase.WORKING -> "Fokus dulu dengan kegiatan magangmu hari ini. Notifikasi laporan presensi dimulai pukul $reportStartTimeStr WIB."
         DailyWorkPhase.REPORTING_WINDOW -> "Presensi dan logbook hari ini belum tercatat. Selesaikan sebelum batas waktu."
     }
 
@@ -428,17 +428,21 @@ private fun HeroStatusCard(
         DailyWorkPhase.COMPLETED -> Pair("Status", "Tuntas")
         DailyWorkPhase.HOLIDAY -> Pair("Status", "Libur")
         DailyWorkPhase.BEFORE_WORK -> Pair("Mulai kerja", "$workStartTimeStr WIB")
-        DailyWorkPhase.WORKING -> Pair("Laporan dibuka", "$reportStartTimeStr WIB")
+        DailyWorkPhase.WORKING -> Pair("Notifikasi dimulai", "$reportStartTimeStr WIB")
         DailyWorkPhase.REPORTING_WINDOW -> Pair("Sisa waktu", remainingTimeText)
     }
 
     val (metricRightLabel, metricRightValue) = when (phase) {
         DailyWorkPhase.COMPLETED -> Pair("Batas pengisian", "23.59 WIB")
         DailyWorkPhase.HOLIDAY -> Pair("Jadwal", "Off Day")
-        DailyWorkPhase.BEFORE_WORK -> Pair("Laporan dibuka", "$reportStartTimeStr WIB")
+        DailyWorkPhase.BEFORE_WORK -> Pair("Notifikasi dimulai", "$reportStartTimeStr WIB")
         DailyWorkPhase.WORKING -> Pair("Batas akhir", "23.59 WIB")
         DailyWorkPhase.REPORTING_WINDOW -> Pair("Batas pengisian", "23.59 WIB")
     }
+
+    val isPhaseWithBalancedTimestamps = phase == DailyWorkPhase.BEFORE_WORK || phase == DailyWorkPhase.WORKING
+    val rightValueStyle = if (isPhaseWithBalancedTimestamps) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium
+    val rightValueWeight = if (isPhaseWithBalancedTimestamps) FontWeight.Bold else FontWeight.SemiBold
 
     val animSpec = tween<Color>(300)
     val animatedContainerColor by animateColorAsState(containerColor, animSpec, label = "heroContainer")
@@ -541,8 +545,8 @@ private fun HeroStatusCard(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = metricRightValue,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style = rightValueStyle,
+                            fontWeight = rightValueWeight,
                             color = animatedMetricValueColor
                         )
                     }

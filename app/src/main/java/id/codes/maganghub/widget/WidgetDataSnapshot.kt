@@ -80,11 +80,11 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENUNGGU_KERJA -> {
             val workTime = String.format(Locale.ROOT, "%02d:%02d", workStartHour, workStartMinute)
             val reportTime = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
-            "Mulai $workTime • Laporan dibuka $reportTime WIB"
+            "Mulai $workTime • Notifikasi dimulai $reportTime WIB"
         }
         WidgetStatus.SEDANG_BEKERJA -> {
             val reportTime = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
-            "Pengisian laporan dibuka $reportTime WIB"
+            "Fokus magang • Notifikasi dimulai $reportTime WIB"
         }
     }
 
@@ -112,7 +112,7 @@ data class WidgetDataSnapshot(
         }
         WidgetStatus.SEDANG_BEKERJA -> {
             val reportTime = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
-            "Buka $reportTime"
+            "Notif $reportTime"
         }
     }
 
@@ -129,7 +129,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.SUDAH_ABSEN -> "Lengkap"
         WidgetStatus.HARI_LIBUR -> "Hari Off"
         WidgetStatus.MENUNGGU_KERJA -> "mulai kerja"
-        WidgetStatus.SEDANG_BEKERJA -> "laporan dibuka"
+        WidgetStatus.SEDANG_BEKERJA -> "notifikasi dimulai"
         WidgetStatus.BELUM_ABSEN, WidgetStatus.MENDESAK -> "tersisa"
         WidgetStatus.SESI_BERAKHIR -> ""
     }
