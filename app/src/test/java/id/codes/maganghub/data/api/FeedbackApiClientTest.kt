@@ -109,6 +109,27 @@ class FeedbackApiClientTest {
     }
 
     @Test
+    fun testSendFeedbackHttpError_WithErrorField() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(400)
+                .setBody("""{"error":"request timestamp expired","message":"request timestamp expired"}""")
+        )
+
+        val request = FeedbackRequest(
+            type = FeedbackType.OTHER,
+            message = "Tanya sesuatu",
+            appVersion = "v1.0.0",
+            deviceModel = "Pixel 7",
+            osVersion = "Android 14"
+        )
+
+        val result = client.sendFeedback(request)
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message?.contains("request timestamp expired") == true)
+    }
+
+    @Test
     fun testSendFeedbackMalformedJsonResponse() = runTest {
         server.enqueue(
             MockResponse()

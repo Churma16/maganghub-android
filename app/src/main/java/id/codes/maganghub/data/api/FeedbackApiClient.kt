@@ -61,8 +61,8 @@ class FeedbackApiClientImpl(
                     val responseBody = response.body?.string().orEmpty()
                     if (!response.isSuccessful) {
                         val errorMsg = try {
-                            gson.fromJson(responseBody, FeedbackResponse::class.java)?.message
-                                ?: "HTTP ${response.code}: Gagal mengirim masukan"
+                            val parsedError = gson.fromJson(responseBody, FeedbackResponse::class.java)
+                            parsedError?.error ?: parsedError?.message ?: "HTTP ${response.code}: Gagal mengirim masukan"
                         } catch (_: Exception) {
                             "HTTP ${response.code}: Gagal mengirim masukan"
                         }

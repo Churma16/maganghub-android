@@ -47,5 +47,8 @@ data class FeedbackResponse(
     val success: Boolean,
 
     @SerializedName("message")
-    val message: String? = null
+    val message: String? = null,
+
+    @SerializedName("error")
+    val error: String? = null
 )
