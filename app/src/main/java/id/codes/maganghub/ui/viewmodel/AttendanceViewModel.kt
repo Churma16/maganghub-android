@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import id.codes.maganghub.MagangHubApp
+import id.codes.maganghub.background.AttendanceAlarmScheduler
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
@@ -181,6 +183,11 @@ class AttendanceViewModel(
             repository.updateReminderSettings(settings)
             _uiState.update { it.copy(reminderSettings = settings) }
             updateNextReminderString()
+            try {
+                AttendanceAlarmScheduler.scheduleNextAlarm(MagangHubApp.instance.applicationContext)
+            } catch (_: Exception) {
+                // Fallback for pure JVM unit tests where Application context is unavailable
+            }
         }
     }
 
@@ -226,7 +233,8 @@ class AttendanceViewModel(
                 currentTimeWib = timeWib,
                 dateFormatted = dateFormatted,
                 soundEnabled = settings.soundEnabled,
-                vibrationEnabled = settings.vibrationEnabled
+                vibrationEnabled = settings.vibrationEnabled,
+                intervalMinutes = settings.intervalMinutes
             )
         }
 
@@ -242,8 +250,7 @@ class AttendanceViewModel(
         return zdt.format(fullDateTimeFormatter)
     }
 
-    private fun updateNextReminderString() {
-        val now = ZonedDateTime.now(wibZoneId)
+    internal fun updateNextReminderString(now: ZonedDateTime = ZonedDateTime.now(wibZoneId)) {
         val settings = _uiState.value.reminderSettings
         val status = _uiState.value.attendanceStatus
 
@@ -257,10 +264,10 @@ class AttendanceViewModel(
                 "Hari ini pukul ${reminderTime.format(timeFormatter)} WIB"
             }
             now.hour >= settings.startHour && now.hour < settings.endHour -> {
-                val interval = settings.intervalMinutes
+                val interval = if (settings.intervalMinutes > 0) settings.intervalMinutes else 30
                 val nextMinute = ((now.minute / interval) + 1) * interval
                 val nextTime = now.plusMinutes((nextMinute - now.minute).toLong()).withSecond(0)
-                if (nextTime.hour >= settings.endHour) {
+                if (nextTime.toLocalDate() != now.toLocalDate() || nextTime.hour >= settings.endHour) {
                     "Batas akhir presensi 23:59 WIB"
                 } else {
                     "Aktif pukul ${nextTime.format(timeFormatter)} WIB (setiap $interval m)"

@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -145,6 +146,37 @@ class AttendanceViewModelTest {
 
         assertEquals(17, viewModel.uiState.value.reminderSettings.startHour)
         assertEquals(15, viewModel.uiState.value.reminderSettings.intervalMinutes)
+        assertNotNull(viewModel.uiState.value.nextReminderFormatted)
+    }
+
+    @Test
+    fun testUpdateReminderSettingsZeroIntervalFallback() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        val zeroInterval = ReminderSettings(startHour = 0, endHour = 24, intervalMinutes = 0, isEnabled = true)
+        viewModel.updateReminderSettings(zeroInterval)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.nextReminderFormatted)
+    }
+
+    @Test
+    fun testUpdateReminderSettingsMidnightRollover() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        val settings = ReminderSettings(startHour = 16, endHour = 24, intervalMinutes = 30, isEnabled = true)
+        viewModel.updateReminderSettings(settings)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Simulate 23:45 WIB
+        val nearMidnight = java.time.LocalDate.of(2026, 11, 25)
+            .atTime(23, 45)
+            .atZone(java.time.ZoneId.of("Asia/Jakarta"))
+        viewModel.updateNextReminderString(nearMidnight)
+
+        assertEquals("Batas akhir presensi 23:59 WIB", viewModel.uiState.value.nextReminderFormatted)
     }
 
     @Test
