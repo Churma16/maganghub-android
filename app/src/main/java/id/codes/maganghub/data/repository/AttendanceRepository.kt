@@ -86,4 +86,14 @@ interface AttendanceRepository {
      * Submits user feedback (bug report, feature request, general feedback).
      */
     suspend fun submitFeedback(request: FeedbackRequest): Result<FeedbackResponse>
+
+    /**
+     * Postpones mentor review reminder notifications for 24 hours.
+     */
+    suspend fun snoozeMentorReminderOneDay()
+
+    /**
+     * Retrieves cached pending mentor review count without network call.
+     */
+    fun getCachedPendingMentorReviewCount(): Int
 }

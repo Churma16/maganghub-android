@@ -20,13 +20,16 @@ object NotificationHelper {
     const val CHANNEL_REMINDER_ID = "channel_maganghub_reminder"
     const val CHANNEL_CONFIRMATION_ID = "channel_maganghub_confirmation"
     const val CHANNEL_SYSTEM_ID = "channel_maganghub_system"
+    const val CHANNEL_MENTOR_REMINDER_ID = "channel_maganghub_mentor_reminder"
 
     const val NOTIFICATION_ID_REMINDER = 1001
     const val NOTIFICATION_ID_CONFIRMATION = 1002
     const val NOTIFICATION_ID_AUTH_ALERT = 1003
+    const val NOTIFICATION_ID_MENTOR_REMINDER = 1004
 
     const val ACTION_CHECK_NOW = "id.codes.maganghub.ACTION_CHECK_NOW"
     const val ACTION_SNOOZE_30 = "id.codes.maganghub.ACTION_SNOOZE_30"
+    const val ACTION_SNOOZE_MENTOR_ONE_DAY = "id.codes.maganghub.ACTION_SNOOZE_MENTOR_ONE_DAY"
 
     const val URL_MONEV_DASHBOARD = "https://monev.maganghub.kemnaker.go.id/dashboard"
 
@@ -83,8 +86,23 @@ object NotificationHelper {
             lightColor = Color.YELLOW
         }
 
+        // 4. Mentor Review Reminder Channel
+        val mentorReminderChannel = NotificationChannel(
+            CHANNEL_MENTOR_REMINDER_ID,
+            "Pengingat Peninjauan Mentor",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Pengingat jika kehadiran dan laporan menunggu peninjauan mentor"
+            enableLights(true)
+            lightColor = Color.YELLOW
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 400, 200, 400)
+            setSound(soundUri, audioAttributes)
+            lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+        }
+
         notificationManager.createNotificationChannels(
-            listOf(reminderChannel, confirmationChannel, systemChannel)
+            listOf(reminderChannel, confirmationChannel, systemChannel, mentorReminderChannel)
         )
     }
 
@@ -252,6 +270,81 @@ object NotificationHelper {
         } catch (e: SecurityException) {
             // Permission not granted
         }
+    }
+
+    /**
+     * Shows high-priority notification when attendance reports are pending mentor review.
+     */
+    fun showMentorReviewReminderNotification(
+        context: Context,
+        pendingCount: Int,
+        thresholdDays: Int,
+        soundEnabled: Boolean = true,
+        vibrationEnabled: Boolean = true
+    ) {
+        createNotificationChannels(context)
+
+        // Open MainActivity when tapping notification body or clicking "Buka Aplikasi"
+        val openAppIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val openAppPendingIntent = PendingIntent.getActivity(
+            context,
+            6,
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Action: "Tunda 1 Hari"
+        val snoozeIntent = Intent(context, AttendanceAlarmReceiver::class.java).apply {
+            action = ACTION_SNOOZE_MENTOR_ONE_DAY
+        }
+        val snoozePendingIntent = PendingIntent.getBroadcast(
+            context,
+            7,
+            snoozeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val title = "Saatnya Ingatkan Mentor"
+        val body = "$pendingCount hari kehadiran & laporan menunggu peninjauan mentor (batas: $thresholdDays hari)."
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_MENTOR_REMINDER_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(openAppPendingIntent)
+            .addAction(0, "Tunda 1 Hari", snoozePendingIntent)
+            .addAction(0, "Buka Aplikasi", openAppPendingIntent)
+
+        if (!soundEnabled) {
+            builder.setSilent(true)
+        }
+        if (vibrationEnabled) {
+            builder.setVibrate(longArrayOf(0, 400, 200, 400))
+        } else {
+            builder.setVibrate(longArrayOf(0))
+        }
+
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_MENTOR_REMINDER, builder.build())
+        } catch (e: SecurityException) {
+            // POST_NOTIFICATIONS permission not granted yet
+        }
+    }
+
+    /**
+     * Cancels any active mentor review reminder notification.
+     */
+    fun cancelMentorReminder(context: Context) {
+        try {
+            NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_MENTOR_REMINDER)
+        } catch (e: Exception) {}
     }
 
     /**

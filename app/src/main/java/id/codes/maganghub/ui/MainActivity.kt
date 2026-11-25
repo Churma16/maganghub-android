@@ -201,6 +201,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 onOpenLoginDialog = { viewModel.setLoginDialogOpen(true) },
                 onNavigateToSettings = { selectedTab = 1 },
                 onDismissMessage = { viewModel.clearMessages() },
+                onSnoozeMentorReminder = { viewModel.snoozeMentorReminderOneDay() },
                 formatLastSync = { viewModel.formatLastSync(it) },
                 modifier = Modifier
                     .fillMaxSize()

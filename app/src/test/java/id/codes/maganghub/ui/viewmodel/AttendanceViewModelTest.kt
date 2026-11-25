@@ -45,6 +45,7 @@ class AttendanceViewModelTest {
         private var cachedHomeData: AttendanceHomeData? = null
         private var cachedStatus: AttendanceStatus = AttendanceStatus.UNKNOWN
         private var cachedTimestamp: Long = 0L
+        private var cachedPendingMentorCount: Int = 0
         private var hasCredentialsSaved: Boolean = false
 
         override suspend fun login(username: String, password: String): Result<String> {
@@ -59,7 +60,14 @@ class AttendanceViewModelTest {
             cachedHomeData = data
             cachedStatus = status
             cachedTimestamp = 1732454400000L
-            return Result.success(AttendanceCheckResult(status = status, data = data, checkedAt = cachedTimestamp))
+            return Result.success(
+                AttendanceCheckResult(
+                    status = status,
+                    data = data,
+                    checkedAt = cachedTimestamp,
+                    pendingMentorReviewCount = cachedPendingMentorCount
+                )
+            )
         }
 
         override suspend fun logout() {
@@ -68,6 +76,7 @@ class AttendanceViewModelTest {
             cachedHomeData = null
             cachedStatus = AttendanceStatus.UNKNOWN
             cachedTimestamp = 0L
+            cachedPendingMentorCount = 0
         }
 
         override suspend fun updateReminderSettings(settings: ReminderSettings) {
@@ -93,6 +102,17 @@ class AttendanceViewModelTest {
 
         override suspend fun submitFeedback(request: FeedbackRequest): Result<FeedbackResponse> {
             return submitFeedbackResult
+        }
+
+        override suspend fun snoozeMentorReminderOneDay() {
+            val snoozeUntil = System.currentTimeMillis() + 24 * 60 * 60 * 1000L
+            _reminderSettingsFlow.value = _reminderSettingsFlow.value.copy(mentorSnoozedUntil = snoozeUntil)
+        }
+
+        override fun getCachedPendingMentorReviewCount(): Int = cachedPendingMentorCount
+
+        fun setCachedPendingMentorReviewCount(count: Int) {
+            cachedPendingMentorCount = count
         }
     }
 
@@ -315,5 +335,52 @@ class AttendanceViewModelTest {
         assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue("unknown_mode"))
         assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue(null))
         assertEquals(ThemeMode.SYSTEM, ThemeMode.fromValue(""))
+    }
+
+    @Test
+    fun testPendingMentorReviewCountUpdatedOnCheck() = runTest {
+        val repo = FakeAttendanceRepository()
+        repo.setCachedPendingMentorReviewCount(6)
+        val viewModel = AttendanceViewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.checkAttendanceNow(silent = true)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(6, viewModel.uiState.value.pendingMentorReviewCount)
+    }
+
+    @Test
+    fun testSnoozeMentorReminderOneDay() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val beforeSnooze = System.currentTimeMillis()
+        viewModel.snoozeMentorReminderOneDay()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val snoozedUntil = viewModel.uiState.value.reminderSettings.mentorSnoozedUntil
+        assertTrue(snoozedUntil >= beforeSnooze + 23 * 60 * 60 * 1000L)
+        assertEquals("Pengingat mentor ditunda 1 hari", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun testUpdateMentorReminderSettings() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val updated = ReminderSettings(
+            mentorReminderEnabled = true,
+            mentorReviewThresholdDays = 5,
+            mentorRepeatIntervalMinutes = 60
+        )
+        viewModel.updateReminderSettings(updated)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(true, viewModel.uiState.value.reminderSettings.mentorReminderEnabled)
+        assertEquals(5, viewModel.uiState.value.reminderSettings.mentorReviewThresholdDays)
+        assertEquals(60, viewModel.uiState.value.reminderSettings.mentorRepeatIntervalMinutes)
     }
 }
