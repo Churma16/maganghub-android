@@ -2,6 +2,7 @@ package id.codes.maganghub.ui.viewmodel
 
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 
@@ -26,7 +27,8 @@ data class AttendanceUiState(
     val successMessage: String? = null,
     val isLoginDialogOpen: Boolean = false,
     val isFeedbackSheetOpen: Boolean = false,
-    val isSubmittingFeedback: Boolean = false
+    val isSubmittingFeedback: Boolean = false,
+    val activeLegalDocument: LegalDocumentType? = null
 ) {
     val isAttended: Boolean
         get() = attendanceStatus == AttendanceStatus.HADIR
