@@ -162,6 +162,24 @@ class AttendanceViewModelTest {
     }
 
     @Test
+    fun testUpdateReminderSettingsMidnightRollover() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        val settings = ReminderSettings(startHour = 16, endHour = 24, intervalMinutes = 30, isEnabled = true)
+        viewModel.updateReminderSettings(settings)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Simulate 23:45 WIB
+        val nearMidnight = java.time.LocalDate.of(2026, 11, 25)
+            .atTime(23, 45)
+            .atZone(java.time.ZoneId.of("Asia/Jakarta"))
+        viewModel.updateNextReminderString(nearMidnight)
+
+        assertEquals("Batas akhir presensi 23:59 WIB", viewModel.uiState.value.nextReminderFormatted)
+    }
+
+    @Test
     fun testFormatLastSync() {
         val repo = FakeAttendanceRepository()
         val viewModel = AttendanceViewModel(repo)

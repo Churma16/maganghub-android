@@ -178,14 +178,13 @@ class AttendanceViewModel(
     /**
      * Updates reminder settings in repository and persistent storage.
      */
-    fun updateReminderSettings(settings: ReminderSettings, context: Context? = null) {
+    fun updateReminderSettings(settings: ReminderSettings) {
         viewModelScope.launch {
             repository.updateReminderSettings(settings)
             _uiState.update { it.copy(reminderSettings = settings) }
             updateNextReminderString()
             try {
-                val appContext = context?.applicationContext ?: MagangHubApp.instance.applicationContext
-                AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+                AttendanceAlarmScheduler.scheduleNextAlarm(MagangHubApp.instance.applicationContext)
             } catch (_: Exception) {
                 // Fallback for pure JVM unit tests where Application context is unavailable
             }
@@ -251,8 +250,7 @@ class AttendanceViewModel(
         return zdt.format(fullDateTimeFormatter)
     }
 
-    private fun updateNextReminderString() {
-        val now = ZonedDateTime.now(wibZoneId)
+    internal fun updateNextReminderString(now: ZonedDateTime = ZonedDateTime.now(wibZoneId)) {
         val settings = _uiState.value.reminderSettings
         val status = _uiState.value.attendanceStatus
 
@@ -269,7 +267,7 @@ class AttendanceViewModel(
                 val interval = if (settings.intervalMinutes > 0) settings.intervalMinutes else 30
                 val nextMinute = ((now.minute / interval) + 1) * interval
                 val nextTime = now.plusMinutes((nextMinute - now.minute).toLong()).withSecond(0)
-                if (nextTime.hour >= settings.endHour) {
+                if (nextTime.toLocalDate() != now.toLocalDate() || nextTime.hour >= settings.endHour) {
                     "Batas akhir presensi 23:59 WIB"
                 } else {
                     "Aktif pukul ${nextTime.format(timeFormatter)} WIB (setiap $interval m)"
