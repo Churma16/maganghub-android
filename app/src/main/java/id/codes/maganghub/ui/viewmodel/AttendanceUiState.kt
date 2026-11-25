@@ -42,4 +42,30 @@ data class AttendanceUiState(
 
     val isPending: Boolean
         get() = attendanceStatus == AttendanceStatus.BELUM_HADIR
+
+    fun getDailyWorkPhase(nowWib: java.time.ZonedDateTime = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Jakarta"))): DailyWorkPhase {
+        if (attendanceData?.hasAttendance == true || isAttended) return DailyWorkPhase.COMPLETED
+        if (attendanceData?.isHoliday == true || attendanceData?.isScheduledOffDay == true || isHoliday) return DailyWorkPhase.HOLIDAY
+
+        val currentMinutes = nowWib.hour * 60 + nowWib.minute
+        val workStartMinutes = reminderSettings.workStartHour * 60 + reminderSettings.workStartMinute
+        val reportStartMinutes = reminderSettings.startHour * 60
+
+        return when {
+            currentMinutes < workStartMinutes -> DailyWorkPhase.BEFORE_WORK
+            currentMinutes < reportStartMinutes -> DailyWorkPhase.WORKING
+            else -> DailyWorkPhase.REPORTING_WINDOW
+        }
+    }
+}
+
+/**
+ * Representation of the intern's daily progression phases.
+ */
+enum class DailyWorkPhase {
+    COMPLETED,
+    HOLIDAY,
+    BEFORE_WORK,
+    WORKING,
+    REPORTING_WINDOW
 }

@@ -140,6 +140,7 @@ import id.codes.maganghub.ui.theme.TextPrimaryLight
 import id.codes.maganghub.ui.theme.TextSecondaryDark
 import id.codes.maganghub.ui.theme.TextSecondaryLight
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
+import id.codes.maganghub.ui.viewmodel.DailyWorkPhase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.time.Duration
@@ -329,63 +330,114 @@ private fun HeroStatusCard(
     remainingTimeText: String,
     isDark: Boolean
 ) {
-    val isComplete = uiState.attendanceData?.hasAttendance == true || uiState.attendanceStatus == AttendanceStatus.HADIR
+    val phase = uiState.getDailyWorkPhase()
 
-    val containerColor = when {
-        isDark && isComplete -> HeroCompleteBgDark
-        isDark && !isComplete -> HeroIncompleteBgDark
-        !isDark && isComplete -> HeroCompleteBgLight
-        else -> HeroIncompleteBgLight
-    }
-    val borderColor = when {
-        isDark && isComplete -> HeroCompleteBorderDark
-        isDark && !isComplete -> HeroIncompleteBorderDark
-        !isDark && isComplete -> HeroCompleteBorderLight
-        else -> HeroIncompleteBorderLight
-    }
-    val badgeColor = when {
-        isDark && isComplete -> HeroCompleteIconDark
-        isDark && !isComplete -> HeroIncompleteIconDark
-        !isDark && isComplete -> HeroCompleteIconLight
-        else -> HeroIncompleteIconLight
-    }
-    val badgeIcon = if (isComplete) Icons.Default.Check else Icons.Default.Close
-    val statusTitle = if (isComplete) "Lengkap" else "Belum lengkap"
-    val statusDescription = if (isComplete) {
-        "Presensi dan kehadiran Anda hari ini sudah tercatat lengkap."
-    } else {
-        "Presensi dan logbook hari ini belum tercatat. Selesaikan sebelum batas waktu."
+    val containerColor = when (phase) {
+        DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteBgDark else HeroCompleteBgLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+        DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+        DailyWorkPhase.WORKING -> if (isDark) Color(0xFF0C243B) else Color(0xFFE0F2FE)
+        DailyWorkPhase.REPORTING_WINDOW -> if (isDark) HeroIncompleteBgDark else HeroIncompleteBgLight
     }
 
-    val titleColor = when {
-        isDark && isComplete -> HeroCompleteTitleDark
-        isDark && !isComplete -> HeroIncompleteTitleDark
-        !isDark && isComplete -> HeroCompleteTitleLight
-        else -> HeroIncompleteTitleLight
+    val borderColor = when (phase) {
+        DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteBorderDark else HeroCompleteBorderLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) StatusHolidayBorderDark else StatusHolidayBorderLight
+        DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1)
+        DailyWorkPhase.WORKING -> if (isDark) Color(0xFF1E4268) else Color(0xFFBAE6FD)
+        DailyWorkPhase.REPORTING_WINDOW -> if (isDark) HeroIncompleteBorderDark else HeroIncompleteBorderLight
     }
-    val dateColor = when {
-        isDark && isComplete -> HeroCompleteDateDark
-        isDark && !isComplete -> HeroIncompleteDateDark
-        !isDark && isComplete -> HeroCompleteDateLight
-        else -> HeroIncompleteDateLight
+
+    val badgeColor = when (phase) {
+        DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteIconDark else HeroCompleteIconLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) StatusHolidayIconDark else StatusHolidayIconLight
+        DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8)
+        DailyWorkPhase.WORKING -> if (isDark) Color(0xFF0284C7) else Color(0xFF0284C7)
+        DailyWorkPhase.REPORTING_WINDOW -> if (isDark) HeroIncompleteIconDark else HeroIncompleteIconLight
     }
-    val descColor = when {
-        isDark && isComplete -> HeroCompleteDescDark
-        isDark && !isComplete -> HeroIncompleteDescDark
-        !isDark && isComplete -> HeroCompleteDescLight
-        else -> HeroIncompleteDescLight
+
+    val titleColor = when (phase) {
+        DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteTitleDark else HeroCompleteTitleLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) TextPrimaryDark else Color(0xFF1E293B)
+        DailyWorkPhase.BEFORE_WORK -> if (isDark) TextPrimaryDark else Color(0xFF1E293B)
+        DailyWorkPhase.WORKING -> if (isDark) Color.White else Color(0xFF0369A1)
+        DailyWorkPhase.REPORTING_WINDOW -> if (isDark) HeroIncompleteTitleDark else HeroIncompleteTitleLight
     }
+
+    val dateColor = when (phase) {
+        DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteDateDark else HeroCompleteDateLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) StatusHolidayIconDark else StatusHolidayIconLight
+        DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+        DailyWorkPhase.WORKING -> if (isDark) Color(0xFF7DD3FC) else Color(0xFF0284C7)
+        DailyWorkPhase.REPORTING_WINDOW -> if (isDark) HeroIncompleteDateDark else HeroIncompleteDateLight
+    }
+
+    val descColor = when (phase) {
+        DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteDescDark else HeroCompleteDescLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) TextSecondaryDark else TextSecondaryLight
+        DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)
+        DailyWorkPhase.WORKING -> if (isDark) Color(0xFFE2E8F0) else Color(0xFF0C4A6E)
+        DailyWorkPhase.REPORTING_WINDOW -> if (isDark) HeroIncompleteDescDark else HeroIncompleteDescLight
+    }
+
     val metricBoxColor = if (isDark) MetricPanelDark else MetricPanelLight
     val metricBorder = when {
         isDark -> BorderStroke(1.dp, Color.Transparent)
-        isComplete -> BorderStroke(1.dp, HeroCompleteBorderLight)
-        else -> BorderStroke(1.dp, HeroIncompleteBorderLight)
+        phase == DailyWorkPhase.COMPLETED -> BorderStroke(1.dp, HeroCompleteBorderLight)
+        phase == DailyWorkPhase.WORKING -> BorderStroke(1.dp, Color(0xFFBAE6FD))
+        phase == DailyWorkPhase.REPORTING_WINDOW -> BorderStroke(1.dp, HeroIncompleteBorderLight)
+        else -> BorderStroke(1.dp, Color(0xFFCBD5E1))
     }
     val metricLabelColor = if (isDark) MetricLabelDark else MetricLabelLight
     val metricValueColor = when {
         isDark -> Color.White
-        isComplete -> HeroCompleteTitleLight
-        else -> HeroIncompleteTitleLight
+        phase == DailyWorkPhase.COMPLETED -> HeroCompleteTitleLight
+        phase == DailyWorkPhase.WORKING -> Color(0xFF0369A1)
+        phase == DailyWorkPhase.REPORTING_WINDOW -> HeroIncompleteTitleLight
+        else -> Color(0xFF1E293B)
+    }
+
+    val badgeIcon = when (phase) {
+        DailyWorkPhase.COMPLETED -> Icons.Default.Check
+        DailyWorkPhase.HOLIDAY -> Icons.Default.DateRange
+        DailyWorkPhase.BEFORE_WORK -> Icons.Default.Schedule
+        DailyWorkPhase.WORKING -> Icons.Default.Schedule
+        DailyWorkPhase.REPORTING_WINDOW -> Icons.Default.Close
+    }
+
+    val workStartTimeStr = String.format("%02d:%02d", uiState.reminderSettings.workStartHour, uiState.reminderSettings.workStartMinute)
+    val reportStartTimeStr = "${uiState.reminderSettings.startHour}:00"
+
+    val statusTitle = when (phase) {
+        DailyWorkPhase.COMPLETED -> "Lengkap"
+        DailyWorkPhase.HOLIDAY -> "Hari Libur"
+        DailyWorkPhase.BEFORE_WORK -> "Menunggu jam kerja"
+        DailyWorkPhase.WORKING -> "Selamat bekerja"
+        DailyWorkPhase.REPORTING_WINDOW -> "Belum lengkap"
+    }
+
+    val statusDescription = when (phase) {
+        DailyWorkPhase.COMPLETED -> "Presensi dan kehadiran Anda hari ini sudah tercatat lengkap."
+        DailyWorkPhase.HOLIDAY -> "Hari ini hari libur atau off day terjadwal. Tidak ada kewajiban presensi."
+        DailyWorkPhase.BEFORE_WORK -> "Jam kerja dimulai pukul $workStartTimeStr WIB. Pengisian laporan presensi dibuka pukul $reportStartTimeStr WIB."
+        DailyWorkPhase.WORKING -> "Fokus dulu dengan kegiatan magangmu hari ini. Pengisian laporan presensi dibuka pukul $reportStartTimeStr WIB."
+        DailyWorkPhase.REPORTING_WINDOW -> "Presensi dan logbook hari ini belum tercatat. Selesaikan sebelum batas waktu."
+    }
+
+    val (metricLeftLabel, metricLeftValue) = when (phase) {
+        DailyWorkPhase.COMPLETED -> Pair("Status", "Tuntas")
+        DailyWorkPhase.HOLIDAY -> Pair("Status", "Libur")
+        DailyWorkPhase.BEFORE_WORK -> Pair("Mulai kerja", "$workStartTimeStr WIB")
+        DailyWorkPhase.WORKING -> Pair("Laporan dibuka", "$reportStartTimeStr WIB")
+        DailyWorkPhase.REPORTING_WINDOW -> Pair("Sisa waktu", remainingTimeText)
+    }
+
+    val (metricRightLabel, metricRightValue) = when (phase) {
+        DailyWorkPhase.COMPLETED -> Pair("Batas pengisian", "23.59 WIB")
+        DailyWorkPhase.HOLIDAY -> Pair("Jadwal", "Off Day")
+        DailyWorkPhase.BEFORE_WORK -> Pair("Laporan dibuka", "$reportStartTimeStr WIB")
+        DailyWorkPhase.WORKING -> Pair("Batas akhir", "23.59 WIB")
+        DailyWorkPhase.REPORTING_WINDOW -> Pair("Batas pengisian", "23.59 WIB")
     }
 
     val animSpec = tween<Color>(300)
@@ -453,7 +505,7 @@ private fun HeroStatusCard(
                 lineHeight = 20.sp
             )
 
-            // Metric Box (Sisa Waktu & Batas Pengisian)
+            // Metric Box (Left & Right Metrics)
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = animatedMetricBoxColor,
@@ -467,13 +519,13 @@ private fun HeroStatusCard(
                 ) {
                     Column {
                         Text(
-                            text = "Sisa waktu",
+                            text = metricLeftLabel,
                             style = MaterialTheme.typography.labelSmall,
                             color = animatedMetricLabelColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = remainingTimeText,
+                            text = metricLeftValue,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = animatedMetricValueColor
@@ -482,13 +534,13 @@ private fun HeroStatusCard(
 
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "Batas pengisian",
+                            text = metricRightLabel,
                             style = MaterialTheme.typography.labelSmall,
                             color = animatedMetricLabelColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "23.59 WIB",
+                            text = metricRightValue,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = animatedMetricValueColor
@@ -748,14 +800,15 @@ private fun BottomCtaSection(
     openMonevPortal: () -> Unit,
     haptic: HapticFeedback
 ) {
-    val isComplete = uiState.isAttended || uiState.isHoliday
+    val phase = uiState.getDailyWorkPhase()
+    val isReportingPending = phase == DailyWorkPhase.REPORTING_WINDOW
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 4.dp)
     ) {
-        if (isComplete) {
+        if (!isReportingPending) {
             OutlinedButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)

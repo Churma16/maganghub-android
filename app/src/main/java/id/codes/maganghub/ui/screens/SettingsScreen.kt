@@ -508,11 +508,77 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Jam Mulai (WIB)
+                // Jam Mulai Kerja (WIB) with Native TimePickerDialog
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(
+                            text = "Jam mulai kerja (WIB)",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Awal fase 'Selamat bekerja' sebelum jam presensi dibuka",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    val workTimeText = String.format("%02d:%02d WIB", settings.workStartHour, settings.workStartMinute)
+                    Surface(
+                        modifier = Modifier.height(40.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7),
+                        border = BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8)),
+                        onClick = {
+                            val timePicker = android.app.TimePickerDialog(
+                                context,
+                                { _, hour, minute ->
+                                    if (hour >= settings.startHour) {
+                                        showFeedbackToast("Jam mulai kerja harus sebelum jam notifikasi (${settings.startHour}:00 WIB)")
+                                    } else {
+                                        onUpdateReminderSettings(
+                                            settings.copy(
+                                                workStartHour = hour,
+                                                workStartMinute = minute
+                                            )
+                                        )
+                                        showFeedbackToast(String.format("Jam mulai kerja diatur ke %02d:%02d WIB", hour, minute))
+                                    }
+                                },
+                                settings.workStartHour,
+                                settings.workStartMinute,
+                                true
+                            )
+                            timePicker.show()
+                        }
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = workTimeText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B)
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = cardBorderColor)
+
+                // Jam Mulai Notifikasi Presensi (WIB)
                 // Chips: Unselected text #E2E8F0 / #1E293B, border #3B4B6B / #94A3B8. Selected: bg #DBEAFE, text #1E3A8A
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Jam mulai (WIB)",
+                        text = "Jam mulai notifikasi presensi (WIB)",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -536,8 +602,12 @@ fun SettingsScreen(
                                 border = chipBorder,
                                 onClick = {
                                     if (!selected) {
-                                        onUpdateReminderSettings(settings.copy(startHour = hour))
-                                        showFeedbackToast("Notifikasi dimulai pukul $hour:00 WIB")
+                                        if (hour <= settings.workStartHour) {
+                                            showFeedbackToast("Jam notifikasi harus sesudah jam mulai kerja (${String.format("%02d:%02d", settings.workStartHour, settings.workStartMinute)} WIB)")
+                                        } else {
+                                            onUpdateReminderSettings(settings.copy(startHour = hour))
+                                            showFeedbackToast("Notifikasi dimulai pukul $hour:00 WIB")
+                                        }
                                     }
                                 }
                             ) {
