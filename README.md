@@ -4,24 +4,43 @@
 [![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-brightgreen.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.23-blue.svg)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.04.01-informational.svg)](https://developer.android.com/jetpack/compose)
+[![Glance](https://img.shields.io/badge/Jetpack%20Glance-1.1.0-darkgreen.svg)](https://developer.android.com/jetpack/androidx/releases/glance)
 [![Material 3](https://img.shields.io/badge/Design-Material%203-teal.svg)](https://m3.material.io)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
-Aplikasi Android pengingat presensi dan pengisian logbook harian untuk peserta MagangHub Kemnaker (Monev). Aplikasi ini mengecek status kehadiran secara berkala dan membunyikan alarm pengingat antara pukul 16:00 sampai 23:59 WIB jika kamu belum mengisi presensi hari ini.
+Aplikasi Android pengingat presensi dan pengisian logbook harian untuk peserta MagangHub Kemnaker (Monev). Aplikasi ini mengecek status kehadiran secara berkala, menampilkan status di layar utama melalui widget interaktif, dan membunyikan alarm pengingat antara sore hingga malam hari (16:00 sampai 23:59 WIB) jika kamu belum mengisi presensi hari ini.
+
+---
+
+## Pratinjau Antarmuka
+
+| Dashboard & Fase Kerja | Pengaturan Pengingat | Pengingat Approval Mentor |
+|:---:|:---:|:---:|
+| <img src="docs/images/dashboard.png" width="240" alt="Dashboard Screen" /> | <img src="docs/images/settings_reminders.png" width="240" alt="Settings Reminders Screen" /> | <img src="docs/images/settings_mentor.png" width="240" alt="Settings Mentor Screen" /> |
+
+<br/>
+
+### Home Screen Widget (Jetpack Glance)
+
+<p align="center">
+  <img src="docs/images/widget_card.png" width="600" alt="Home Screen Widget Card" />
+</p>
+<p align="center"><em>Widget interaktif di layar utama (1x5) dengan indikator status kehadiran real-time, info approval mentor, jadwal pengingat berikutnya, dan waktu sinkronisasi terakhir.</em></p>
 
 ---
 
 ## Daftar Isi
 1. [Latar Belakang](#latar-belakang)
-2. [Fitur Utama](#fitur-utama)
-3. [Arsitektur Aplikasi](#arsitektur-aplikasi)
-4. [Download dan Cara Pasang APK](#download-dan-cara-pasang-apk)
-5. [Pengaturan Agar Tidak Dimatikan OS (Anti-Kill)](#pengaturan-agar-tidak-dimatikan-os-anti-kill)
-6. [Kompilasi dari Source Code](#kompilasi-dari-source-code)
-7. [Keamanan dan Privasi Kredensial](#keamanan-dan-privasi-kredensial)
-8. [Siklus Rilis dan Versioning](#siklus-rilis-dan-versioning)
-9. [CI/CD Workflow](#cicd-workflow)
-10. [Lisensi](#lisensi)
+2. [Pratinjau Antarmuka](#pratinjau-antarmuka)
+3. [Fitur Utama](#fitur-utama)
+4. [Arsitektur Aplikasi](#arsitektur-aplikasi)
+5. [Download dan Cara Pasang APK](#download-dan-cara-pasang-apk)
+6. [Pengaturan Agar Tidak Dimatikan OS (Anti-Kill)](#pengaturan-agar-tidak-dimatikan-os-anti-kill)
+7. [Kompilasi dari Source Code](#kompilasi-dari-source-code)
+8. [Keamanan dan Privasi Kredensial](#keamanan-dan-privasi-kredensial)
+9. [Siklus Rilis dan Versioning](#siklus-rilis-dan-versioning)
+10. [CI/CD Workflow](#cicd-workflow)
+11. [Lisensi](#lisensi)
 
 ---
 
@@ -35,14 +54,43 @@ MagangHub Logbook Companion memindahkan logika pemantau presensi mandiri ke apli
 
 ## Fitur Utama
 
-### 1. Penjadwal Pengingat Sore dan Malam (16:00 - 23:59 WIB)
+### 1. Home Screen Widget Interaktif (Jetpack Glance)
+* **Pantau Cepat Tanpa Buka Aplikasi**: Menampilkan status kehadiran hari ini langsung di layar beranda (*Home Screen*) perangkat.
+* **Layout Responsif Otomatis**:
+  * **1x5 (Detailed)**: Menampilkan bar aksen status, teks kehadiran utama, status laporan harian, tanggal, divider horizontal, jadwal notifikasi berikutnya/keterangan selesai, serta waktu sinkronisasi terakhir.
+  * **1x3 (Compact)**: Menampilkan status ringkas untuk ukuran grid layar yang lebih sempit.
+* **4 Status Visual Dinamis**:
+  * 🟢 **Sudah Absen** (Hijau): Menandakan presensi dan logbook hari ini telah tercatat lengkap.
+  * 🟠 **Belum Absen** (Oranye/Kuning): Pengingat visual bahwa presensi hari ini belum diisi.
+  * 🔴 **Presensi Terlewat** (Merah): Peringatan jika jam kerja telah usai namun laporan belum disubmit.
+  * ⚪ **Hari Libur** (Netral): Menandakan hari libur nasional atau akhir pekan tanpa kewajiban presensi.
+* **Status Footer Cerdas**: Menampilkan status antrean pengingat (*"Hari ini pukul 16:00 WIB"* saat menunggu jam pelaporan atau *"Tidak ada notifikasi lagi"* setelah presensi terisi) lengkap dengan jam pengecekan terakhir.
+* **Pratinjau Widget Android 12+ (`previewLayout`)**: Dilengkapi layout pratinjau XML native AOSP RemoteViews (`widget_attendance_preview.xml`) sehingga launcher menampilkan pratinjau instan saat memilih widget di widget picker tanpa menunggu kompilasi runtime.
+* **Aksi Interaktif Langsung**: Tombol sinkronisasi cepat (*tap-to-refresh*) dan pintasan langsung membuka aplikasi.
+
+### 2. Fase Kerja Harian Adaptif (Adaptive Daily Work Phases)
+* **Linimasa Status Kontekstual**: Dashboard menyajikan status dinamis yang berubah cerdas mengikuti ritme hari kerja:
+  * 🌅 **Pra-Kerja** (Sebelum Jam Kerja): Menghitung mundur (*countdown*) menuju jam masuk kerja dan menampilkan informasi jadwal pengingat sore.
+  * 💼 **Jam Kerja**: Menampilkan pesan ucapan selamat bekerja dan memantau durasi sisa jam kerja aktif.
+  * 📝 **Pelaporan & Evaluasi** (16:00 - 23:59 WIB): Pengingat aktif pengisian presensi dan logbook Monev harian.
+  * 🌙 **Pasca-Kerja**: Menampilkan ringkasan santai setelah kewajiban presensi hari itu terpenuhi.
+* **Kustomisasi Jam Mulai Kerja**: Bebas mengatur jam masuk kerja melalui dialog pemilih waktu intuitif (`TimePickerDialog`), dengan pengaturan standar pukul 08:00 WIB.
+* **Call-to-Action (CTA) Monev Adaptif**: Tombol akses cepat ke portal Monev dengan teks aksi yang relevan terhadap fase yang sedang berjalan.
+
+### 3. Pelacak & Pengingat Approval Mentor
+* **Monitoring Status Approval Laporan**: Mendeteksi presensi dan logbook yang telah dikirim namun masih menunggu persetujuan pembimbing/mentor magang.
+* **Indikator Progres Visual**: Kartu khusus di Dashboard yang menampilkan jumlah hari tunggu serta batas toleransi keterlambatan.
+* **Pilihan Ambang Batas Hari Fleksibel**: Pengguna dapat memilih toleransi waktu tunggu approval: **1 hari**, **3 hari**, atau **5 hari**.
+* **Alarm Notifikasi Keterlambatan**: Notifikasi khusus akan dibunyikan jika laporan belum disetujui mentor melewati ambang batas yang ditentukan.
+
+### 4. Penjadwal Pengingat Sore dan Malam (16:00 - 23:59 WIB)
 * **AlarmManager Exact Clock (`RTC_WAKEUP`)**: Menggunakan `setAlarmClock` yang diizinkan sistem Android untuk menembus Doze mode pada jam yang sudah ditentukan tanpa tertunda oleh deep sleep perangkat.
 * **WorkManager Periodic Safety Net**: Pengecekan cadangan berbasis koneksi jaringan aktif (`NetworkType.CONNECTED`) jika AlarmManager dibatasi oleh sistem.
 * **Boot dan Update Receiver**: Menjadwalkan ulang alarm otomatis setelah ponsel dinyalakan ulang (`BOOT_COMPLETED`) atau setelah aplikasi diperbarui (`MY_PACKAGE_REPLACED`).
 * **Pengecekan Hari Libur**: Otomatis mendeteksi hari libur nasional atau jadwal libur mingguan dari data Monev, sehingga tidak akan memicu alarm di hari libur.
 * **Auto-Mute Setelah Absen**: Begitu presensi hari ini terdeteksi sudah diisi, alarm pengingat hari itu langsung berhenti dan dijadwalkan kembali untuk besok sore pukul 16:00 WIB.
 
-### 2. Notifikasi Prioritas Tinggi dan Aksi Cepat
+### 5. Notifikasi Prioritas Tinggi dan Aksi Cepat
 * **Kanal Notifikasi Prioritas Tinggi**: Notifikasi muncul di bagian atas layar (heads-up banner) disertai suara dan getar.
 * **Tombol Aksi Cepat pada Notifikasi**:
   * **Buka Monev**: Membuka dashboard Monev MagangHub langsung di browser bawaan ponsel.
@@ -50,7 +98,7 @@ MagangHub Logbook Companion memindahkan logika pemantau presensi mandiri ke apli
   * **Tunda 30 Menit**: Menunda jadwal alarm pengingat berikutnya selama 30 menit.
 * **Konfirmasi Harian**: Menampilkan notifikasi pemberitahuan saat kehadiran berhasil diverifikasi sudah masuk.
 
-### 3. Autentikasi SIAPkerja Kemnaker SSO 4-Tahap
+### 6. Autentikasi SIAPkerja Kemnaker SSO 4-Tahap
 * Menangani alur login SSO resmi:
   1. `GET /auth/login` MagangHub API untuk mendapatkan URL autorisasi SSO Kemnaker.
   2. `GET SSO authorization page` dengan penanganan cookie sesi dan pengambilan `csrf-token`.
@@ -64,25 +112,25 @@ MagangHub Logbook Companion memindahkan logika pemantau presensi mandiri ke apli
   * Memasang circuit breaker yang menangguhkan auto-login setelah 3 kali gagal autentikasi berturut-turut demi melindungi akun dari pemblokiran brute-force SSO.
 * **Penyimpanan Terenkripsi**: Password dan token disimpan menggunakan enkripsi AES-256 hardware Keystore (`EncryptedSharedPreferences`).
 
-### 4. Tampilan Jetpack Compose dan Material 3
-* Status kehadiran jelas: indikator visual tegas untuk status sudah absen atau belum absen.
-* Kartu informasi real-time: menampilkan tanggal, status laporan harian, dan jadwal pengingat berikutnya.
-* Pengaturan lengkap: atur jam mulai pengingat (bawaan: 16:00 WIB), interval alarm (bawaan: 30 menit), serta toggle suara dan getar.
-* Tombol uji notifikasi instan untuk memastikan perizinan kanal notifikasi di ponsel berfungsi dengan baik.
+### 7. Tampilan Jetpack Compose, Material 3, dan Haptic Feedback
+* **Desain Material 3**: Tampilan modern mengikuti panduan Material You dengan dukungan tema Terang, Gelap, dan Ikuti Sistem.
+* **Umpan Balik Haptik & Toast**: Konfirmasi getaran instan dan pesan pop-up saat mengubah setelan pengingat, memilih jam kerja, atau menyinkronkan status.
+* **Pengaturan Komprehensif**: Atur jam mulai kerja, jam mulai notifikasi sore, interval pengingat berkala (15, 30, 45, 60 menit), serta tombol tes notifikasi instan.
 
 ---
 
 ## Arsitektur Aplikasi
 
-Aplikasi dibangun dengan arsitektur terpisah antara tampilan, logika background, dan jaringan:
+Aplikasi dibangun dengan arsitektur terpisah antara tampilan, logika background, widget, dan jaringan:
 
 ```mermaid
 flowchart TD
-    subgraph UI ["Layer UI (Jetpack Compose & Material 3)"]
+    subgraph UI ["Layer UI (Jetpack Compose, Glance & Material 3)"]
         A[MainActivity] --> B[DashboardScreen]
         A --> C[SettingsScreen & LoginDialog]
         B --> D[AttendanceViewModel]
         C --> D
+        W1[AttendanceWidgetReceiver] --> W2[AttendanceGlanceWidget]
     end
 
     subgraph Background ["Layer Background & Notification"]
@@ -92,11 +140,15 @@ flowchart TD
         F -->|Trigger Worker| H[AttendanceCheckWorker]
         I[NotificationHelper] <-- Displays & Actions --> F
         H -->|Show Alerts| I
+        H -->|Enqueue Widget Sync| W3[AttendanceWidgetUpdateWorker]
+        W3 -->|Update RemoteViews| W2
     end
 
     subgraph Data ["Layer Data & Network"]
         D <--> J[AttendanceRepository]
         H <--> J
+        W2 <--> J
+        W3 <--> J
         J <--> K[MagangHubApiClient]
         J <--> L[EncryptedPreferences]
         K -->|4-Step SSO & Fetch Status| M[(Kemnaker SSO & Monev API)]
@@ -131,14 +183,24 @@ app/src/main/
 │   │   │   └── AttendanceRepositoryImpl.kt# Implementasi sinkronisasi & cache
 │   │   └── storage/
 │   │       └── EncryptedPreferences.kt    # Enkripsi kredensial AES-256
-│   └── ui/                                 # Antarmuka Jetpack Compose
-│       ├── MainActivity.kt                # Activity utama aplikasi
-│       ├── components/                    # Komponen UI modular
-│       ├── screens/                       # DashboardScreen & SettingsScreen
-│       ├── theme/                         # Color, Theme, & Typography M3
-│       └── viewmodel/
-│           ├── AttendanceViewModel.kt     # Logika state UI & handler user
-│           └── AttendanceUiState.kt       # State immutability holder
+│   ├── ui/                                 # Antarmuka Jetpack Compose
+│   │   ├── MainActivity.kt                # Activity utama aplikasi
+│   │   ├── components/                    # Komponen UI modular (cards, dialogs, banners)
+│   │   ├── screens/                       # DashboardScreen & SettingsScreen
+│   │   ├── theme/                         # Color, Theme, & Typography M3
+│   │   └── viewmodel/
+│   │       ├── AttendanceViewModel.kt     # Logika state UI & handler user
+│   │       └── AttendanceUiState.kt       # State immutability holder
+│   └── widget/                             # Jetpack Glance Home Screen Widget
+│       ├── AttendanceGlanceWidget.kt       # Komposisi UI Glance (1x5 & 1x3 responsive)
+│       ├── AttendanceWidgetReceiver.kt     # GlanceAppWidgetReceiver entrypoint
+│       ├── AttendanceWidgetUpdateWorker.kt # Worker sinkronisasi widget background
+│       └── WidgetTheme.kt                  # Palet warna & state visual widget
+└── res/
+    ├── layout/
+    │   └── widget_attendance_preview.xml  # Native RemoteViews preview untuk widget picker
+    └── xml/
+        └── attendance_widget_info.xml      # AppWidgetProvider metadata
 ```
 
 ---
@@ -198,10 +260,10 @@ chmod +x gradlew
 # Jalankan Unit Tests
 ./gradlew testDebugUnitTest
 
-# Build Debug APK (output: app/build/outputs/apk/debug/maganghub-v0.1.0-dev.apk)
+# Build Debug APK (output: app/build/outputs/apk/debug/maganghub-v<version>-dev.apk)
 ./gradlew assembleDebug
 
-# Build Signed Release APK (output: app/build/outputs/apk/release/maganghub-v0.1.0.apk)
+# Build Signed Release APK (output: app/build/outputs/apk/release/maganghub-v<version>.apk)
 ./gradlew assembleRelease
 
 # Build Snapshot APK dengan Version Suffix
