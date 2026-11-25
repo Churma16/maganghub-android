@@ -1,0 +1,78 @@
+package id.codes.maganghub.data.api
+
+import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
+import id.codes.maganghub.data.model.FeedbackRequest
+import id.codes.maganghub.data.model.FeedbackResponse
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
+import java.util.concurrent.TimeUnit
+
+/**
+ * API contract and client for sending feedback to the telegram bridge microservice.
+ */
+interface FeedbackApiClient {
+    suspend fun sendFeedback(request: FeedbackRequest): Result<FeedbackResponse>
+}
+
+/**
+ * Implementation using OkHttp and Gson serialization.
+ */
+class FeedbackApiClientImpl(
+    private val endpointUrl: String = DEFAULT_FEEDBACK_ENDPOINT,
+    private val client: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .build(),
+    private val gson: Gson = Gson()
+) : FeedbackApiClient {
+
+    companion object {
+        private const val TAG = "FeedbackApiClient"
+        const val DEFAULT_FEEDBACK_ENDPOINT = "https://feedback.churma.codes/api/v1/feedback"
+        private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+    }
+
+    override suspend fun sendFeedback(request: FeedbackRequest): Result<FeedbackResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val jsonPayload = gson.toJson(request)
+                val httpRequest = Request.Builder()
+                    .url(endpointUrl)
+                    .post(jsonPayload.toRequestBody(JSON_MEDIA_TYPE))
+                    .header("Accept", "application/json")
+                    .build()
+
+                client.newCall(httpRequest).execute().use { response ->
+                    val responseBody = response.body?.string().orEmpty()
+                    if (!response.isSuccessful) {
+                        val errorMsg = try {
+                            gson.fromJson(responseBody, FeedbackResponse::class.java)?.message
+                                ?: "HTTP ${response.code}: Gagal mengirim masukan"
+                        } catch (_: Exception) {
+                            "HTTP ${response.code}: Gagal mengirim masukan"
+                        }
+                        return@withContext Result.failure(IOException(errorMsg))
+                    }
+
+                    val parsed = try {
+                        gson.fromJson(responseBody, FeedbackResponse::class.java)
+                    } catch (e: JsonSyntaxException) {
+                        return@withContext Result.failure(IOException("Format respons server tidak valid", e))
+                    } ?: return@withContext Result.failure(IOException("Respons server kosong"))
+
+                    Result.success(parsed)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to send feedback: ${e.message}", e)
+                Result.failure(e)
+            }
+        }
+    }
+}

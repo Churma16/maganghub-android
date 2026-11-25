@@ -3,6 +3,10 @@ package id.codes.maganghub.ui.viewmodel
 import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.FeedbackRequest
+import id.codes.maganghub.data.model.FeedbackResponse
+import id.codes.maganghub.data.model.FeedbackType
+import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UserProfileData
@@ -20,6 +24,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -94,6 +99,12 @@ class AttendanceViewModelTest {
         override fun getCachedStatus(): AttendanceStatus = cachedStatus
         override fun getLastCheckTimestamp(): Long = cachedTimestamp
         override fun hasSavedCredentials(): Boolean = hasCredentialsSaved
+
+        var submitFeedbackResult: Result<FeedbackResponse> = Result.success(FeedbackResponse(success = true))
+
+        override suspend fun submitFeedback(request: FeedbackRequest): Result<FeedbackResponse> {
+            return submitFeedbackResult
+        }
 
         override suspend fun snoozeMentorReminderOneDay() {
             val snoozeUntil = System.currentTimeMillis() + 24 * 60 * 60 * 1000L
@@ -200,6 +211,78 @@ class AttendanceViewModelTest {
     }
 
     @Test
+    fun testSubmitFeedbackSuccess() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        viewModel.setFeedbackSheetOpen(true)
+        assertTrue(viewModel.uiState.value.isFeedbackSheetOpen)
+
+        var successCalled = false
+        viewModel.submitFeedback(
+            type = FeedbackType.BUG,
+            message = "Ada bug di alarm",
+            onSuccess = { successCalled = true }
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(successCalled)
+        assertFalse(viewModel.uiState.value.isFeedbackSheetOpen)
+        assertFalse(viewModel.uiState.value.isSubmittingFeedback)
+        assertEquals("Terima kasih! Masukanmu berhasil dikirim.", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun testSubmitFeedbackFailure() = runTest {
+        val repo = FakeAttendanceRepository()
+        repo.submitFeedbackResult = Result.failure(java.io.IOException("Jaringan bermasalah"))
+        val viewModel = AttendanceViewModel(repo)
+
+        viewModel.setFeedbackSheetOpen(true)
+        assertTrue(viewModel.uiState.value.isFeedbackSheetOpen)
+
+        var errorCalled = false
+        var capturedError: String? = null
+        viewModel.submitFeedback(
+            type = FeedbackType.BUG,
+            message = "Ada bug fatal",
+            onError = {
+                errorCalled = true
+                capturedError = it
+            }
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(errorCalled)
+        assertEquals("Jaringan bermasalah", capturedError)
+        // Sheet stays open on failure so message is not lost
+        assertTrue(viewModel.uiState.value.isFeedbackSheetOpen)
+        assertFalse(viewModel.uiState.value.isSubmittingFeedback)
+        assertEquals("Jaringan bermasalah", viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun testSubmitFeedbackEmptyMessageValidation() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        var errorCalled = false
+        var errorMessage: String? = null
+        viewModel.submitFeedback(
+            type = FeedbackType.FEATURE_REQUEST,
+            message = "   ",
+            onError = {
+                errorCalled = true
+                errorMessage = it
+            }
+        )
+
+        assertTrue(errorCalled)
+        assertEquals("Masukan tidak boleh kosong", errorMessage)
+        assertEquals("Masukan tidak boleh kosong", viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
     fun testFormatLastSync() {
         val repo = FakeAttendanceRepository()
         val viewModel = AttendanceViewModel(repo)
@@ -301,5 +384,22 @@ class AttendanceViewModelTest {
         assertEquals(true, viewModel.uiState.value.reminderSettings.mentorReminderEnabled)
         assertEquals(5, viewModel.uiState.value.reminderSettings.mentorReviewThresholdDays)
         assertEquals(60, viewModel.uiState.value.reminderSettings.mentorRepeatIntervalMinutes)
+    }
+
+    @Test
+    fun testShowAndDismissLegalDocument() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        assertNull(viewModel.uiState.value.activeLegalDocument)
+
+        viewModel.showLegalDocument(LegalDocumentType.PRIVACY_POLICY)
+        assertEquals(LegalDocumentType.PRIVACY_POLICY, viewModel.uiState.value.activeLegalDocument)
+
+        viewModel.showLegalDocument(LegalDocumentType.TERMS_OF_SERVICE)
+        assertEquals(LegalDocumentType.TERMS_OF_SERVICE, viewModel.uiState.value.activeLegalDocument)
+
+        viewModel.dismissLegalDocument()
+        assertNull(viewModel.uiState.value.activeLegalDocument)
     }
 }

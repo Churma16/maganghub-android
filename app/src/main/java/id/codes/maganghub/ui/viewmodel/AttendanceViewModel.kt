@@ -4,10 +4,15 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import id.codes.maganghub.BuildConfig
 import id.codes.maganghub.MagangHubApp
 import id.codes.maganghub.background.AttendanceAlarmScheduler
 import id.codes.maganghub.background.NotificationHelper
+import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.FeedbackRequest
+import id.codes.maganghub.data.model.FeedbackType
+import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.repository.AttendanceRepository
@@ -215,6 +220,83 @@ class AttendanceViewModel(
      */
     fun clearMessages() {
         _uiState.update { it.copy(errorMessage = null, successMessage = null) }
+    }
+
+    /**
+     * Sets a transient success message.
+     */
+    fun setSuccessMessage(message: String?) {
+        _uiState.update { it.copy(successMessage = message, errorMessage = null) }
+    }
+
+    /**
+     * Sets a transient error message.
+     */
+    fun setErrorMessage(message: String?) {
+        _uiState.update { it.copy(errorMessage = message, successMessage = null) }
+    }
+
+    /**
+     * Opens or closes the feedback bottom sheet.
+     */
+    fun setFeedbackSheetOpen(open: Boolean) {
+        _uiState.update { it.copy(isFeedbackSheetOpen = open, errorMessage = null) }
+    }
+
+    /**
+     * Shows the in-app legal document bottom sheet (Privacy Policy or Terms of Service).
+     */
+    fun showLegalDocument(type: LegalDocumentType) {
+        _uiState.update { it.copy(activeLegalDocument = type) }
+    }
+
+    /**
+     * Dismisses the active legal document bottom sheet.
+     */
+    fun dismissLegalDocument() {
+        _uiState.update { it.copy(activeLegalDocument = null) }
+    }
+
+    /**
+     * Submits user feedback (bug report, feature suggestion, general feedback).
+     */
+    fun submitFeedback(
+        type: FeedbackType,
+        message: String,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        if (message.isBlank()) {
+            val error = "Masukan tidak boleh kosong"
+            setErrorMessage(error)
+            onError(error)
+            return
+        }
+
+        val request = FeedbackRequest(
+            type = type,
+            message = message.trim(),
+            appVersion = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+            deviceModel = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
+            osVersion = "Android ${android.os.Build.VERSION.RELEASE} (SDK ${android.os.Build.VERSION.SDK_INT})",
+            timestamp = System.currentTimeMillis()
+        )
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmittingFeedback = true) }
+            val result = repository.submitFeedback(request)
+            _uiState.update { it.copy(isSubmittingFeedback = false) }
+
+            result.onSuccess {
+                setFeedbackSheetOpen(false)
+                setSuccessMessage("Terima kasih! Masukanmu berhasil dikirim.")
+                onSuccess()
+            }.onFailure { err ->
+                val errorMsg = err.message ?: "Gagal mengirim masukan. Coba lagi nanti."
+                setErrorMessage(errorMsg)
+                onError(errorMsg)
+            }
+        }
     }
 
     /**

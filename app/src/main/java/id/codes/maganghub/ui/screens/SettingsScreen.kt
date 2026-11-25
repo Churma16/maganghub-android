@@ -37,10 +37,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DesktopWindows
 import androidx.compose.material.icons.outlined.LightMode
@@ -52,7 +54,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -75,6 +77,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
@@ -85,6 +88,7 @@ import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.ui.theme.ChipSelectedText
 import id.codes.maganghub.ui.theme.HadirGreenLight
 import id.codes.maganghub.ui.theme.HadirGreenText
+import id.codes.maganghub.ui.theme.KemnakerSky
 import id.codes.maganghub.ui.theme.NavActivePillBg
 import id.codes.maganghub.ui.theme.PureWhite
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
@@ -115,6 +119,9 @@ fun SettingsScreen(
     onOpenLoginDialog: () -> Unit,
     onLogout: () -> Unit,
     onTestNotification: () -> Unit,
+    onOpenFeedback: () -> Unit = {},
+    onOpenPrivacyPolicy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -196,10 +203,7 @@ fun SettingsScreen(
 
             OutlinedButton(
                 onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_MONEV_DASHBOARD)).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(intent)
+                    NotificationHelper.openWebUrl(context, NotificationHelper.URL_MONEV_DASHBOARD)
                 },
                 modifier = Modifier
                     .weight(1f)
@@ -559,7 +563,7 @@ fun SettingsScreen(
                     }
                 }
 
-                Divider(color = cardBorderColor)
+                HorizontalDivider(color = cardBorderColor)
 
                 // Switch 1: Pengingat berulang
                 // Toggles: Track on #0369A1, off #3B4B6B / #64748B, knob #FFFFFF
@@ -657,7 +661,7 @@ fun SettingsScreen(
                 )
 
                 if (settings.mentorReminderEnabled) {
-                    Divider(color = cardBorderColor)
+                    HorizontalDivider(color = cardBorderColor)
 
                     // Row 1: Batas hari belum di-approve
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -755,7 +759,7 @@ fun SettingsScreen(
             }
         }
 
-        // 7. Footer: MagangHub Logbook Companion with explanatory text
+        // 7. Bantuan dan Informasi Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -764,22 +768,136 @@ fun SettingsScreen(
             elevation = cardElevation
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "MagangHub Logbook Companion v${BuildConfig.VERSION_NAME}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "Bantuan dan informasi",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp)
                 )
-                Text(
-                    text = "Pengingat harian dan cek status presensi MagangHub biar nggak kelupaan isi logbook.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+
+                // Row 1: Kirim masukan
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenFeedback() }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ChatBubbleOutline,
+                            contentDescription = null,
+                            tint = KemnakerSky,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        Text(
+                            text = "Kirim masukan",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Laporkan bug atau usul fitur",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                HorizontalDivider(
+                    color = cardBorderColor,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(horizontal = 16.dp)
                 )
+
+                // Row 2: Kebijakan Privasi
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenPrivacyPolicy() }
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Kebijakan Privasi",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Icon(
+                        imageVector = Icons.Default.OpenInNew,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                HorizontalDivider(
+                    color = cardBorderColor,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                // Row 3: Syarat dan Ketentuan
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenTerms() }
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Syarat dan Ketentuan",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Icon(
+                        imageVector = Icons.Default.OpenInNew,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
+
+        // 7. Footer: Clean centered version label matching mockups
+        Text(
+            text = "MagangHub Logbook Companion v${BuildConfig.VERSION_NAME}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            textAlign = TextAlign.Center
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
     }

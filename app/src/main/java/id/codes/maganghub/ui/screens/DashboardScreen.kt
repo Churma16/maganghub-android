@@ -158,7 +158,9 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onDismissMessage: () -> Unit = {},
-    onSnoozeMentorReminder: () -> Unit = {}
+    onSnoozeMentorReminder: () -> Unit = {},
+    onOpenPrivacyPolicy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -171,10 +173,17 @@ fun DashboardScreen(
     }
 
     val openMonevPortal: () -> Unit = {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_MONEV_DASHBOARD)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        context.startActivity(intent)
+        NotificationHelper.openWebUrl(context, NotificationHelper.URL_MONEV_DASHBOARD)
+    }
+
+    if (!uiState.isLoggedIn) {
+        WelcomeScreen(
+            onOpenLoginDialog = onOpenLoginDialog,
+            modifier = modifier,
+            onOpenPrivacyPolicy = onOpenPrivacyPolicy,
+            onOpenTerms = onOpenTerms
+        )
+        return
     }
 
     var remainingTimeText by remember { mutableStateOf(calculateRemainingTime().first) }
@@ -194,57 +203,7 @@ fun DashboardScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. Unauthenticated Prompt Banner
-        if (!uiState.isLoggedIn) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = if (isDark) SurfaceDark else SurfaceLight),
-                border = BorderStroke(1.dp, if (isDark) OutlineDark else OutlineLight),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = if (isDark) AccentSkyDark else AccentSkyLight,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Akun Belum Terhubung",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = if (isDark) TextPrimaryDark else TextPrimaryLight
-                        )
-                        Text(
-                            text = "Masuk SSO Kemnaker untuk memantau presensi otomatis.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (isDark) TextSecondaryDark else TextSecondaryLight
-                        )
-                    }
-                    Button(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onOpenLoginDialog()
-                        },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = PrimaryCta,
-                            contentColor = OnPrimaryCta
-                        )
-                    ) {
-                        Text("Masuk", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
-        // 2. Runtime Error Alert Banner with inline "Coba Lagi"
+        // 1. Runtime Error Alert Banner with inline "Coba Lagi"
         AnimatedVisibility(
             visible = uiState.errorMessage != null,
             enter = fadeIn(),

@@ -3,6 +3,8 @@ package id.codes.maganghub.data.repository
 import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.FeedbackRequest
+import id.codes.maganghub.data.model.FeedbackResponse
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UserProfileData
@@ -79,6 +81,11 @@ interface AttendanceRepository {
      * Whether valid username and password credentials are saved locally.
      */
     fun hasSavedCredentials(): Boolean
+
+    /**
+     * Submits user feedback (bug report, feature request, general feedback).
+     */
+    suspend fun submitFeedback(request: FeedbackRequest): Result<FeedbackResponse>
 
     /**
      * Postpones mentor review reminder notifications for 24 hours.

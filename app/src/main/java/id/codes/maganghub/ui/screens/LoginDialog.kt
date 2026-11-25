@@ -51,6 +51,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import id.codes.maganghub.ui.components.LegalConsentText
 import id.codes.maganghub.ui.theme.DangerRed
 import id.codes.maganghub.ui.theme.PureWhite
 
@@ -60,6 +61,8 @@ fun LoginDialog(
     isLoading: Boolean,
     errorMessage: String?,
     onDismiss: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
     onLogin: (username: String, password: String) -> Unit
 ) {
     if (!isOpen) return
@@ -209,6 +212,13 @@ fun LoginDialog(
                         }
                     ),
                     modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+                LegalConsentText(
+                    modifier = Modifier.fillMaxWidth(),
+                    onOpenTerms = onOpenTerms,
+                    onOpenPrivacyPolicy = onOpenPrivacyPolicy
                 )
             }
         },
