@@ -633,22 +633,22 @@ fun SettingsScreen(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Pengingat Mentor",
+                        text = "Pengingat Approval Presensi Mentor",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Beri tahu jika laporan belum ditinjau mentor setelah beberapa hari",
+                        text = "Beri tahu jika mentor belum meng-approve logbook presensi",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                // Switch row: "Ingatkan mentor otomatis"
+                // Switch row: "Aktifkan notifikasi pengingat"
                 ReminderToggleRow(
-                    title = "Ingatkan mentor otomatis",
-                    subtitle = "Notifikasi berkala jika ada laporan menunggu peninjauan",
+                    title = "Aktifkan notifikasi pengingat",
+                    subtitle = "Kirim notifikasi saat laporan belum di-approve melewati batas hari",
                     checked = settings.mentorReminderEnabled,
                     isDark = isDark,
                     onCheckedChange = { checked ->
@@ -659,10 +659,10 @@ fun SettingsScreen(
                 if (settings.mentorReminderEnabled) {
                     Divider(color = cardBorderColor)
 
-                    // Row 1: Batas hari belum ditinjau
+                    // Row 1: Batas hari belum di-approve
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Batas hari belum ditinjau",
+                            text = "Batas hari belum di-approve",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
