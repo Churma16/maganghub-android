@@ -32,6 +32,8 @@ data class ReminderSettings(
     val isEnabled: Boolean = true,
     val morningReminderEnabled: Boolean = true,
     val skipHolidays: Boolean = true,
+    val workStartHour: Int = 8,
+    val workStartMinute: Int = 0,
     val startHour: Int = 16,
     val endHour: Int = 24,
     val intervalMinutes: Int = 30,
