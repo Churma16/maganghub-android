@@ -3,6 +3,8 @@ package id.codes.maganghub.ui.screens
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
@@ -185,7 +187,7 @@ fun DashboardScreen(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = if (isDark) SurfaceDark else SurfaceLight),
                 border = BorderStroke(1.dp, if (isDark) OutlineDark else OutlineLight),
-                elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -399,12 +401,23 @@ private fun HeroStatusCard(
         else -> HeroIncompleteTitleLight
     }
 
+    val animSpec = tween<Color>(300)
+    val animatedContainerColor by animateColorAsState(containerColor, animSpec, label = "heroContainer")
+    val animatedBorderColor by animateColorAsState(borderColor, animSpec, label = "heroBorder")
+    val animatedBadgeColor by animateColorAsState(badgeColor, animSpec, label = "heroBadge")
+    val animatedTitleColor by animateColorAsState(titleColor, animSpec, label = "heroTitle")
+    val animatedDateColor by animateColorAsState(dateColor, animSpec, label = "heroDate")
+    val animatedDescColor by animateColorAsState(descColor, animSpec, label = "heroDesc")
+    val animatedMetricBoxColor by animateColorAsState(metricBoxColor, animSpec, label = "metricBox")
+    val animatedMetricLabelColor by animateColorAsState(metricLabelColor, animSpec, label = "metricLabel")
+    val animatedMetricValueColor by animateColorAsState(metricValueColor, animSpec, label = "metricValue")
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = BorderStroke(1.dp, borderColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 2.dp)
+        colors = CardDefaults.cardColors(containerColor = animatedContainerColor),
+        border = BorderStroke(1.dp, animatedBorderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -419,7 +432,7 @@ private fun HeroStatusCard(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(badgeColor),
+                        .background(animatedBadgeColor),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -434,13 +447,13 @@ private fun HeroStatusCard(
                     Text(
                         text = formatHeroDate(uiState.attendanceData?.date),
                         style = MaterialTheme.typography.labelMedium,
-                        color = dateColor
+                        color = animatedDateColor
                     )
                     Text(
                         text = statusTitle,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = titleColor
+                        color = animatedTitleColor
                     )
                 }
             }
@@ -449,14 +462,14 @@ private fun HeroStatusCard(
             Text(
                 text = statusDescription,
                 style = MaterialTheme.typography.bodyMedium,
-                color = descColor,
+                color = animatedDescColor,
                 lineHeight = 20.sp
             )
 
             // Metric Box (Sisa Waktu & Batas Pengisian)
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = metricBoxColor,
+                color = animatedMetricBoxColor,
                 border = metricBorder,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -469,14 +482,14 @@ private fun HeroStatusCard(
                         Text(
                             text = "Sisa waktu",
                             style = MaterialTheme.typography.labelSmall,
-                            color = metricLabelColor
+                            color = animatedMetricLabelColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = remainingTimeText,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = metricValueColor
+                            color = animatedMetricValueColor
                         )
                     }
 
@@ -484,14 +497,14 @@ private fun HeroStatusCard(
                         Text(
                             text = "Batas pengisian",
                             style = MaterialTheme.typography.labelSmall,
-                            color = metricLabelColor
+                            color = animatedMetricLabelColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "23.59 WIB",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = metricValueColor
+                            color = animatedMetricValueColor
                         )
                     }
                 }
@@ -512,7 +525,7 @@ private fun MiniStatusCards(uiState: AttendanceUiState) {
 
     val cardBorder = BorderStroke(1.dp, if (isDark) OutlineDark else OutlineLight)
     val cardBg = if (isDark) SurfaceDark else SurfaceLight
-    val cardElevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.5.dp)
+    val cardElevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // Card 1: Status Magang
@@ -686,7 +699,7 @@ private fun PengingatCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = if (isDark) SurfaceDark else SurfaceLight),
         border = BorderStroke(1.dp, if (isDark) OutlineDark else OutlineLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.5.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -790,7 +803,7 @@ private fun BottomCtaSection(
             shape = RoundedCornerShape(14.dp),
             color = if (isDark) SurfaceDark else SurfaceLight,
             border = BorderStroke(1.dp, if (isDark) OutlineButtonBorderDark else OutlineButtonBorderLight),
-            shadowElevation = if (isDark) 0.dp else 1.5.dp,
+            shadowElevation = 0.dp,
             modifier = Modifier.size(52.dp),
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)

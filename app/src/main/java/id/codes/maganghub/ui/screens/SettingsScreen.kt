@@ -8,19 +8,27 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -138,7 +146,7 @@ fun SettingsScreen(
     // Card border / divider: Dark #263450 | Light #D5DDEA
     val cardBorderColor = if (isDark) Color(0xFF263450) else Color(0xFFD5DDEA)
     val cardBorder = BorderStroke(1.dp, cardBorderColor)
-    val cardElevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.5.dp)
+    val cardElevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
 
     // Quick action outline buttons: border #3B4B6B / #94A3B8, icon #E2E8F0 / #334155
     val quickActionBorder = BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
@@ -343,43 +351,13 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                // Segmented control track: #0B1220 / #EEF2F7. Active pill: #DBEAFE bg with #1E3A8A text
-                val trackBg = if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7)
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = trackBg,
-                    border = BorderStroke(1.dp, cardBorderColor)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        ThemeSegmentButton(
-                            modifier = Modifier.weight(1f),
-                            selected = uiState.themeMode == ThemeMode.SYSTEM,
-                            icon = Icons.Outlined.DesktopWindows,
-                            label = "Sistem",
-                            onClick = { onSetThemeMode(ThemeMode.SYSTEM) }
-                        )
-                        ThemeSegmentButton(
-                            modifier = Modifier.weight(1f),
-                            selected = uiState.themeMode == ThemeMode.LIGHT,
-                            icon = Icons.Outlined.LightMode,
-                            label = "Terang",
-                            onClick = { onSetThemeMode(ThemeMode.LIGHT) }
-                        )
-                        ThemeSegmentButton(
-                            modifier = Modifier.weight(1f),
-                            selected = uiState.themeMode == ThemeMode.DARK,
-                            icon = Icons.Outlined.DarkMode,
-                            label = "Gelap",
-                            onClick = { onSetThemeMode(ThemeMode.DARK) }
-                        )
-                    }
-                }
+                // 3-Option Segmented Control with smooth sliding animated pill
+                ThemeSegmentedSlider(
+                    currentMode = uiState.themeMode,
+                    isDark = isDark,
+                    cardBorderColor = cardBorderColor,
+                    onSelectMode = onSetThemeMode
+                )
 
                 Text(
                     text = when (uiState.themeMode) {
@@ -756,53 +734,111 @@ private fun ReminderToggleRow(
 }
 
 /**
- * Single segmented pill item for theme mode selection.
+ * Modern Segmented Control with a smooth sliding animated pill background.
  */
 @Composable
-private fun ThemeSegmentButton(
-    modifier: Modifier = Modifier,
-    selected: Boolean,
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit
+private fun ThemeSegmentedSlider(
+    currentMode: ThemeMode,
+    isDark: Boolean,
+    cardBorderColor: Color,
+    onSelectMode: (ThemeMode) -> Unit
 ) {
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val backgroundColor = if (selected) {
-        Color(0xFFDBEAFE)
-    } else {
-        Color.Transparent
-    }
-
-    val contentColor = when {
-        selected -> Color(0xFF1E3A8A)
-        isDark -> Color(0xFFE2E8F0)
-        else -> Color(0xFF1E293B)
+    val trackBg = if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7)
+    val selectedIndex = when (currentMode) {
+        ThemeMode.SYSTEM -> 0
+        ThemeMode.LIGHT -> 1
+        ThemeMode.DARK -> 2
     }
 
     Surface(
-        onClick = onClick,
-        modifier = modifier.height(38.dp),
-        shape = RoundedCornerShape(8.dp),
-        color = backgroundColor
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = trackBg,
+        border = BorderStroke(1.dp, cardBorderColor)
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = contentColor
+            val pillWidth = maxWidth / 3
+            val animatedOffset by animateDpAsState(
+                targetValue = pillWidth * selectedIndex,
+                animationSpec = spring(
+                    dampingRatio = 0.8f,
+                    stiffness = 380f
+                ),
+                label = "pillOffset"
             )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = contentColor
-            )
+
+            // Animated sliding pill
+            Surface(
+                modifier = Modifier
+                    .width(pillWidth)
+                    .height(38.dp)
+                    .offset(x = animatedOffset),
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFFDBEAFE),
+                border = BorderStroke(1.dp, Color(0xFF93C5FD).copy(alpha = 0.5f))
+            ) {}
+
+            // The 3 options row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(38.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                listOf(
+                    Triple(ThemeMode.SYSTEM, Icons.Outlined.DesktopWindows, "Sistem"),
+                    Triple(ThemeMode.LIGHT, Icons.Outlined.LightMode, "Terang"),
+                    Triple(ThemeMode.DARK, Icons.Outlined.DarkMode, "Gelap")
+                ).forEachIndexed { index, (mode, icon, label) ->
+                    val selected = currentMode == mode
+                    val targetTextColor = when {
+                        selected -> Color(0xFF1E3A8A)
+                        isDark -> Color(0xFFA8B3C7)
+                        else -> Color(0xFF475569)
+                    }
+                    val textColor by animateColorAsState(
+                        targetValue = targetTextColor,
+                        animationSpec = tween(200),
+                        label = "textColor$index"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                onSelectMode(mode)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = textColor
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                color = textColor
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
