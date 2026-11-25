@@ -45,6 +45,7 @@ import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.background.AttendanceAlarmScheduler
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.ui.screens.DashboardScreen
+import id.codes.maganghub.ui.screens.FeedbackBottomSheet
 import id.codes.maganghub.ui.screens.LoginDialog
 import id.codes.maganghub.ui.screens.SettingsScreen
 import id.codes.maganghub.ui.theme.KemnakerSky
@@ -214,6 +215,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 onTestNotification = {
                     viewModel.testNotification(MagangHubApp.instance.applicationContext)
                 },
+                onOpenFeedback = { viewModel.setFeedbackSheetOpen(true) },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -228,6 +230,16 @@ fun MainContent(viewModel: AttendanceViewModel) {
             onDismiss = { viewModel.setLoginDialogOpen(false) },
             onLogin = { username, password ->
                 viewModel.login(username, password)
+            }
+        )
+
+        // Shared Feedback Bottom Sheet overlay
+        FeedbackBottomSheet(
+            isOpen = uiState.isFeedbackSheetOpen,
+            isSubmitting = uiState.isSubmittingFeedback,
+            onDismiss = { viewModel.setFeedbackSheetOpen(false) },
+            onSubmit = { type, message ->
+                viewModel.submitFeedback(type, message)
             }
         )
     }

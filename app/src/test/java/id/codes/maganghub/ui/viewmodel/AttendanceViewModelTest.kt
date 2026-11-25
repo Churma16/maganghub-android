@@ -3,6 +3,9 @@ package id.codes.maganghub.ui.viewmodel
 import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.FeedbackRequest
+import id.codes.maganghub.data.model.FeedbackResponse
+import id.codes.maganghub.data.model.FeedbackType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UserProfileData
@@ -85,6 +88,10 @@ class AttendanceViewModelTest {
         override fun getCachedStatus(): AttendanceStatus = cachedStatus
         override fun getLastCheckTimestamp(): Long = cachedTimestamp
         override fun hasSavedCredentials(): Boolean = hasCredentialsSaved
+
+        override suspend fun submitFeedback(request: FeedbackRequest): Result<FeedbackResponse> {
+            return Result.success(FeedbackResponse(success = true))
+        }
     }
 
     @Before
@@ -177,6 +184,49 @@ class AttendanceViewModelTest {
         viewModel.updateNextReminderString(nearMidnight)
 
         assertEquals("Batas akhir presensi 23:59 WIB", viewModel.uiState.value.nextReminderFormatted)
+    }
+
+    @Test
+    fun testSubmitFeedbackSuccess() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        viewModel.setFeedbackSheetOpen(true)
+        assertTrue(viewModel.uiState.value.isFeedbackSheetOpen)
+
+        var successCalled = false
+        viewModel.submitFeedback(
+            type = FeedbackType.BUG,
+            message = "Ada bug di alarm",
+            onSuccess = { successCalled = true }
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(successCalled)
+        assertFalse(viewModel.uiState.value.isFeedbackSheetOpen)
+        assertFalse(viewModel.uiState.value.isSubmittingFeedback)
+        assertEquals("Terima kasih! Masukanmu berhasil dikirim.", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun testSubmitFeedbackEmptyMessageValidation() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        var errorCalled = false
+        var errorMessage: String? = null
+        viewModel.submitFeedback(
+            type = FeedbackType.FEATURE_REQUEST,
+            message = "   ",
+            onError = {
+                errorCalled = true
+                errorMessage = it
+            }
+        )
+
+        assertTrue(errorCalled)
+        assertEquals("Masukan tidak boleh kosong", errorMessage)
+        assertEquals("Masukan tidak boleh kosong", viewModel.uiState.value.errorMessage)
     }
 
     @Test

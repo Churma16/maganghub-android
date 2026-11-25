@@ -23,7 +23,9 @@ data class AttendanceUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val errorMessage: String? = null,
     val successMessage: String? = null,
-    val isLoginDialogOpen: Boolean = false
+    val isLoginDialogOpen: Boolean = false,
+    val isFeedbackSheetOpen: Boolean = false,
+    val isSubmittingFeedback: Boolean = false
 ) {
     val isAttended: Boolean
         get() = attendanceStatus == AttendanceStatus.HADIR

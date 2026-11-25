@@ -1,11 +1,15 @@
 package id.codes.maganghub.data.repository
 
 import android.util.Log
+import id.codes.maganghub.data.api.FeedbackApiClient
+import id.codes.maganghub.data.api.FeedbackApiClientImpl
 import id.codes.maganghub.data.api.MagangHubApiClient
 import id.codes.maganghub.data.api.UnauthorizedSessionException
 import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.FeedbackRequest
+import id.codes.maganghub.data.model.FeedbackResponse
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UserProfileData
@@ -27,6 +31,7 @@ import kotlinx.coroutines.withContext
 class AttendanceRepositoryImpl(
     private val apiClient: MagangHubApiClient,
     private val storage: EncryptedPreferences,
+    private val feedbackApiClient: FeedbackApiClient = FeedbackApiClientImpl(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : AttendanceRepository {
 
@@ -216,4 +221,9 @@ class AttendanceRepositoryImpl(
     override fun getLastCheckTimestamp(): Long = storage.getLastCheckTimestamp()
 
     override fun hasSavedCredentials(): Boolean = storage.hasCredentials()
+
+    override suspend fun submitFeedback(request: FeedbackRequest): Result<FeedbackResponse> =
+        withContext(ioDispatcher) {
+            feedbackApiClient.sendFeedback(request)
+        }
 }
