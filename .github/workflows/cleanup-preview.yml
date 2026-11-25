@@ -1,7 +1,7 @@
 name: Cleanup PR Preview Release
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
   workflow_dispatch:
     inputs:
@@ -12,7 +12,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   cleanup:
@@ -21,12 +20,14 @@ jobs:
     steps:
       - name: Resolve PR Number
         id: meta
+        env:
+          INPUT_PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            RAW_INPUT="${{ github.event.inputs.pr_number }}"
-            PR_NUM=$(echo "$RAW_INPUT" | tr -dc '0-9')
+            PR_NUM=$(echo "$INPUT_PR_NUMBER" | tr -dc '0-9')
           else
-            PR_NUM="${{ github.event.pull_request.number }}"
+            PR_NUM="$EVENT_PR_NUMBER"
           fi
 
           if [ -z "$PR_NUM" ]; then
@@ -45,7 +46,7 @@ jobs:
           echo "[INFO] Searching for preview releases associated with PR #$PR_NUM..."
 
           # Find preview releases matching pattern -pr<PR_NUM>.
-          RELEASES=$(gh release list --repo "${{ github.repository }}" --limit 100 --json tagName,isPrerelease --jq ".[] | select(.tagName | test(\"-pr${PR_NUM}\\\\.\")) | .tagName")
+          RELEASES=$(gh release list --repo "${{ github.repository }}" --limit 1000 --json tagName,isPrerelease --jq ".[] | select(.tagName | test(\"-pr${PR_NUM}\\\\.\")) | .tagName")
 
           if [ -z "$RELEASES" ]; then
             echo "[INFO] No preview releases found for PR #$PR_NUM. Nothing to clean up."

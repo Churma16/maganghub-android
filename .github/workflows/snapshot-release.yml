@@ -22,8 +22,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -86,7 +84,6 @@ jobs:
           VERSION_SUFFIX="-snapshot.${SHORT_SHA}"
           SNAPSHOT_APK="maganghub-${SNAPSHOT_TAG}.apk"
           echo "snapshot_tag=$SNAPSHOT_TAG" >> $GITHUB_OUTPUT
-          echo "version_suffix=$VERSION_SUFFIX" >> $GITHUB_OUTPUT
           echo "snapshot_apk=$SNAPSHOT_APK" >> $GITHUB_OUTPUT
           echo "VERSION_SUFFIX=$VERSION_SUFFIX" >> $GITHUB_ENV
           echo "SNAPSHOT_TAG=$SNAPSHOT_TAG" >> $GITHUB_ENV
