@@ -194,7 +194,29 @@ class UpdateApiClientTest {
         )
 
         val info = client.getLatestRelease().getOrThrow()
-        assertEquals("Yang baru: Fitur keren ditambahkan", info.changelog)
+        assertEquals("Fitur keren ditambahkan", info.changelog)
+    }
+
+    @Test
+    fun `empty Yang baru header falls through to bullet points`() = runTest {
+        enqueueReleasesResponse(
+            """
+            [
+              {
+                "tag_name": "v1.3.0",
+                "name": "Release 1.3.0",
+                "body": "Yang baru:\n- Integrasi laporan presensi mentor\n- Mode gelap",
+                "draft": false,
+                "prerelease": false,
+                "html_url": "https://github.com/example/releases/tag/v1.3.0",
+                "assets": []
+              }
+            ]
+            """.trimIndent()
+        )
+
+        val info = client.getLatestRelease().getOrThrow()
+        assertEquals("Integrasi laporan presensi mentor", info.changelog)
     }
 
     @Test

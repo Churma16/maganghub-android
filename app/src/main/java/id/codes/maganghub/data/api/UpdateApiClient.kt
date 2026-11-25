@@ -22,14 +22,12 @@ private data class GithubRelease(
     @SerializedName("draft") val draft: Boolean = false,
     @SerializedName("prerelease") val prerelease: Boolean = false,
     @SerializedName("html_url") val htmlUrl: String = "",
-    @SerializedName("published_at") val publishedAt: String = "",
     @SerializedName("assets") val assets: List<GithubAsset> = emptyList()
 )
 
 private data class GithubAsset(
     @SerializedName("name") val name: String = "",
-    @SerializedName("browser_download_url") val browserDownloadUrl: String = "",
-    @SerializedName("size") val size: Long = 0L
+    @SerializedName("browser_download_url") val browserDownloadUrl: String = ""
 )
 
 // ---------------------------------------------------------------------------
@@ -118,7 +116,8 @@ class UpdateApiClientImpl(
                     line.startsWith("What's new:", ignoreCase = true) ||
                     line.startsWith("Whats new:", ignoreCase = true)
             }
-            if (yangBaru != null) return yangBaru.substringAfter(':').trim().take(200)
+            val yangBaruContent = yangBaru?.substringAfter(':')?.trim()
+            if (!yangBaruContent.isNullOrBlank()) return yangBaruContent.take(200)
 
             // 2. First bullet point
             val bullet = lines.firstOrNull { it.startsWith("-") || it.startsWith("*") || it.startsWith("•") }

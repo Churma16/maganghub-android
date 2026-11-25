@@ -434,8 +434,8 @@ class AttendanceViewModel(
      */
     fun checkForUpdates() {
         if (_uiState.value.updateCheckState is UpdateCheckState.Checking) return
+        _uiState.update { it.copy(updateCheckState = UpdateCheckState.Checking) }
         viewModelScope.launch {
-            _uiState.update { it.copy(updateCheckState = UpdateCheckState.Checking) }
             val result = repository.checkForUpdates()
             result.fold(
                 onSuccess = { state ->
