@@ -586,7 +586,7 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Aplikasi otomatisasi pengecekan kehadiran dan pengingat harian logbook magang terintegrasi Kemnaker SSO OAuth2.",
+                    text = "Pengingat harian dan cek status presensi MagangHub biar nggak kelupaan isi logbook.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
