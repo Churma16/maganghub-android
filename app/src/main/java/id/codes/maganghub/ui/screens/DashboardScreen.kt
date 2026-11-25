@@ -1049,7 +1049,7 @@ private fun MentorReviewCard(
                 }
 
                 LinearProgressIndicator(
-                    progress = progressValue,
+                    progress = { progressValue },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)

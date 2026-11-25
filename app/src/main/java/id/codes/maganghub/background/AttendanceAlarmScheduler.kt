@@ -120,8 +120,13 @@ object AttendanceAlarmScheduler {
         if (!mentorReminderEnabled) return false
         if (pendingCount < thresholdDays) return false
         if (currentTimeMillis < snoozedUntil) return false
-        val intervalMillis = repeatIntervalMinutes * 60 * 1000L
-        return (lastMentorReminderTime + intervalMillis <= currentTimeMillis)
+        if (lastMentorReminderTime > 0L) {
+            val intervalMillis = repeatIntervalMinutes.coerceAtLeast(1) * 60 * 1000L
+            if (lastMentorReminderTime + intervalMillis > currentTimeMillis) {
+                return false
+            }
+        }
+        return true
     }
 
     /**

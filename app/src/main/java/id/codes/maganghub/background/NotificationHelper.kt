@@ -306,7 +306,7 @@ object NotificationHelper {
         )
 
         val title = "Saatnya Ingatkan Mentor"
-        val body = "$pendingCount hari kehadiran & laporan menunggu peninjauan mentor."
+        val body = "$pendingCount hari kehadiran & laporan menunggu peninjauan mentor (batas: $thresholdDays hari)."
 
         val builder = NotificationCompat.Builder(context, CHANNEL_MENTOR_REMINDER_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
