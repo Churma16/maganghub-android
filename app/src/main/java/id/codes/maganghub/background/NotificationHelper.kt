@@ -15,6 +15,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import id.codes.maganghub.R
 import id.codes.maganghub.ui.MainActivity
+import java.time.Duration
+import java.time.ZonedDateTime
 
 object NotificationHelper {
 
@@ -65,17 +67,17 @@ object NotificationHelper {
             .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
             .build()
 
-        // 1. High Priority Reminder Channel (with sound & prominent vibration)
+        // 1. High Priority Reminder Channel (with sound & vibration)
         val reminderChannel = NotificationChannel(
             CHANNEL_REMINDER_ID,
-            "Pengingat Presensi MagangHub",
+            "Pengingat Harian Presensi",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Pengingat berkala pukul 16:00 - 23:59 WIB jika belum presensi & isi logbook"
+            description = "Pengingat berkala jika presensi & logbook hari ini belum lengkap"
             enableLights(true)
             lightColor = Color.RED
             enableVibration(true)
-            vibrationPattern = longArrayOf(0, 500, 200, 500, 200, 500)
+            vibrationPattern = longArrayOf(0, 400, 200, 400)
             setSound(soundUri, audioAttributes)
             lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
         }
@@ -83,10 +85,10 @@ object NotificationHelper {
         // 2. Default Priority Confirmation Channel
         val confirmationChannel = NotificationChannel(
             CHANNEL_CONFIRMATION_ID,
-            "Konfirmasi Presensi Tercatat",
+            "Status Presensi Selesai",
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "Konfirmasi sukses setelah presensi & logbook harian berhasil tercatat"
+            description = "Pemberitahuan singkat ketika presensi & logbook hari ini sudah lengkap"
             enableLights(true)
             lightColor = Color.GREEN
             enableVibration(false)
@@ -109,7 +111,7 @@ object NotificationHelper {
             "Pengingat Peninjauan Mentor",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Pengingat jika kehadiran dan laporan menunggu peninjauan mentor"
+            description = "Pengingat jika kehadiran dan laporan menunggu approval mentor"
             enableLights(true)
             lightColor = Color.YELLOW
             enableVibration(true)
@@ -124,16 +126,34 @@ object NotificationHelper {
     }
 
     /**
+     * Calculates remaining time until 23:59 WIB deadline for today in human-readable Indonesian text.
+     * Example: "2 jam 59 menit", "45 menit", or "kurang dari 1 menit".
+     */
+    fun formatRemainingTimeToDeadline(nowWib: ZonedDateTime = ZonedDateTime.now(AttendanceAlarmScheduler.ZONE_WIB)): String {
+        val wib = nowWib.withZoneSameInstant(AttendanceAlarmScheduler.ZONE_WIB)
+        val deadline = wib.toLocalDate().atTime(23, 59).atZone(AttendanceAlarmScheduler.ZONE_WIB)
+        val diffSeconds = Duration.between(wib, deadline).seconds
+        if (diffSeconds <= 0) return "kurang dari 1 menit"
+        val totalMinutes = (diffSeconds + 30) / 60
+        val hours = totalMinutes / 60
+        val minutes = totalMinutes % 60
+        return when {
+            hours > 0 && minutes > 0 -> "$hours jam $minutes menit"
+            hours > 0 -> "$hours jam"
+            minutes > 0 -> "$minutes menit"
+            else -> "kurang dari 1 menit"
+        }
+    }
+
+    /**
      * Shows high-priority heads-up reminder notification with action buttons.
      */
     fun showReminderNotification(
         context: Context,
-        reminderIndex: Int,
-        currentTimeWib: String,
-        dateFormatted: String,
         soundEnabled: Boolean = true,
         vibrationEnabled: Boolean = true,
-        intervalMinutes: Int = 30
+        intervalMinutes: Int = 30,
+        nowWib: ZonedDateTime = ZonedDateTime.now(AttendanceAlarmScheduler.ZONE_WIB)
     ) {
         createNotificationChannels(context)
 
@@ -159,7 +179,7 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Quick Action 2: "Snooze 30m"
+        // Quick Action 2: "Tunda [X] menit"
         val snoozeIntent = Intent(context, AttendanceAlarmReceiver::class.java).apply {
             action = ACTION_SNOOZE_30
         }
@@ -170,34 +190,44 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = "🚨 PERINGATAN: BELUM ABSEN MAGANGHUB!"
-        val bigText = StringBuilder()
-            .append("Batas waktu pengisian: 23:59 WIB\n\n")
-            .append("• Status: 🔴 BELUM ABSEN (Peringatan #$reminderIndex)\n")
-            .append("• Waktu Sekarang: $currentTimeWib WIB\n")
-            .append("• Tanggal: $dateFormatted\n\n")
-            .append("Presensi & logbook harian Anda belum terisi di Monev Kemnaker. Ketuk 'Buka Monev' untuk mengisi sekarang!")
-            .toString()
+        // Quick Action 3: "Sudah isi" (triggers immediate re-verification)
+        val checkNowIntent = Intent(context, AttendanceAlarmReceiver::class.java).apply {
+            action = ACTION_CHECK_NOW
+        }
+        val checkNowPendingIntent = PendingIntent.getBroadcast(
+            context,
+            2,
+            checkNowIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val remainingText = formatRemainingTimeToDeadline(nowWib)
+        val title = "Presensi dan logbook belum lengkap"
+        val contentText = "Sisa $remainingText sampai 23.59 WIB. Buka Monev untuk mengisi laporan hari ini."
+        val bigText = "Sisa $remainingText sampai 23.59 WIB.\nBuka Monev untuk mengisi laporan hari ini."
+
+        val snoozeLabel = if (intervalMinutes > 0) "Tunda $intervalMinutes menit" else "Tunda 30 menit"
 
         val builder = NotificationCompat.Builder(context, CHANNEL_REMINDER_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
-            .setContentText("Batas 23:59 WIB! Presensi & logbook hari ini belum terisi (#$reminderIndex).")
+            .setContentText(contentText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(false)
             .setOngoing(false)
             .setContentIntent(openAppPendingIntent)
             .addAction(0, "Buka Monev", monevWebPendingIntent)
-            .addAction(0, if (intervalMinutes > 0) "Snooze $intervalMinutes Menit" else "Snooze 30 Menit", snoozePendingIntent)
+            .addAction(0, snoozeLabel, snoozePendingIntent)
+            .addAction(0, "Sudah isi", checkNowPendingIntent)
 
         if (!soundEnabled) {
             builder.setSilent(true)
         }
         if (vibrationEnabled) {
-            builder.setVibrate(longArrayOf(0, 500, 200, 500, 200, 500))
+            builder.setVibrate(longArrayOf(0, 400, 200, 400))
         } else {
             builder.setVibrate(longArrayOf(0))
         }
@@ -210,39 +240,37 @@ object NotificationHelper {
     }
 
     /**
-     * Shows daily confirmation notification when attendance has been fulfilled.
+     * Shows brief confirmation notification when attendance has been fulfilled,
+     * which auto-cancels after a few seconds.
      */
-    fun showSuccessNotification(context: Context, dateFormatted: String) {
+    fun showSuccessNotification(context: Context) {
         createNotificationChannels(context)
 
         // Cancel existing reminder notification
         cancelReminder(context)
 
-        val monevWebIntent = Intent(Intent.ACTION_VIEW, Uri.parse(URL_MONEV_DASHBOARD)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        val openAppIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        val monevWebPendingIntent = PendingIntent.getActivity(
+        val openAppPendingIntent = PendingIntent.getActivity(
             context,
             4,
-            monevWebIntent,
+            openAppIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val title = "Semua beres hari ini"
+        val message = "Presensi dan logbook sudah lengkap. Pengingat berhenti sampai besok."
+
         val builder = NotificationCompat.Builder(context, CHANNEL_CONFIRMATION_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("🎉 Presensi MagangHub Tercatat!")
-            .setContentText("Presensi dan logbook harian Anda untuk tanggal $dateFormatted sudah tercatat.")
-            .setStyle(
-                NotificationCompat.BigTextStyle().bigText(
-                    "✅ Status Kehadiran: SUDAH ABSEN\n" +
-                    "📅 Tanggal: $dateFormatted\n" +
-                    "🎯 Status Magang: Aktif 🟢\n\n" +
-                    "Presensi dan logbook harian Anda telah berhasil tercatat di sistem Monev MagangHub Kemnaker. Kerja bagus hari ini!"
-                )
-            )
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
-            .addAction(0, "Buka Monev", monevWebPendingIntent)
+            .setTimeoutAfter(12_000L)
+            .setContentIntent(openAppPendingIntent)
 
         try {
             NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_CONFIRMATION, builder.build())
@@ -290,29 +318,29 @@ object NotificationHelper {
     }
 
     /**
-     * Shows high-priority notification when attendance reports are pending mentor review.
+     * Shows notification when attendance reports are pending mentor review.
      */
     fun showMentorReviewReminderNotification(
         context: Context,
         pendingCount: Int,
-        thresholdDays: Int,
+        thresholdDays: Int = 5,
         soundEnabled: Boolean = true,
         vibrationEnabled: Boolean = true
     ) {
         createNotificationChannels(context)
 
-        // Open MainActivity when tapping notification body or clicking "Buka Aplikasi"
-        val openAppIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        // Quick Action 1: "Buka Monev" in Browser
+        val monevWebIntent = Intent(Intent.ACTION_VIEW, Uri.parse(URL_MONEV_DASHBOARD)).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
-        val openAppPendingIntent = PendingIntent.getActivity(
+        val monevWebPendingIntent = PendingIntent.getActivity(
             context,
             6,
-            openAppIntent,
+            monevWebIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Action: "Tunda 1 Hari"
+        // Quick Action 2: "Tunda 1 hari"
         val snoozeIntent = Intent(context, AttendanceAlarmReceiver::class.java).apply {
             action = ACTION_SNOOZE_MENTOR_ONE_DAY
         }
@@ -323,8 +351,8 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = "Saatnya Ingatkan Mentor"
-        val body = "$pendingCount hari kehadiran & laporan menunggu peninjauan mentor (batas: $thresholdDays hari)."
+        val title = "Peninjauan mentor tertunda"
+        val body = "$pendingCount kehadiran dan laporan sudah menunggu approval. Saatnya mengingatkan mentor."
 
         val builder = NotificationCompat.Builder(context, CHANNEL_MENTOR_REMINDER_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -335,9 +363,10 @@ object NotificationHelper {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
-            .setContentIntent(openAppPendingIntent)
-            .addAction(0, "Tunda 1 Hari", snoozePendingIntent)
-            .addAction(0, "Buka Aplikasi", openAppPendingIntent)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(monevWebPendingIntent)
+            .addAction(0, "Buka Monev", monevWebPendingIntent)
+            .addAction(0, "Tunda 1 hari", snoozePendingIntent)
 
         if (!soundEnabled) {
             builder.setSilent(true)

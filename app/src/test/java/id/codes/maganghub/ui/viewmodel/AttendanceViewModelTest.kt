@@ -416,6 +416,20 @@ class AttendanceViewModelTest {
     }
 
     @Test
+    fun testTestNotificationSheetState() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        assertFalse(viewModel.uiState.value.isTestNotificationSheetOpen)
+
+        viewModel.setTestNotificationSheetOpen(true)
+        assertTrue(viewModel.uiState.value.isTestNotificationSheetOpen)
+
+        viewModel.setTestNotificationSheetOpen(false)
+        assertFalse(viewModel.uiState.value.isTestNotificationSheetOpen)
+    }
+
+    @Test
     fun testCheckForUpdatesAvailable() = runTest {
         val repo = FakeAttendanceRepository()
         val updateInfo = UpdateInfo(
@@ -475,5 +489,6 @@ class AttendanceViewModelTest {
         val formatted = viewModel.formatLastUpdateCheck(System.currentTimeMillis())
         assertTrue(formatted.startsWith("Terakhir dicek hari ini"))
         assertTrue(formatted.endsWith("WIB"))
+    }
     }
 }

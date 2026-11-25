@@ -30,6 +30,7 @@ data class AttendanceUiState(
     val isFeedbackSheetOpen: Boolean = false,
     val isSubmittingFeedback: Boolean = false,
     val activeLegalDocument: LegalDocumentType? = null,
+    val isTestNotificationSheetOpen: Boolean = false,
     val updateCheckState: UpdateCheckState = UpdateCheckState.Idle,
     val lastUpdateCheckTimestamp: Long = 0L
 ) {
