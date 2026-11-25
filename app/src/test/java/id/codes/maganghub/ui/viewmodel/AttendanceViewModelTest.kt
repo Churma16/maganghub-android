@@ -120,14 +120,14 @@ class AttendanceViewModelTest {
         }
 
         var checkForUpdatesResult: Result<UpdateCheckState> = Result.success(UpdateCheckState.UpToDate)
-        var lastUpdateCheckTimestamp: Long = 0L
+        private var cachedLastUpdateCheckTimestamp: Long = 0L
 
         override suspend fun checkForUpdates(): Result<UpdateCheckState> {
-            lastUpdateCheckTimestamp = 1732543200000L
+            cachedLastUpdateCheckTimestamp = 1732543200000L
             return checkForUpdatesResult
         }
 
-        override fun getLastUpdateCheckTimestamp(): Long = lastUpdateCheckTimestamp
+        override fun getLastUpdateCheckTimestamp(): Long = cachedLastUpdateCheckTimestamp
     }
 
     @Before
