@@ -28,7 +28,8 @@ data class AttendanceUiState(
     val isLoginDialogOpen: Boolean = false,
     val isFeedbackSheetOpen: Boolean = false,
     val isSubmittingFeedback: Boolean = false,
-    val activeLegalDocument: LegalDocumentType? = null
+    val activeLegalDocument: LegalDocumentType? = null,
+    val isTestNotificationSheetOpen: Boolean = false
 ) {
     val isAttended: Boolean
         get() = attendanceStatus == AttendanceStatus.HADIR

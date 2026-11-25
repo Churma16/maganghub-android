@@ -119,6 +119,8 @@ fun SettingsScreen(
     onOpenLoginDialog: () -> Unit,
     onLogout: () -> Unit,
     onTestNotification: () -> Unit,
+    isPreviewBuild: Boolean = false,
+    onOpenTestNotificationSheet: () -> Unit = {},
     onOpenFeedback: () -> Unit = {},
     onOpenPrivacyPolicy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},
@@ -176,7 +178,13 @@ fun SettingsScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedButton(
-                onClick = onTestNotification,
+                onClick = {
+                    if (isPreviewBuild) {
+                        onOpenTestNotificationSheet()
+                    } else {
+                        onTestNotification()
+                    }
+                },
                 modifier = Modifier
                     .weight(1f)
                     .height(44.dp),
