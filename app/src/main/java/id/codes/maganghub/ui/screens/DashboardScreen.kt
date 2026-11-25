@@ -745,7 +745,7 @@ private fun PengingatCard(
                     text = if (!uiState.reminderSettings.isEnabled) {
                         "Pengingat dinonaktifkan"
                     } else {
-                        "Pengingat berikutnya 16:00 WIB"
+                        uiState.nextReminderFormatted
                     },
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,

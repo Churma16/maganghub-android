@@ -115,7 +115,8 @@ object NotificationHelper {
         currentTimeWib: String,
         dateFormatted: String,
         soundEnabled: Boolean = true,
-        vibrationEnabled: Boolean = true
+        vibrationEnabled: Boolean = true,
+        intervalMinutes: Int = 30
     ) {
         createNotificationChannels(context)
 
@@ -173,7 +174,7 @@ object NotificationHelper {
             .setOngoing(false)
             .setContentIntent(openAppPendingIntent)
             .addAction(0, "Buka Monev", monevWebPendingIntent)
-            .addAction(0, "Snooze 30 Menit", snoozePendingIntent)
+            .addAction(0, if (intervalMinutes > 0) "Snooze $intervalMinutes Menit" else "Snooze 30 Menit", snoozePendingIntent)
 
         if (!soundEnabled) {
             builder.setSilent(true)

@@ -218,7 +218,8 @@ class AttendanceCheckWorker(
             currentTimeWib = currentTimeString,
             dateFormatted = homeData.date,
             soundEnabled = settings.soundEnabled,
-            vibrationEnabled = settings.vibrationEnabled
+            vibrationEnabled = settings.vibrationEnabled,
+            intervalMinutes = settings.intervalMinutes
         )
 
         // Reschedule next exact alarm

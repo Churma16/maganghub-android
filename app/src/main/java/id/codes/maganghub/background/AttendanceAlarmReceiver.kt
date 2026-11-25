@@ -32,8 +32,12 @@ class AttendanceAlarmReceiver : BroadcastReceiver() {
                 AttendanceCheckWorker.enqueueImmediateCheck(context)
             }
             NotificationHelper.ACTION_SNOOZE_30 -> {
-                Log.i(TAG, "User triggered 'Snooze 30 Menit' from notification action")
-                AttendanceAlarmScheduler.snooze(context, 30)
+                val interval = try {
+                    MagangHubApp.instance.encryptedPreferences.getReminderSettings().intervalMinutes
+                } catch (e: Exception) { 30 }
+                val effectiveInterval = if (interval > 0) interval else 30
+                Log.i(TAG, "User triggered 'Snooze' from notification action ($effectiveInterval minutes)")
+                AttendanceAlarmScheduler.snooze(context, effectiveInterval)
             }
             NotificationHelper.ACTION_SNOOZE_MENTOR_ONE_DAY -> {
                 Log.i(TAG, "User triggered 'Tunda 1 Hari' mentor reminder snooze")
