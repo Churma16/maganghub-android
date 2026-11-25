@@ -297,6 +297,7 @@ fun DashboardScreen(
 
         // 7. Bottom Floating Primary CTA (Prominent Sky Blue + Monev Link)
         BottomCtaSection(
+            uiState = uiState,
             openMonevPortal = openMonevPortal,
             haptic = haptic
         )
@@ -737,60 +738,87 @@ private fun PengingatCard(
 }
 
 /**
- * Prominent Sky Blue Bottom Floating Primary CTA Button.
+ * Full-width Bottom Floating Primary CTA Button.
+ * When pending (attendance/logbook not completed today), displays a solid primary blue CTA "Isi laporan hari ini ↗".
+ * When completed (HADIR or LIBUR), transitions to an outlined calm button "Buka Portal Monev ↗".
  */
 @Composable
 private fun BottomCtaSection(
+    uiState: AttendanceUiState,
     openMonevPortal: () -> Unit,
     haptic: HapticFeedback
 ) {
-    Row(
+    val isComplete = uiState.isAttended || uiState.isHoliday
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(top = 4.dp)
     ) {
-        Button(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                openMonevPortal()
-            },
-            modifier = Modifier
-                .weight(1f)
-                .height(52.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryCta,
-                contentColor = OnPrimaryCta
-            )
-        ) {
-            Text(
-                text = "Isi laporan hari ini",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = OnPrimaryCta
-            )
-        }
-
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            shadowElevation = 0.dp,
-            modifier = Modifier.size(52.dp),
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                openMonevPortal()
+        if (isComplete) {
+            OutlinedButton(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    openMonevPortal()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Buka Portal Monev",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Default.OpenInNew,
+                        contentDescription = "Buka Portal Monev",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.OpenInNew,
-                    contentDescription = "Buka Monev Portal",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
+        } else {
+            Button(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    openMonevPortal()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryCta,
+                    contentColor = OnPrimaryCta
                 )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Isi laporan hari ini",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = OnPrimaryCta
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Default.OpenInNew,
+                        contentDescription = null,
+                        tint = OnPrimaryCta,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
