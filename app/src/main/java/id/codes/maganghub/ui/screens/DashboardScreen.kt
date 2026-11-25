@@ -910,7 +910,7 @@ private fun MentorReviewCard(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val pendingCount = uiState.pendingMentorReviewCount
-    val threshold = uiState.reminderSettings.mentorReviewThresholdDays.coerceAtLeast(1)
+    val threshold = uiState.reminderSettings.mentorReviewThresholdDays.coerceIn(1, 5)
     val isWarning = pendingCount >= threshold
 
     // Design tokens matching Kemnaker Monev theme

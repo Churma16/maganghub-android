@@ -672,10 +672,9 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             listOf(
+                                "1 hari" to 1,
                                 "3 hari" to 3,
-                                "5 hari" to 5,
-                                "7 hari" to 7,
-                                "10 hari" to 10
+                                "5 hari" to 5
                             ).forEach { (label, days) ->
                                 val selected = settings.mentorReviewThresholdDays == days
                                 val chipBg = if (selected) Color(0xFFDBEAFE) else (if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7))
