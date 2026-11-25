@@ -568,7 +568,7 @@ fun SettingsScreen(
             }
         }
 
-        // 5. Footer: MagangHub Presensi Checker v1.0.0 with explanatory text
+        // 5. Footer: MagangHub Logbook Companion with explanatory text
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -580,13 +580,13 @@ fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "MagangHub Presensi Checker v${BuildConfig.VERSION_NAME}",
+                    text = "MagangHub Logbook Companion v${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Aplikasi otomatisasi pengecekan kehadiran dan pengingat harian logbook magang terintegrasi Kemnaker SSO OAuth2.",
+                    text = "Pengingat harian dan cek status presensi MagangHub biar nggak kelupaan isi logbook.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
