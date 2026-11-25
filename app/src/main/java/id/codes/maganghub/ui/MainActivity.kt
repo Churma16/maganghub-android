@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -111,6 +112,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainContent(viewModel: AttendanceViewModel) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -208,8 +210,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
             1 -> SettingsScreen(
                 uiState = uiState,
                 onUpdateReminderSettings = { settings ->
-                    viewModel.updateReminderSettings(settings)
-                    AttendanceAlarmScheduler.scheduleNextAlarm(applicationContext)
+                    viewModel.updateReminderSettings(settings, context)
                 },
                 onSetThemeMode = { viewModel.setThemeMode(it) },
                 onOpenLoginDialog = { viewModel.setLoginDialogOpen(true) },

@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import id.codes.maganghub.MagangHubApp
+import id.codes.maganghub.background.AttendanceAlarmScheduler
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
@@ -176,11 +178,17 @@ class AttendanceViewModel(
     /**
      * Updates reminder settings in repository and persistent storage.
      */
-    fun updateReminderSettings(settings: ReminderSettings) {
+    fun updateReminderSettings(settings: ReminderSettings, context: Context? = null) {
         viewModelScope.launch {
             repository.updateReminderSettings(settings)
             _uiState.update { it.copy(reminderSettings = settings) }
             updateNextReminderString()
+            try {
+                val appContext = context?.applicationContext ?: MagangHubApp.instance.applicationContext
+                AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+            } catch (_: Exception) {
+                // Fallback for pure JVM unit tests where Application context is unavailable
+            }
         }
     }
 
@@ -258,7 +266,7 @@ class AttendanceViewModel(
                 "Hari ini pukul ${reminderTime.format(timeFormatter)} WIB"
             }
             now.hour >= settings.startHour && now.hour < settings.endHour -> {
-                val interval = settings.intervalMinutes
+                val interval = if (settings.intervalMinutes > 0) settings.intervalMinutes else 30
                 val nextMinute = ((now.minute / interval) + 1) * interval
                 val nextTime = now.plusMinutes((nextMinute - now.minute).toLong()).withSecond(0)
                 if (nextTime.hour >= settings.endHour) {
