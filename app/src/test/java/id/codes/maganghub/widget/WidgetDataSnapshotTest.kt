@@ -266,7 +266,7 @@ class WidgetDataSnapshotTest {
         }
         val normal = WidgetDataSnapshot.fromComponents(
             hasCredentials = true,
-            attendanceStatus = AttendanceStatus.BELUM_ABSEN,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
             pendingCount = 0,
             thresholdDays = 3,
             themeMode = ThemeMode.SYSTEM,
@@ -283,7 +283,7 @@ class WidgetDataSnapshotTest {
         }
         val mendesak = WidgetDataSnapshot.fromComponents(
             hasCredentials = true,
-            attendanceStatus = AttendanceStatus.BELUM_ABSEN,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
             pendingCount = 0,
             thresholdDays = 3,
             themeMode = ThemeMode.SYSTEM,
@@ -300,7 +300,7 @@ class WidgetDataSnapshotTest {
         }
         val lastMinute = WidgetDataSnapshot.fromComponents(
             hasCredentials = true,
-            attendanceStatus = AttendanceStatus.BELUM_ABSEN,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
             pendingCount = 0,
             thresholdDays = 3,
             themeMode = ThemeMode.SYSTEM,
