@@ -28,6 +28,10 @@ data class WidgetDataSnapshot(
     val pendingMentorCount: Int,
     val isMentorOverdue: Boolean,
     val thresholdDays: Int = 3,
+    val lastCheckTimestamp: Long = 0L,
+    val reminderEnabled: Boolean = true,
+    val reminderStartHour: Int = 16,
+    val reminderIntervalMinutes: Int = 15,
     val themeMode: ThemeMode
 ) {
 
@@ -59,7 +63,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Segera isi sebelum 23:59 WIB"
         WidgetStatus.HARI_LIBUR -> {
             when {
-                pendingMentorCount == 0 -> "Pengingat nonaktif hari ini"
+                pendingMentorCount == 0 -> "Tidak wajib presensi hari ini"
                 isMentorOverdue -> "$pendingMentorCount laporan belum di-approve"
                 else -> "$pendingMentorCount laporan menunggu approval"
             }
@@ -79,12 +83,64 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Sisa $remainingTimeText"
         WidgetStatus.HARI_LIBUR -> {
             when {
-                pendingMentorCount == 0 -> "Pengingat off"
+                pendingMentorCount == 0 -> "Tidak wajib absen"
                 isMentorOverdue -> "$pendingMentorCount menunggu >$thresholdDays hr"
                 else -> "$pendingMentorCount menunggu approval"
             }
         }
         WidgetStatus.SESI_BERAKHIR -> "Masuk ke SSO"
+    }
+
+    fun getRightLabel1x5(): String = when (status) {
+        WidgetStatus.SUDAH_ABSEN -> "Lengkap"
+        WidgetStatus.HARI_LIBUR -> "Hari Off"
+        WidgetStatus.BELUM_ABSEN, WidgetStatus.MENDESAK -> "tersisa"
+        WidgetStatus.SESI_BERAKHIR -> ""
+    }
+
+    fun getFooterLeft1x5(nowHour: Int = -1): String = when {
+        status == WidgetStatus.SESI_BERAKHIR -> "Sinkronisasi terhenti"
+        !reminderEnabled -> "Notifikasi nonaktif"
+        status == WidgetStatus.HARI_LIBUR -> "Notifikasi dijeda hari ini"
+        status == WidgetStatus.SUDAH_ABSEN -> "Tidak ada notifikasi lagi"
+        else -> {
+            // BELUM_ABSEN or MENDESAK
+            val hour = if (nowHour >= 0) nowHour else Calendar.getInstance(WIB_TIMEZONE).get(Calendar.HOUR_OF_DAY)
+            if (hour < reminderStartHour) {
+                val timeStr = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
+                "Notifikasi mulai $timeStr • tiap ${reminderIntervalMinutes}m"
+            } else {
+                "Notifikasi aktif • tiap $reminderIntervalMinutes menit"
+            }
+        }
+    }
+
+    fun getFooterLeft1x3(nowHour: Int = -1): String = when {
+        status == WidgetStatus.SESI_BERAKHIR -> "Perlu login"
+        !reminderEnabled -> "Nonaktif"
+        status == WidgetStatus.HARI_LIBUR -> "Dijeda hari ini"
+        status == WidgetStatus.SUDAH_ABSEN -> "Notif berhenti"
+        else -> {
+            // BELUM_ABSEN or MENDESAK
+            val hour = if (nowHour >= 0) nowHour else Calendar.getInstance(WIB_TIMEZONE).get(Calendar.HOUR_OF_DAY)
+            if (hour < reminderStartHour) {
+                val timeStr = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
+                "Mulai $timeStr"
+            } else {
+                "Tiap $reminderIntervalMinutes menit"
+            }
+        }
+    }
+
+    fun getFooterRight1x5(): String {
+        if (lastCheckTimestamp <= 0L) return ""
+        val timeStr = formatTime(lastCheckTimestamp)
+        return "Dicek $timeStr"
+    }
+
+    fun getFooterRight1x3(): String {
+        if (lastCheckTimestamp <= 0L) return ""
+        return formatTime(lastCheckTimestamp)
     }
 
     fun isSubtextWarning(): Boolean {
@@ -116,17 +172,23 @@ data class WidgetDataSnapshot(
         private val WIB_TIMEZONE = TimeZone.getTimeZone("Asia/Jakarta")
         private val WIB_ZONE_ID = ZoneId.of("Asia/Jakarta")
         private val DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE, d MMM", Locale("id", "ID"))
+        private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale("id", "ID"))
 
         fun fromPreferences(
             context: Context,
             nowMillis: Long = System.currentTimeMillis()
         ): WidgetDataSnapshot {
             val prefs = EncryptedPreferences(context)
+            val settings = prefs.getReminderSettings()
             return fromComponents(
                 hasCredentials = prefs.hasCredentials(),
                 attendanceStatus = prefs.getLastAttendanceStatus(),
                 pendingCount = prefs.getPendingMentorReviewCount(),
-                thresholdDays = prefs.getReminderSettings().mentorReviewThresholdDays,
+                thresholdDays = settings.mentorReviewThresholdDays,
+                lastCheckTimestamp = prefs.getLastCheckTimestamp(),
+                reminderEnabled = settings.isEnabled,
+                reminderStartHour = settings.startHour,
+                reminderIntervalMinutes = settings.intervalMinutes,
                 themeMode = prefs.getThemeMode(),
                 nowMillis = nowMillis
             )
@@ -137,6 +199,10 @@ data class WidgetDataSnapshot(
             attendanceStatus: AttendanceStatus,
             pendingCount: Int,
             thresholdDays: Int,
+            lastCheckTimestamp: Long = 0L,
+            reminderEnabled: Boolean = true,
+            reminderStartHour: Int = 16,
+            reminderIntervalMinutes: Int = 15,
             themeMode: ThemeMode,
             nowMillis: Long = System.currentTimeMillis()
         ): WidgetDataSnapshot {
@@ -149,6 +215,10 @@ data class WidgetDataSnapshot(
                     pendingMentorCount = 0,
                     isMentorOverdue = false,
                     thresholdDays = thresholdDays.coerceIn(1, 5),
+                    lastCheckTimestamp = lastCheckTimestamp,
+                    reminderEnabled = reminderEnabled,
+                    reminderStartHour = reminderStartHour,
+                    reminderIntervalMinutes = reminderIntervalMinutes,
                     themeMode = themeMode
                 )
             }
@@ -183,8 +253,17 @@ data class WidgetDataSnapshot(
                 pendingMentorCount = pendingCount,
                 isMentorOverdue = isOverdue,
                 thresholdDays = effectiveThreshold,
+                lastCheckTimestamp = lastCheckTimestamp,
+                reminderEnabled = reminderEnabled,
+                reminderStartHour = reminderStartHour,
+                reminderIntervalMinutes = reminderIntervalMinutes,
                 themeMode = themeMode
             )
+        }
+
+        fun formatTime(millis: Long): String {
+            val zonedDateTime = Instant.ofEpochMilli(millis).atZone(WIB_ZONE_ID)
+            return TIME_FORMATTER.format(zonedDateTime)
         }
 
         fun calculateRemainingTime(nowMillis: Long): Pair<Long, String> {

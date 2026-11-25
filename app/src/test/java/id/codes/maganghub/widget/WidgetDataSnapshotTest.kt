@@ -136,8 +136,8 @@ class WidgetDataSnapshotTest {
 
         assertEquals("Hari Libur", base.getTitle1x5())
         assertEquals("Hari Libur", base.getTitle1x3())
-        assertEquals("Pengingat nonaktif hari ini", base.getSubtext1x5())
-        assertEquals("Pengingat off", base.getSubtext1x3())
+        assertEquals("Tidak wajib presensi hari ini", base.getSubtext1x5())
+        assertEquals("Tidak wajib absen", base.getSubtext1x3())
         assertFalse(base.showBadge1x5())
         assertEquals(R.drawable.ic_widget_moon, base.getInlineIconResId())
 
@@ -183,6 +183,10 @@ class WidgetDataSnapshotTest {
             assertNotEquals(dark.titleText, light.titleText)
             assertNotEquals(Color.Unspecified, dark.accentBar)
             assertNotEquals(Color.Unspecified, light.accentBar)
+            assertNotEquals(Color.Unspecified, dark.footerDivider)
+            assertNotEquals(Color.Unspecified, dark.footerText)
+            assertNotEquals(Color.Unspecified, light.footerDivider)
+            assertNotEquals(Color.Unspecified, light.footerText)
         }
     }
 
@@ -353,5 +357,90 @@ class WidgetDataSnapshotTest {
         assertTrue(formatted.startsWith("Rab"))
         assertTrue(formatted.contains("25"))
         assertTrue(formatted.contains("Nov"))
+    }
+
+    @Test
+    fun testFooterMicrocopyGaya1AllConditions() {
+        val baseSudah = WidgetDataSnapshot(
+            status = WidgetStatus.SUDAH_ABSEN,
+            remainingTimeMillis = 0L,
+            remainingTimeText = "",
+            formattedDate = "Rab, 25 Nov",
+            pendingMentorCount = 0,
+            isMentorOverdue = false,
+            reminderEnabled = true,
+            reminderStartHour = 16,
+            reminderIntervalMinutes = 15,
+            themeMode = ThemeMode.SYSTEM
+        )
+        assertEquals("Tidak ada notifikasi lagi", baseSudah.getFooterLeft1x5(nowHour = 10))
+        assertEquals("Notif berhenti", baseSudah.getFooterLeft1x3(nowHour = 10))
+
+        val baseBelumEarly = baseSudah.copy(status = WidgetStatus.BELUM_ABSEN)
+        assertEquals("Notifikasi mulai 16:00 • tiap 15m", baseBelumEarly.getFooterLeft1x5(nowHour = 11))
+        assertEquals("Mulai 16:00", baseBelumEarly.getFooterLeft1x3(nowHour = 11))
+
+        val baseBelumActive = baseSudah.copy(status = WidgetStatus.BELUM_ABSEN)
+        assertEquals("Notifikasi aktif • tiap 15 menit", baseBelumActive.getFooterLeft1x5(nowHour = 17))
+        assertEquals("Tiap 15 menit", baseBelumActive.getFooterLeft1x3(nowHour = 17))
+
+        val baseLibur = baseSudah.copy(status = WidgetStatus.HARI_LIBUR)
+        assertEquals("Notifikasi dijeda hari ini", baseLibur.getFooterLeft1x5())
+        assertEquals("Dijeda hari ini", baseLibur.getFooterLeft1x3())
+
+        val baseDisabled = baseBelumActive.copy(reminderEnabled = false)
+        assertEquals("Notifikasi nonaktif", baseDisabled.getFooterLeft1x5())
+        assertEquals("Nonaktif", baseDisabled.getFooterLeft1x3())
+
+        val baseSesiBerakhir = baseSudah.copy(status = WidgetStatus.SESI_BERAKHIR)
+        assertEquals("Sinkronisasi terhenti", baseSesiBerakhir.getFooterLeft1x5())
+        assertEquals("Perlu login", baseSesiBerakhir.getFooterLeft1x3())
+    }
+
+    @Test
+    fun testFooterRightTimestamp() {
+        val wib = TimeZone.getTimeZone("Asia/Jakarta")
+        val cal = Calendar.getInstance(wib).apply {
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 30)
+            set(Calendar.SECOND, 0)
+        }
+
+        val snapshotWithTime = WidgetDataSnapshot(
+            status = WidgetStatus.SUDAH_ABSEN,
+            remainingTimeMillis = 0L,
+            remainingTimeText = "",
+            formattedDate = "Rab, 25 Nov",
+            pendingMentorCount = 0,
+            isMentorOverdue = false,
+            lastCheckTimestamp = cal.timeInMillis,
+            themeMode = ThemeMode.SYSTEM
+        )
+        assertEquals("Dicek 23:30", snapshotWithTime.getFooterRight1x5())
+        assertEquals("23:30", snapshotWithTime.getFooterRight1x3())
+
+        val snapshotZeroTime = snapshotWithTime.copy(lastCheckTimestamp = 0L)
+        assertEquals("", snapshotZeroTime.getFooterRight1x5())
+        assertEquals("", snapshotZeroTime.getFooterRight1x3())
+    }
+
+    @Test
+    fun testRightLabels1x5() {
+        val sudah = WidgetDataSnapshot(
+            status = WidgetStatus.SUDAH_ABSEN,
+            remainingTimeMillis = 0L,
+            remainingTimeText = "",
+            formattedDate = "Rab, 25 Nov",
+            pendingMentorCount = 0,
+            isMentorOverdue = false,
+            themeMode = ThemeMode.SYSTEM
+        )
+        assertEquals("Lengkap", sudah.getRightLabel1x5())
+
+        val libur = sudah.copy(status = WidgetStatus.HARI_LIBUR)
+        assertEquals("Hari Off", libur.getRightLabel1x5())
+
+        val belum = sudah.copy(status = WidgetStatus.BELUM_ABSEN)
+        assertEquals("tersisa", belum.getRightLabel1x5())
     }
 }

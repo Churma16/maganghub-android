@@ -27,6 +27,7 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
@@ -101,162 +102,213 @@ private fun WidgetLayout1x5(
     colors: WidgetColorTokens,
     actionButtonAction: Action
 ) {
-    Row(
+    Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 14.dp, vertical = 8.dp)
     ) {
-        // 1. Zona Kiri: Garis aksen vertikal tipis (lebar 4dp, tinggi 32dp, pill)
-        Box(
-            modifier = GlanceModifier
-                .width(4.dp)
-                .height(32.dp)
-                .background(ColorProvider(colors.accentBar))
-                .cornerRadius(2.dp)
-        ) {}
-
-        Spacer(modifier = GlanceModifier.width(10.dp))
-
-        // 2. Zona Tengah: Judul & Subteks kontekstual
-        Column(
-            modifier = GlanceModifier.defaultWeight()
+        // --- Baris Utama: Status, Subteks, dan Aksi Kanan ---
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val iconRes = data.getInlineIconResId()
-                if (iconRes != null) {
-                    Image(
-                        provider = ImageProvider(iconRes),
-                        contentDescription = null,
-                        modifier = GlanceModifier.size(14.dp),
-                        colorFilter = ColorFilter.tint(ColorProvider(colors.inlineIcon))
+            // 1. Zona Kiri: Garis aksen vertikal tipis (lebar 4dp, tinggi 28dp, pill)
+            Box(
+                modifier = GlanceModifier
+                    .width(4.dp)
+                    .height(28.dp)
+                    .background(ColorProvider(colors.accentBar))
+                    .cornerRadius(2.dp)
+            ) {}
+
+            Spacer(modifier = GlanceModifier.width(10.dp))
+
+            // 2. Zona Tengah: Judul & Subteks kontekstual
+            Column(
+                modifier = GlanceModifier.defaultWeight()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val iconRes = data.getInlineIconResId()
+                    if (iconRes != null) {
+                        Image(
+                            provider = ImageProvider(iconRes),
+                            contentDescription = null,
+                            modifier = GlanceModifier.size(13.5.dp),
+                            colorFilter = ColorFilter.tint(ColorProvider(colors.inlineIcon))
+                        )
+                        Spacer(modifier = GlanceModifier.width(6.dp))
+                    }
+                    Text(
+                        text = data.getTitle1x5(),
+                        style = TextStyle(
+                            color = ColorProvider(colors.titleText),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        maxLines = 1
                     )
-                    Spacer(modifier = GlanceModifier.width(6.dp))
                 }
+
+                Spacer(modifier = GlanceModifier.height(2.dp))
+
+                val subtextColor = if (data.isSubtextWarning()) colors.subtextWarning else colors.subtextNormal
                 Text(
-                    text = data.getTitle1x5(),
+                    text = data.getSubtext1x5(),
                     style = TextStyle(
-                        color = ColorProvider(colors.titleText),
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.Bold
+                        color = ColorProvider(subtextColor),
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Medium
                     ),
                     maxLines = 1
                 )
             }
 
-            Spacer(modifier = GlanceModifier.height(3.dp))
+            Spacer(modifier = GlanceModifier.width(8.dp))
 
-            val subtextColor = if (data.isSubtextWarning()) colors.subtextWarning else colors.subtextNormal
-            Text(
-                text = data.getSubtext1x5(),
-                style = TextStyle(
-                    color = ColorProvider(subtextColor),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                maxLines = 1
-            )
-        }
-
-        Spacer(modifier = GlanceModifier.width(8.dp))
-
-        // 3. Zona Kanan: Dinamis sesuai Status
-        when {
-            data.showActionButton() -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (data.status == WidgetStatus.BELUM_ABSEN || data.status == WidgetStatus.MENDESAK) {
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = data.remainingTimeText,
-                                style = TextStyle(
-                                    color = ColorProvider(colors.rightValue),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
+            // 3. Zona Kanan: Dinamis sesuai Status
+            when {
+                data.showActionButton() -> {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (data.status == WidgetStatus.BELUM_ABSEN || data.status == WidgetStatus.MENDESAK) {
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = data.remainingTimeText,
+                                    style = TextStyle(
+                                        color = ColorProvider(colors.rightValue),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 )
-                            )
-                            Text(
-                                text = "tersisa",
-                                style = TextStyle(
-                                    color = ColorProvider(colors.rightLabel),
-                                    fontSize = 9.5.sp,
-                                    fontWeight = FontWeight.Medium
+                                Text(
+                                    text = data.getRightLabel1x5(),
+                                    style = TextStyle(
+                                        color = ColorProvider(colors.rightLabel),
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
                                 )
-                            )
+                            }
+                            Spacer(modifier = GlanceModifier.width(6.dp))
                         }
-                        Spacer(modifier = GlanceModifier.width(6.dp))
-                    }
 
-                    // Safe touch target container >= 48x48 dp with inner 36x36 dp squircle
+                        // Safe touch target container >= 48x48 dp with inner 32x32 dp squircle
+                        Box(
+                            modifier = GlanceModifier
+                                .size(48.dp)
+                                .clickable(actionButtonAction),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = GlanceModifier
+                                    .size(32.dp)
+                                    .background(ColorProvider(colors.actionButtonBg))
+                                    .cornerRadius(10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    provider = ImageProvider(R.drawable.ic_widget_arrow_outward),
+                                    contentDescription = "Aksi Cepat",
+                                    modifier = GlanceModifier.size(16.dp),
+                                    colorFilter = ColorFilter.tint(ColorProvider(colors.actionButtonIcon))
+                                )
+                            }
+                        }
+                    }
+                }
+
+                data.showBadge1x5() -> {
                     Box(
                         modifier = GlanceModifier
-                            .size(48.dp)
-                            .clickable(actionButtonAction),
-                        contentAlignment = Alignment.Center
+                            .background(ColorProvider(colors.badgeBorder))
+                            .cornerRadius(8.dp)
+                            .padding(1.dp)
                     ) {
                         Box(
                             modifier = GlanceModifier
-                                .size(36.dp)
-                                .background(ColorProvider(colors.actionButtonBg))
-                                .cornerRadius(12.dp),
+                                .background(ColorProvider(colors.badgeBg))
+                                .cornerRadius(7.dp)
+                                .padding(horizontal = 7.dp, vertical = 3.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Image(
-                                provider = ImageProvider(R.drawable.ic_widget_arrow_outward),
-                                contentDescription = "Aksi Cepat",
-                                modifier = GlanceModifier.size(18.dp),
-                                colorFilter = ColorFilter.tint(ColorProvider(colors.actionButtonIcon))
+                            Text(
+                                text = data.getBadgeText1x5(),
+                                style = TextStyle(
+                                    color = ColorProvider(colors.badgeText),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             )
                         }
                     }
                 }
-            }
 
-            data.showBadge1x5() -> {
-                Box(
-                    modifier = GlanceModifier
-                        .background(ColorProvider(colors.badgeBorder))
-                        .cornerRadius(8.dp)
-                        .padding(1.dp)
-                ) {
-                    Box(
-                        modifier = GlanceModifier
-                            .background(ColorProvider(colors.badgeBg))
-                            .cornerRadius(7.dp)
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                else -> {
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = data.getBadgeText1x5(),
+                            text = data.formattedDate,
                             style = TextStyle(
-                                color = ColorProvider(colors.badgeText),
+                                color = ColorProvider(colors.rightValue),
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         )
+                        val label = data.getRightLabel1x5()
+                        if (label.isNotEmpty()) {
+                            Text(
+                                text = label,
+                                style = TextStyle(
+                                    color = ColorProvider(colors.rightLabel),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                        }
                     }
                 }
             }
+        }
 
-            else -> {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = data.formattedDate,
-                        style = TextStyle(
-                            color = ColorProvider(colors.rightValue),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                    val label = if (data.status == WidgetStatus.HARI_LIBUR) "Hari Off" else "Lengkap"
-                    Text(
-                        text = label,
-                        style = TextStyle(
-                            color = ColorProvider(colors.rightLabel),
-                            fontSize = 9.5.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    )
-                }
+        // Pendorong ke area bawah kartu
+        Spacer(modifier = GlanceModifier.defaultWeight())
+
+        // Pemisah garis tipis (subtle divider)
+        Box(
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(ColorProvider(colors.footerDivider))
+        ) {}
+
+        Spacer(modifier = GlanceModifier.height(5.dp))
+
+        // --- Baris Footer: Status Notifikasi & Waktu Terakhir Dicek ---
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = data.getFooterLeft1x5(),
+                style = TextStyle(
+                    color = ColorProvider(colors.footerText),
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Normal
+                ),
+                maxLines = 1,
+                modifier = GlanceModifier.defaultWeight()
+            )
+
+            val rightFooter = data.getFooterRight1x5()
+            if (rightFooter.isNotEmpty()) {
+                Spacer(modifier = GlanceModifier.width(6.dp))
+                Text(
+                    text = rightFooter,
+                    style = TextStyle(
+                        color = ColorProvider(colors.footerText),
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    maxLines = 1
+                )
             }
         }
     }
@@ -268,75 +320,123 @@ private fun WidgetLayout1x3(
     colors: WidgetColorTokens,
     actionButtonAction: Action
 ) {
-    Row(
+    Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 10.dp, vertical = 7.dp)
     ) {
-        // 1. Zona Kiri: Garis aksen vertikal tipis (lebar 4dp, tinggi 32dp, pill)
-        Box(
-            modifier = GlanceModifier
-                .width(4.dp)
-                .height(32.dp)
-                .background(ColorProvider(colors.accentBar))
-                .cornerRadius(2.dp)
-        ) {}
-
-        Spacer(modifier = GlanceModifier.width(8.dp))
-
-        // 2. Zona Tengah: Judul & Subteks ringkas (tanpa inline icon untuk hemat ruang)
-        Column(
-            modifier = GlanceModifier.defaultWeight()
+        // --- Baris Utama: Status Ringkas & Aksi ---
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = data.getTitle1x3(),
-                style = TextStyle(
-                    color = ColorProvider(colors.titleText),
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                maxLines = 1
-            )
-
-            Spacer(modifier = GlanceModifier.height(3.dp))
-
-            val subtextColor = if (data.isSubtextWarning()) colors.subtextWarning else colors.subtextNormal
-            Text(
-                text = data.getSubtext1x3(),
-                style = TextStyle(
-                    color = ColorProvider(subtextColor),
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                maxLines = 1
-            )
-        }
-
-        // 3. Zona Kanan: Tombol aksi jika diperlukan
-        if (data.showActionButton()) {
-            Spacer(modifier = GlanceModifier.width(4.dp))
-            // Safe touch target container >= 48x48 dp with inner 32x32 dp squircle
+            // 1. Zona Kiri: Garis aksen vertikal tipis
             Box(
                 modifier = GlanceModifier
-                    .size(48.dp)
-                    .clickable(actionButtonAction),
-                contentAlignment = Alignment.Center
+                    .width(3.5.dp)
+                    .height(26.dp)
+                    .background(ColorProvider(colors.accentBar))
+                    .cornerRadius(2.dp)
+            ) {}
+
+            Spacer(modifier = GlanceModifier.width(7.dp))
+
+            // 2. Zona Tengah: Judul & Subteks ringkas
+            Column(
+                modifier = GlanceModifier.defaultWeight()
             ) {
+                Text(
+                    text = data.getTitle1x3(),
+                    style = TextStyle(
+                        color = ColorProvider(colors.titleText),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    maxLines = 1
+                )
+
+                Spacer(modifier = GlanceModifier.height(2.dp))
+
+                val subtextColor = if (data.isSubtextWarning()) colors.subtextWarning else colors.subtextNormal
+                Text(
+                    text = data.getSubtext1x3(),
+                    style = TextStyle(
+                        color = ColorProvider(subtextColor),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    maxLines = 1
+                )
+            }
+
+            // 3. Zona Kanan: Tombol aksi jika diperlukan
+            if (data.showActionButton()) {
+                Spacer(modifier = GlanceModifier.width(4.dp))
                 Box(
                     modifier = GlanceModifier
-                        .size(32.dp)
-                        .background(ColorProvider(colors.actionButtonBg))
-                        .cornerRadius(12.dp),
+                        .size(44.dp)
+                        .clickable(actionButtonAction),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        provider = ImageProvider(R.drawable.ic_widget_arrow_outward),
-                        contentDescription = "Aksi Cepat",
-                        modifier = GlanceModifier.size(16.dp),
-                        colorFilter = ColorFilter.tint(ColorProvider(colors.actionButtonIcon))
-                    )
+                    Box(
+                        modifier = GlanceModifier
+                            .size(30.dp)
+                            .background(ColorProvider(colors.actionButtonBg))
+                            .cornerRadius(10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            provider = ImageProvider(R.drawable.ic_widget_arrow_outward),
+                            contentDescription = "Aksi Cepat",
+                            modifier = GlanceModifier.size(15.dp),
+                            colorFilter = ColorFilter.tint(ColorProvider(colors.actionButtonIcon))
+                        )
+                    }
                 }
+            }
+        }
+
+        // Pendorong ke area bawah kartu
+        Spacer(modifier = GlanceModifier.defaultWeight())
+
+        // Pemisah garis tipis (subtle divider)
+        Box(
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(ColorProvider(colors.footerDivider))
+        ) {}
+
+        Spacer(modifier = GlanceModifier.height(4.dp))
+
+        // --- Baris Footer Ringkas: Status Notifikasi & Waktu Dicek ---
+        Row(
+            modifier = GlanceModifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = data.getFooterLeft1x3(),
+                style = TextStyle(
+                    color = ColorProvider(colors.footerText),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Normal
+                ),
+                maxLines = 1,
+                modifier = GlanceModifier.defaultWeight()
+            )
+
+            val rightFooter = data.getFooterRight1x3()
+            if (rightFooter.isNotEmpty()) {
+                Spacer(modifier = GlanceModifier.width(4.dp))
+                Text(
+                    text = rightFooter,
+                    style = TextStyle(
+                        color = ColorProvider(colors.footerText),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    maxLines = 1
+                )
             }
         }
     }

@@ -20,6 +20,8 @@ data class WidgetColorTokens(
     val badgeBg: Color,
     val badgeBorder: Color,
     val badgeText: Color,
+    val footerDivider: Color,
+    val footerText: Color,
 )
 
 object WidgetColors {
@@ -57,7 +59,9 @@ object WidgetColors {
                 actionButtonIcon = Color.Transparent,
                 badgeBg = Color(0x26F59E0B),
                 badgeBorder = Color(0x4DFBBF24),
-                badgeText = Color(0xFFFCD34D)
+                badgeText = Color(0xFFFCD34D),
+                footerDivider = Color(0xFF064E3B).copy(alpha = 0.6f),
+                footerText = Color(0xFFA7F3D0).copy(alpha = 0.65f)
             )
             WidgetStatus.BELUM_ABSEN -> WidgetColorTokens(
                 cardBackground = Color(0xFF251A0A),
@@ -73,7 +77,9 @@ object WidgetColors {
                 actionButtonIcon = Color(0xFF020617),
                 badgeBg = Color.Transparent,
                 badgeBorder = Color.Transparent,
-                badgeText = Color.Transparent
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFF78350F).copy(alpha = 0.6f),
+                footerText = Color(0xFFFEF3C7).copy(alpha = 0.65f)
             )
             WidgetStatus.MENDESAK -> WidgetColorTokens(
                 cardBackground = Color(0xFF2A0E14),
@@ -89,7 +95,9 @@ object WidgetColors {
                 actionButtonIcon = Color(0xFFFFFFFF),
                 badgeBg = Color.Transparent,
                 badgeBorder = Color.Transparent,
-                badgeText = Color.Transparent
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFF881337).copy(alpha = 0.6f),
+                footerText = Color(0xFFFFE4E6).copy(alpha = 0.65f)
             )
             WidgetStatus.HARI_LIBUR -> WidgetColorTokens(
                 cardBackground = Color(0xFF131B2E),
@@ -105,7 +113,9 @@ object WidgetColors {
                 actionButtonIcon = Color.Transparent,
                 badgeBg = Color(0x26F59E0B),
                 badgeBorder = Color(0x4DFBBF24),
-                badgeText = Color(0xFFFCD34D)
+                badgeText = Color(0xFFFCD34D),
+                footerDivider = Color(0xFF1E293B).copy(alpha = 0.6f),
+                footerText = Color(0xFF94A3B8)
             )
             WidgetStatus.SESI_BERAKHIR -> WidgetColorTokens(
                 cardBackground = Color(0xFF1E293B),
@@ -121,7 +131,9 @@ object WidgetColors {
                 actionButtonIcon = Color(0xFFFFFFFF),
                 badgeBg = Color.Transparent,
                 badgeBorder = Color.Transparent,
-                badgeText = Color.Transparent
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFF334155).copy(alpha = 0.6f),
+                footerText = Color(0xFF94A3B8)
             )
         }
     }
@@ -142,7 +154,9 @@ object WidgetColors {
                 actionButtonIcon = Color.Transparent,
                 badgeBg = Color(0xFFFEF3C7),
                 badgeBorder = Color(0xFFFCD34D),
-                badgeText = Color(0xFF92400E)
+                badgeText = Color(0xFF92400E),
+                footerDivider = Color(0xFFA7F3D0).copy(alpha = 0.7f),
+                footerText = Color(0xFF047857).copy(alpha = 0.70f)
             )
             WidgetStatus.BELUM_ABSEN -> WidgetColorTokens(
                 cardBackground = Color(0xFFFFFBEB),
@@ -158,7 +172,9 @@ object WidgetColors {
                 actionButtonIcon = Color(0xFFFFFFFF),
                 badgeBg = Color.Transparent,
                 badgeBorder = Color.Transparent,
-                badgeText = Color.Transparent
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFFFDE68A).copy(alpha = 0.7f),
+                footerText = Color(0xFF92400E).copy(alpha = 0.70f)
             )
             WidgetStatus.MENDESAK -> WidgetColorTokens(
                 cardBackground = Color(0xFFFFF1F2),
@@ -174,7 +190,9 @@ object WidgetColors {
                 actionButtonIcon = Color(0xFFFFFFFF),
                 badgeBg = Color.Transparent,
                 badgeBorder = Color.Transparent,
-                badgeText = Color.Transparent
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFFFECDD3).copy(alpha = 0.7f),
+                footerText = Color(0xFF9F1239).copy(alpha = 0.70f)
             )
             WidgetStatus.HARI_LIBUR -> WidgetColorTokens(
                 cardBackground = Color(0xFFF8FAFC),
@@ -190,7 +208,9 @@ object WidgetColors {
                 actionButtonIcon = Color.Transparent,
                 badgeBg = Color(0xFFFEF3C7),
                 badgeBorder = Color(0xFFFCD34D),
-                badgeText = Color(0xFF92400E)
+                badgeText = Color(0xFF92400E),
+                footerDivider = Color(0xFFCBD5E1).copy(alpha = 0.7f),
+                footerText = Color(0xFF64748B)
             )
             WidgetStatus.SESI_BERAKHIR -> WidgetColorTokens(
                 cardBackground = Color(0xFFF8FAFC),
@@ -206,7 +226,9 @@ object WidgetColors {
                 actionButtonIcon = Color(0xFFFFFFFF),
                 badgeBg = Color.Transparent,
                 badgeBorder = Color.Transparent,
-                badgeText = Color.Transparent
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFFCBD5E1).copy(alpha = 0.7f),
+                footerText = Color(0xFF64748B)
             )
         }
     }
