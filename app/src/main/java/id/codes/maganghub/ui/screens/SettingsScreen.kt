@@ -162,7 +162,6 @@ fun SettingsScreen(
                     .height(44.dp),
                 shape = RoundedCornerShape(10.dp),
                 border = cardBorder,
-                elevation = ButtonDefaults.outlinedButtonElevation(defaultElevation = if (isDark) 0.dp else 1.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -194,7 +193,6 @@ fun SettingsScreen(
                     .height(44.dp),
                 shape = RoundedCornerShape(10.dp),
                 border = cardBorder,
-                elevation = ButtonDefaults.outlinedButtonElevation(defaultElevation = if (isDark) 0.dp else 1.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
