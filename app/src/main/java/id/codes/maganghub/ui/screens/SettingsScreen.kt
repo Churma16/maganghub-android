@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DesktopWindows
 import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.AlertDialog
@@ -108,6 +107,7 @@ private fun DefaultAvatarPlaceholder(modifier: Modifier = Modifier) {
 fun SettingsScreen(
     uiState: AttendanceUiState,
     onUpdateReminderSettings: (ReminderSettings) -> Unit,
+    onSetThemeMode: (ThemeMode) -> Unit = {},
     onOpenLoginDialog: () -> Unit,
     onLogout: () -> Unit,
     onTestNotification: () -> Unit,
@@ -354,21 +354,21 @@ fun SettingsScreen(
                             selected = uiState.themeMode == ThemeMode.SYSTEM,
                             icon = Icons.Outlined.DesktopWindows,
                             label = "Sistem",
-                            onClick = { viewModel.setThemeMode(ThemeMode.SYSTEM) }
+                            onClick = { onSetThemeMode(ThemeMode.SYSTEM) }
                         )
                         ThemeSegmentButton(
                             modifier = Modifier.weight(1f),
                             selected = uiState.themeMode == ThemeMode.LIGHT,
                             icon = Icons.Outlined.LightMode,
                             label = "Terang",
-                            onClick = { viewModel.setThemeMode(ThemeMode.LIGHT) }
+                            onClick = { onSetThemeMode(ThemeMode.LIGHT) }
                         )
                         ThemeSegmentButton(
                             modifier = Modifier.weight(1f),
                             selected = uiState.themeMode == ThemeMode.DARK,
                             icon = Icons.Outlined.DarkMode,
                             label = "Gelap",
-                            onClick = { viewModel.setThemeMode(ThemeMode.DARK) }
+                            onClick = { onSetThemeMode(ThemeMode.DARK) }
                         )
                     }
                 }

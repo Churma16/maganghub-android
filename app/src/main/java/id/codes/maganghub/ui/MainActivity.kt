@@ -199,6 +199,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
             1 -> SettingsScreen(
                 uiState = uiState,
                 onUpdateReminderSettings = { viewModel.updateReminderSettings(it) },
+                onSetThemeMode = { viewModel.setThemeMode(it) },
                 onOpenLoginDialog = { viewModel.setLoginDialogOpen(true) },
                 onLogout = { viewModel.logout() },
                 onTestNotification = {
