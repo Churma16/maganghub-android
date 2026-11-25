@@ -105,7 +105,7 @@ private fun WidgetLayout1x5(
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .padding(start = 14.dp, end = 14.dp, top = 7.dp, bottom = 4.dp)
     ) {
         // --- Baris Utama: Status, Subteks, dan Aksi Kanan ---
         Row(
@@ -279,7 +279,7 @@ private fun WidgetLayout1x5(
                 .background(ColorProvider(colors.footerDivider))
         ) {}
 
-        Spacer(modifier = GlanceModifier.height(5.dp))
+        Spacer(modifier = GlanceModifier.height(4.dp))
 
         // --- Baris Footer: Status Notifikasi & Waktu Terakhir Dicek ---
         Row(
@@ -323,7 +323,7 @@ private fun WidgetLayout1x3(
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(horizontal = 10.dp, vertical = 7.dp)
+            .padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 4.dp)
     ) {
         // --- Baris Utama: Status Ringkas & Aksi ---
         Row(
@@ -407,7 +407,7 @@ private fun WidgetLayout1x3(
                 .background(ColorProvider(colors.footerDivider))
         ) {}
 
-        Spacer(modifier = GlanceModifier.height(4.dp))
+        Spacer(modifier = GlanceModifier.height(3.dp))
 
         // --- Baris Footer Ringkas: Status Notifikasi & Waktu Dicek ---
         Row(
