@@ -26,6 +26,8 @@ class AttendanceViewModel(
     private val _uiState = MutableStateFlow(
         AttendanceUiState(
             isLoggedIn = repository.hasSavedCredentials(),
+            fullName = repository.sessionFlow.value.fullName,
+            photoUrl = repository.sessionFlow.value.photoUrl,
             attendanceStatus = repository.getCachedStatus(),
             attendanceData = repository.getCachedHomeData(),
             lastSyncTimestamp = repository.getLastCheckTimestamp(),
@@ -45,7 +47,9 @@ class AttendanceViewModel(
                 _uiState.update { current ->
                     current.copy(
                         isLoggedIn = session.isLoggedIn,
-                        username = session.username
+                        username = session.username,
+                        fullName = session.fullName,
+                        photoUrl = session.photoUrl
                     )
                 }
                 updateNextReminderString()
@@ -74,6 +78,9 @@ class AttendanceViewModel(
      * Triggers manual or automated attendance check.
      */
     fun checkAttendanceNow(silent: Boolean = false) {
+        if (!silent) {
+            refreshUserProfile()
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isChecking = true, errorMessage = null, successMessage = null) }
 
@@ -165,6 +172,15 @@ class AttendanceViewModel(
             repository.updateReminderSettings(settings)
             _uiState.update { it.copy(reminderSettings = settings) }
             updateNextReminderString()
+        }
+    }
+
+    /**
+     * Refreshes user profile (name, photo) from Monev API.
+     */
+    fun refreshUserProfile() {
+        viewModelScope.launch {
+            repository.refreshUserProfile()
         }
     }
 

@@ -124,6 +124,63 @@ class MagangHubApiClientTest {
     }
 
     @Test
+    fun testFetchUserProfileSuccess() = runBlocking {
+        val responseBody = """
+            {
+                "data": {
+                    "id": "14d68c26-eb45-4863-bb44-356073d2f643",
+                    "name": "Fathan",
+                    "photo_url": "https://profile-assets.kemnaker.go.id/14d68c26/profiles/photo.jpg",
+                    "company": "Global Digital Niaga",
+                    "internship_company": "Global Digital Niaga"
+                }
+            }
+        """.trimIndent()
+
+        mockServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(responseBody)
+        )
+
+        val profile = client.fetchUserProfile("valid_mock_token")
+        assertNotNull(profile)
+        assertEquals("14d68c26-eb45-4863-bb44-356073d2f643", profile.id)
+        assertEquals("Fathan", profile.name)
+        assertEquals("https://profile-assets.kemnaker.go.id/14d68c26/profiles/photo.jpg", profile.photoUrl)
+        assertEquals("Global Digital Niaga", profile.internshipCompany)
+
+        val recorded = mockServer.takeRequest()
+        assertEquals("/api/v1/users/me", recorded.path)
+        assertEquals("Bearer valid_mock_token", recorded.getHeader("Authorization"))
+    }
+
+    @Test
+    fun testFetchUserProfileUnauthorized() {
+        val errorBody = """
+            {
+                "code": 401,
+                "error_code": "UNAUTHORIZED",
+                "message": "Token expired or invalid"
+            }
+        """.trimIndent()
+
+        mockServer.enqueue(
+            MockResponse()
+                .setResponseCode(401)
+                .setHeader("Content-Type", "application/json")
+                .setBody(errorBody)
+        )
+
+        assertThrows(UnauthorizedSessionException::class.java) {
+            runBlocking {
+                client.fetchUserProfile("expired_token")
+            }
+        }
+    }
+
+    @Test
     fun testFetchTodayAttendanceStatusUnauthorized() {
         val errorBody = """
             {

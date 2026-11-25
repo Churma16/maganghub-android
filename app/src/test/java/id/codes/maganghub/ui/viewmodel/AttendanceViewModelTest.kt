@@ -4,6 +4,7 @@ import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import id.codes.maganghub.data.repository.AttendanceRepository
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +64,12 @@ class AttendanceViewModelTest {
 
         override suspend fun updateReminderSettings(settings: ReminderSettings) {
             _reminderSettingsFlow.value = settings
+        }
+
+        override suspend fun refreshUserProfile(): Result<UserProfileData> {
+            val profile = UserProfileData(name = "Fathan", photoUrl = "https://example.com/photo.jpg")
+            _sessionFlow.value = _sessionFlow.value.copy(fullName = profile.name, photoUrl = profile.photoUrl)
+            return Result.success(profile)
         }
 
         override fun getCachedHomeData(): AttendanceHomeData? = cachedHomeData
@@ -142,5 +149,21 @@ class AttendanceViewModelTest {
 
         val formattedEpoch = viewModel.formatLastSync(1732454400000L)
         assertTrue(formattedEpoch.contains("WIB"))
+    }
+
+    @Test
+    fun testUserProfileEmissionUpdatesUiState() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("", viewModel.uiState.value.fullName)
+        assertEquals(null, viewModel.uiState.value.photoUrl)
+
+        viewModel.refreshUserProfile()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Fathan", viewModel.uiState.value.fullName)
+        assertEquals("https://example.com/photo.jpg", viewModel.uiState.value.photoUrl)
     }
 }

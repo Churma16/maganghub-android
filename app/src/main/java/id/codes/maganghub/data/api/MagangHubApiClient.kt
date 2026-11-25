@@ -6,6 +6,8 @@ import com.google.gson.JsonParser
 import id.codes.maganghub.data.model.ApiErrorResponse
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceHomeResponse
+import id.codes.maganghub.data.model.UserProfileData
+import id.codes.maganghub.data.model.UserProfileResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
@@ -130,6 +132,54 @@ class MagangHubApiClient(
                 200 -> {
                     val envelope = gson.fromJson(responseBody, AttendanceHomeResponse::class.java)
                         ?: throw IOException("Empty response received from attendance endpoint")
+                    envelope.data
+                }
+                401 -> {
+                    val errorEnvelope = try {
+                        gson.fromJson(responseBody, ApiErrorResponse::class.java)
+                    } catch (e: Exception) {
+                        null
+                    }
+                    val msg = errorEnvelope?.message?.takeIf { it.isNotEmpty() }
+                        ?: "Monev access token is expired or invalid (HTTP 401)"
+                    throw UnauthorizedSessionException(msg)
+                }
+                403 -> throw ForbiddenException()
+                404 -> throw NotFoundException()
+                429 -> {
+                    val retrySec = parseRetryAfter(response.header("Retry-After"))
+                    throw RateLimitedException(retrySec)
+                }
+                else -> throw MagangHubApiException(response.code, responseBody)
+            }
+        }
+
+    /**
+     * Calls GET /api/v1/users/me to retrieve authenticated user profile details (name, photo_url, etc).
+     */
+    suspend fun fetchUserProfile(monevAccessToken: String): UserProfileData =
+        withContext(Dispatchers.IO) {
+            val cleanToken = cleanBearerToken(monevAccessToken)
+            if (cleanToken.isEmpty()) {
+                throw UnauthorizedSessionException("Access token is empty")
+            }
+
+            val targetUrl = "${apiBaseUrl.trimEnd('/')}/users/me"
+            val request = Request.Builder()
+                .url(targetUrl)
+                .get()
+                .header("Authorization", "Bearer $cleanToken")
+                .header("Accept", "application/json")
+                .header("User-Agent", userAgentString)
+                .build()
+
+            val response = baseHttpClient.newCall(request).execute()
+            val responseBody = response.body?.string().orEmpty()
+
+            when (response.code) {
+                200 -> {
+                    val envelope = gson.fromJson(responseBody, UserProfileResponse::class.java)
+                        ?: throw IOException("Empty response received from user profile endpoint")
                     envelope.data
                 }
                 401 -> {
