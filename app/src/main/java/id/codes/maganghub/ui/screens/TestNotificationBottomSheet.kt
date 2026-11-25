@@ -149,7 +149,7 @@ fun TestNotificationBottomSheet(
                 iconColor = Color(0xFFF59E0B),
                 iconBg = Color(0xFFF59E0B).copy(alpha = 0.15f),
                 title = "2. Peninjauan Mentor Tertunda",
-                description = "5 kehadiran menunggu peninjauan mentor\nAksi: [Buka Monev] [Tunda 1 hari]",
+                description = "5 kehadiran menunggu approval mentor\nAksi: [Buka Monev] [Tunda 1 hari]",
                 cardBg = cardBg,
                 onClick = onTriggerMentorReminder
             )

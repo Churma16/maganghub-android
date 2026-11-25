@@ -961,7 +961,7 @@ private fun MentorReviewCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (isWarning) "Saatnya ingatkan Mentor" else "Menunggu peninjauan Mentor",
+                        text = if (isWarning) "Saatnya ingatkan Mentor" else "Menunggu approval Mentor",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = titleColor
@@ -969,7 +969,7 @@ private fun MentorReviewCard(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (isWarning) {
-                            "$pendingCount kehadiran dan laporan menunggu peninjauan, sudah mencapai batas pengingat."
+                            "$pendingCount kehadiran dan laporan menunggu approval, sudah mencapai batas pengingat."
                         } else {
                             "$pendingCount kehadiran dan laporan sudah dikirim. Tidak ada tindakan yang perlu kamu lakukan."
                         },

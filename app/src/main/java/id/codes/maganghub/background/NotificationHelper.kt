@@ -111,7 +111,7 @@ object NotificationHelper {
             "Pengingat Peninjauan Mentor",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Pengingat jika kehadiran dan laporan menunggu peninjauan mentor"
+            description = "Pengingat jika kehadiran dan laporan menunggu approval mentor"
             enableLights(true)
             lightColor = Color.YELLOW
             enableVibration(true)
@@ -352,7 +352,7 @@ object NotificationHelper {
         )
 
         val title = "Peninjauan mentor tertunda"
-        val body = "$pendingCount kehadiran dan laporan sudah menunggu peninjauan. Saatnya mengingatkan mentor."
+        val body = "$pendingCount kehadiran dan laporan sudah menunggu approval. Saatnya mengingatkan mentor."
 
         val builder = NotificationCompat.Builder(context, CHANNEL_MENTOR_REMINDER_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
