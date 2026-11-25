@@ -246,7 +246,7 @@ private fun WidgetLayout1x5(
                 else -> {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = data.formattedDate,
+                            text = data.getRightValue1x5(),
                             style = TextStyle(
                                 color = ColorProvider(colors.rightValue),
                                 fontSize = 10.5.sp,

@@ -135,6 +135,42 @@ object WidgetColors {
                 footerDivider = Color(0xFF334155).copy(alpha = 0.6f),
                 footerText = Color(0xFF94A3B8)
             )
+            WidgetStatus.MENUNGGU_KERJA -> WidgetColorTokens(
+                cardBackground = Color(0xFF1E293B),
+                cardBorder = Color(0xFF334155),
+                accentBar = Color(0xFF64748B),
+                inlineIcon = Color(0xFF94A3B8),
+                titleText = Color(0xFFF1F5F9),
+                subtextNormal = Color(0xFF94A3B8),
+                subtextWarning = Color(0xFFFCD34D),
+                rightValue = Color(0xFF94A3B8),
+                rightLabel = Color(0xFF64748B),
+                actionButtonBg = Color.Transparent,
+                actionButtonIcon = Color.Transparent,
+                badgeBg = Color.Transparent,
+                badgeBorder = Color.Transparent,
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFF334155).copy(alpha = 0.6f),
+                footerText = Color(0xFF94A3B8)
+            )
+            WidgetStatus.SEDANG_BEKERJA -> WidgetColorTokens(
+                cardBackground = Color(0xFF082F49),
+                cardBorder = Color(0xFF0369A1),
+                accentBar = Color(0xFF0284C7),
+                inlineIcon = Color(0xFF38BDF8),
+                titleText = Color(0xFFFFFFFF),
+                subtextNormal = Color(0xFFBAE6FD).copy(alpha = 0.85f),
+                subtextWarning = Color(0xFFFCD34D),
+                rightValue = Color(0xFF38BDF8),
+                rightLabel = Color(0xFFBAE6FD).copy(alpha = 0.65f),
+                actionButtonBg = Color.Transparent,
+                actionButtonIcon = Color.Transparent,
+                badgeBg = Color.Transparent,
+                badgeBorder = Color.Transparent,
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFF0369A1).copy(alpha = 0.6f),
+                footerText = Color(0xFFBAE6FD).copy(alpha = 0.70f)
+            )
         }
     }
 
@@ -229,6 +265,42 @@ object WidgetColors {
                 badgeText = Color.Transparent,
                 footerDivider = Color(0xFFCBD5E1).copy(alpha = 0.7f),
                 footerText = Color(0xFF64748B)
+            )
+            WidgetStatus.MENUNGGU_KERJA -> WidgetColorTokens(
+                cardBackground = Color(0xFFF8FAFC),
+                cardBorder = Color(0xFFCBD5E1),
+                accentBar = Color(0xFF64748B),
+                inlineIcon = Color(0xFF64748B),
+                titleText = Color(0xFF1E293B),
+                subtextNormal = Color(0xFF64748B),
+                subtextWarning = Color(0xFFB45309),
+                rightValue = Color(0xFF64748B),
+                rightLabel = Color(0xFF64748B).copy(alpha = 0.70f),
+                actionButtonBg = Color.Transparent,
+                actionButtonIcon = Color.Transparent,
+                badgeBg = Color.Transparent,
+                badgeBorder = Color.Transparent,
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFFCBD5E1).copy(alpha = 0.7f),
+                footerText = Color(0xFF64748B)
+            )
+            WidgetStatus.SEDANG_BEKERJA -> WidgetColorTokens(
+                cardBackground = Color(0xFFF0F9FF),
+                cardBorder = Color(0xFFBAE6FD),
+                accentBar = Color(0xFF0284C7),
+                inlineIcon = Color(0xFF0284C7),
+                titleText = Color(0xFF0369A1),
+                subtextNormal = Color(0xFF0369A1).copy(alpha = 0.85f),
+                subtextWarning = Color(0xFFB45309),
+                rightValue = Color(0xFF0284C7),
+                rightLabel = Color(0xFF0369A1).copy(alpha = 0.70f),
+                actionButtonBg = Color.Transparent,
+                actionButtonIcon = Color.Transparent,
+                badgeBg = Color.Transparent,
+                badgeBorder = Color.Transparent,
+                badgeText = Color.Transparent,
+                footerDivider = Color(0xFFBAE6FD).copy(alpha = 0.7f),
+                footerText = Color(0xFF0369A1).copy(alpha = 0.70f)
             )
         }
     }

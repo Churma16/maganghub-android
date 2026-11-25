@@ -261,9 +261,9 @@ class WidgetDataSnapshotTest {
     fun testFromComponentsBelumAbsenVsMendesak() {
         val wib = TimeZone.getTimeZone("Asia/Jakarta")
 
-        // 14:00 WIB -> >2 hours remaining -> BELUM_ABSEN
+        // 18:00 WIB -> >2 hours remaining and after 16:00 -> BELUM_ABSEN
         val calNormal = Calendar.getInstance(wib).apply {
-            set(Calendar.HOUR_OF_DAY, 14)
+            set(Calendar.HOUR_OF_DAY, 18)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
@@ -273,6 +273,7 @@ class WidgetDataSnapshotTest {
             attendanceStatus = AttendanceStatus.BELUM_HADIR,
             pendingCount = 0,
             thresholdDays = 3,
+            reminderStartHour = 16,
             themeMode = ThemeMode.SYSTEM,
             nowMillis = calNormal.timeInMillis
         )
@@ -442,5 +443,168 @@ class WidgetDataSnapshotTest {
 
         val belum = sudah.copy(status = WidgetStatus.BELUM_ABSEN)
         assertEquals("tersisa", belum.getRightLabel1x5())
+
+        val menunggu = sudah.copy(status = WidgetStatus.MENUNGGU_KERJA)
+        assertEquals("mulai kerja", menunggu.getRightLabel1x5())
+
+        val bekerja = sudah.copy(status = WidgetStatus.SEDANG_BEKERJA)
+        assertEquals("laporan dibuka", bekerja.getRightLabel1x5())
+    }
+
+    @Test
+    fun testMenungguKerjaAndSedangBekerjaUiProperties() {
+        val menunggu = WidgetDataSnapshot(
+            status = WidgetStatus.MENUNGGU_KERJA,
+            remainingTimeMillis = 0L,
+            remainingTimeText = "",
+            formattedDate = "Rab, 25 Nov",
+            pendingMentorCount = 0,
+            isMentorOverdue = false,
+            reminderStartHour = 16,
+            workStartHour = 8,
+            workStartMinute = 0,
+            themeMode = ThemeMode.SYSTEM
+        )
+        assertEquals("Menunggu jam kerja", menunggu.getTitle1x5())
+        assertEquals("Menunggu", menunggu.getTitle1x3())
+        assertEquals("Mulai 08:00 • Laporan dibuka 16:00 WIB", menunggu.getSubtext1x5())
+        assertEquals("Mulai 08:00", menunggu.getSubtext1x3())
+        assertEquals("08:00", menunggu.getRightValue1x5())
+        assertEquals("mulai kerja", menunggu.getRightLabel1x5())
+        assertFalse(menunggu.showActionButton())
+        assertEquals(R.drawable.ic_widget_clock, menunggu.getInlineIconResId())
+
+        val bekerja = menunggu.copy(
+            status = WidgetStatus.SEDANG_BEKERJA,
+            workStartHour = 10,
+            workStartMinute = 30
+        )
+        assertEquals("Selamat bekerja", bekerja.getTitle1x5())
+        assertEquals("Bekerja", bekerja.getTitle1x3())
+        assertEquals("Pengisian laporan dibuka 16:00 WIB", bekerja.getSubtext1x5())
+        assertEquals("Buka 16:00", bekerja.getSubtext1x3())
+        assertEquals("16:00", bekerja.getRightValue1x5())
+        assertEquals("laporan dibuka", bekerja.getRightLabel1x5())
+        assertFalse(bekerja.showActionButton())
+        assertEquals(R.drawable.ic_widget_clock, bekerja.getInlineIconResId())
+    }
+
+    @Test
+    fun testWidgetColorsTokensForNewPhases() {
+        val darkMenunggu = WidgetColors.getDarkTokens(WidgetStatus.MENUNGGU_KERJA)
+        assertEquals(Color(0xFF1E293B), darkMenunggu.cardBackground)
+        assertEquals(Color(0xFF334155), darkMenunggu.cardBorder)
+
+        val lightMenunggu = WidgetColors.getLightTokens(WidgetStatus.MENUNGGU_KERJA)
+        assertEquals(Color(0xFFF8FAFC), lightMenunggu.cardBackground)
+        assertEquals(Color(0xFFCBD5E1), lightMenunggu.cardBorder)
+
+        val darkBekerja = WidgetColors.getDarkTokens(WidgetStatus.SEDANG_BEKERJA)
+        assertEquals(Color(0xFF082F49), darkBekerja.cardBackground)
+        assertEquals(Color(0xFF0369A1), darkBekerja.cardBorder)
+
+        val lightBekerja = WidgetColors.getLightTokens(WidgetStatus.SEDANG_BEKERJA)
+        assertEquals(Color(0xFFF0F9FF), lightBekerja.cardBackground)
+        assertEquals(Color(0xFFBAE6FD), lightBekerja.cardBorder)
+    }
+
+    @Test
+    fun testFromComponentsDailyWorkPhases() {
+        val wib = TimeZone.getTimeZone("Asia/Jakarta")
+
+        fun createCal(hour: Int, minute: Int): Calendar = Calendar.getInstance(wib).apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        // 06:30 WIB -> Before work start (08:00) -> MENUNGGU_KERJA
+        val calBeforeWork = createCal(6, 30)
+        val snapshotBeforeWork = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            reminderStartHour = 16,
+            workStartHour = 8,
+            workStartMinute = 0,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calBeforeWork.timeInMillis
+        )
+        assertEquals(WidgetStatus.MENUNGGU_KERJA, snapshotBeforeWork.status)
+
+        // 08:00 WIB -> Exactly work start -> SEDANG_BEKERJA
+        val calWorkStart = createCal(8, 0)
+        val snapshotWorkStart = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            reminderStartHour = 16,
+            workStartHour = 8,
+            workStartMinute = 0,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calWorkStart.timeInMillis
+        )
+        assertEquals(WidgetStatus.SEDANG_BEKERJA, snapshotWorkStart.status)
+
+        // 11:30 WIB -> During work (between 08:00 and 16:00) -> SEDANG_BEKERJA
+        val calWorking = createCal(11, 30)
+        val snapshotWorking = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            reminderStartHour = 16,
+            workStartHour = 8,
+            workStartMinute = 0,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calWorking.timeInMillis
+        )
+        assertEquals(WidgetStatus.SEDANG_BEKERJA, snapshotWorking.status)
+
+        // 16:00 WIB -> Report window opens -> BELUM_ABSEN
+        val calReportStart = createCal(16, 0)
+        val snapshotReportStart = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            reminderStartHour = 16,
+            workStartHour = 8,
+            workStartMinute = 0,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calReportStart.timeInMillis
+        )
+        assertEquals(WidgetStatus.BELUM_ABSEN, snapshotReportStart.status)
+
+        // Holiday overrides work phases
+        val snapshotHoliday = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.LIBUR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            reminderStartHour = 16,
+            workStartHour = 8,
+            workStartMinute = 0,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calWorking.timeInMillis
+        )
+        assertEquals(WidgetStatus.HARI_LIBUR, snapshotHoliday.status)
+
+        // Already attended overrides work phases
+        val snapshotAttended = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.HADIR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            reminderStartHour = 16,
+            workStartHour = 8,
+            workStartMinute = 0,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calWorking.timeInMillis
+        )
+        assertEquals(WidgetStatus.SUDAH_ABSEN, snapshotAttended.status)
     }
 }
