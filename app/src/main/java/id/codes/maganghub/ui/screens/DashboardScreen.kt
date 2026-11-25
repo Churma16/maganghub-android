@@ -420,7 +420,7 @@ private fun HeroStatusCard(
         DailyWorkPhase.COMPLETED -> "Presensi dan kehadiran Anda hari ini sudah tercatat lengkap."
         DailyWorkPhase.HOLIDAY -> "Hari ini hari libur atau off day terjadwal. Tidak ada kewajiban presensi."
         DailyWorkPhase.BEFORE_WORK -> "Jam kerja dimulai pukul $workStartTimeStr WIB. Notifikasi laporan presensi dimulai pukul $reportStartTimeStr WIB."
-        DailyWorkPhase.WORKING -> "Fokus dulu dengan kegiatan magangmu hari ini. Notifikasi laporan presensi dimulai pukul $reportStartTimeStr WIB."
+        DailyWorkPhase.WORKING -> "Selamat menjalani aktivitas magang hari ini. Notifikasi laporan presensi dimulai pukul $reportStartTimeStr WIB."
         DailyWorkPhase.REPORTING_WINDOW -> "Presensi dan logbook hari ini belum tercatat. Selesaikan sebelum batas waktu."
     }
 

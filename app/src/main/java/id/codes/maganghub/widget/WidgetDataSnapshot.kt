@@ -84,7 +84,7 @@ data class WidgetDataSnapshot(
         }
         WidgetStatus.SEDANG_BEKERJA -> {
             val reportTime = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
-            "Fokus magang • Notifikasi dimulai $reportTime WIB"
+            "Aktivitas magang • Notifikasi dimulai $reportTime WIB"
         }
     }
 

@@ -481,7 +481,7 @@ class WidgetDataSnapshotTest {
         )
         assertEquals("Selamat bekerja", bekerja.getTitle1x5())
         assertEquals("Bekerja", bekerja.getTitle1x3())
-        assertEquals("Fokus magang • Notifikasi dimulai 16:00 WIB", bekerja.getSubtext1x5())
+        assertEquals("Aktivitas magang • Notifikasi dimulai 16:00 WIB", bekerja.getSubtext1x5())
         assertEquals("Notif 16:00", bekerja.getSubtext1x3())
         assertEquals("16:00", bekerja.getRightValue1x5())
         assertEquals("notifikasi dimulai", bekerja.getRightLabel1x5())
