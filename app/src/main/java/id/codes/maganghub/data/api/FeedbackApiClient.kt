@@ -3,6 +3,7 @@ package id.codes.maganghub.data.api
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import id.codes.maganghub.BuildConfig
 import id.codes.maganghub.data.model.FeedbackRequest
 import id.codes.maganghub.data.model.FeedbackResponse
 import kotlinx.coroutines.Dispatchers
@@ -77,7 +78,9 @@ class FeedbackApiClientImpl(
                     Result.success(parsed)
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to send feedback: ${e.message}", e)
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "Failed to send feedback: ${e.message}")
+                }
                 Result.failure(e)
             }
         }
