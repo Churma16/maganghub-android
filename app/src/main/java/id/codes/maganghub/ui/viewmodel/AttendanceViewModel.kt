@@ -90,6 +90,9 @@ class AttendanceViewModel(
             checkAttendanceNow(silent = true)
         } else {
             updateNextReminderString()
+            try {
+                id.codes.maganghub.widget.AttendanceWidgetHelper.updateWidgetAsync(id.codes.maganghub.MagangHubApp.instance)
+            } catch (_: Throwable) {}
         }
     }
 
@@ -128,6 +131,9 @@ class AttendanceViewModel(
                 }
             )
             updateNextReminderString()
+            try {
+                id.codes.maganghub.widget.AttendanceWidgetHelper.updateWidgetAsync(id.codes.maganghub.MagangHubApp.instance)
+            } catch (_: Throwable) {}
         }
     }
 
@@ -182,6 +188,9 @@ class AttendanceViewModel(
                 )
             }
             updateNextReminderString()
+            try {
+                id.codes.maganghub.widget.AttendanceWidgetHelper.updateWidgetAsync(id.codes.maganghub.MagangHubApp.instance)
+            } catch (_: Throwable) {}
         }
     }
 
@@ -416,6 +425,9 @@ class AttendanceViewModel(
     fun setThemeMode(themeMode: ThemeMode) {
         viewModelScope.launch {
             repository.setThemeMode(themeMode)
+            try {
+                id.codes.maganghub.widget.AttendanceWidgetHelper.updateWidgetAsync(id.codes.maganghub.MagangHubApp.instance)
+            } catch (_: Throwable) {}
         }
     }
 

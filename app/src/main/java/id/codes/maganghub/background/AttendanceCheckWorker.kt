@@ -122,6 +122,7 @@ class AttendanceCheckWorker(
 
             // Reschedule next alarm attempt
             AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+            id.codes.maganghub.widget.AttendanceWidgetHelper.updateWidget(appContext)
             return Result.retry()
         }
 
@@ -166,6 +167,8 @@ class AttendanceCheckWorker(
         }
 
         val homeData = resultData?.data
+        id.codes.maganghub.widget.AttendanceWidgetHelper.updateWidget(appContext)
+
         if (homeData == null) {
             AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
             return Result.success()

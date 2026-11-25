@@ -139,6 +139,10 @@ dependencies {
     // Image Loading (Coil Compose)
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Jetpack Glance (AppWidgets)
+    implementation("androidx.glance:glance-appwidget:1.0.0")
+    implementation("androidx.glance:glance-material3:1.0.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
