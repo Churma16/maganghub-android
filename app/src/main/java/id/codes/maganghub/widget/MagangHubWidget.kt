@@ -12,10 +12,12 @@ import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
+import androidx.glance.action.Action
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.action.actionStartActivity as actionStartActivityIntent
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -24,9 +26,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
-import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
@@ -50,13 +50,20 @@ class MagangHubWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val snapshot = WidgetDataSnapshot.fromPreferences(context)
-        val colors = WidgetColors.getTokens(snapshot.status, snapshot.themeMode)
+        val colors = WidgetColors.getTokens(snapshot.status, snapshot.themeMode, context)
 
         val monevIntent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_MONEV_DASHBOARD)).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
-        val openMonevAction = actionStartActivity(monevIntent)
+        val openMonevAction = actionStartActivityIntent(monevIntent)
         val openAppAction = actionStartActivity<MainActivity>()
+
+        // When SESI_BERAKHIR, tapping quick action should open the app to login to SSO, not the web browser
+        val actionButtonAction = if (snapshot.status == WidgetStatus.SESI_BERAKHIR) {
+            openAppAction
+        } else {
+            openMonevAction
+        }
 
         provideContent {
             val currentSize = LocalSize.current
@@ -78,9 +85,9 @@ class MagangHubWidget : GlanceAppWidget() {
                         .clickable(openAppAction)
                 ) {
                     if (isFullWidth) {
-                        WidgetLayout1x5(snapshot, colors, openMonevAction)
+                        WidgetLayout1x5(snapshot, colors, actionButtonAction)
                     } else {
-                        WidgetLayout1x3(snapshot, colors, openMonevAction)
+                        WidgetLayout1x3(snapshot, colors, actionButtonAction)
                     }
                 }
             }
@@ -92,7 +99,7 @@ class MagangHubWidget : GlanceAppWidget() {
 private fun WidgetLayout1x5(
     data: WidgetDataSnapshot,
     colors: WidgetColorTokens,
-    openMonevAction: androidx.glance.action.Action
+    actionButtonAction: Action
 ) {
     Row(
         modifier = GlanceModifier
@@ -176,24 +183,30 @@ private fun WidgetLayout1x5(
                                 )
                             )
                         }
-                        Spacer(modifier = GlanceModifier.width(10.dp))
+                        Spacer(modifier = GlanceModifier.width(6.dp))
                     }
 
-                    // Tombol ikon aksi cepat (36x36 dp, sudut 12 dp)
+                    // Safe touch target container >= 48x48 dp with inner 36x36 dp squircle
                     Box(
                         modifier = GlanceModifier
-                            .size(36.dp)
-                            .background(ColorProvider(colors.actionButtonBg))
-                            .cornerRadius(12.dp)
-                            .clickable(openMonevAction),
+                            .size(48.dp)
+                            .clickable(actionButtonAction),
                         contentAlignment = Alignment.Center
                     ) {
-                        Image(
-                            provider = ImageProvider(R.drawable.ic_widget_arrow_outward),
-                            contentDescription = "Buka Monev",
-                            modifier = GlanceModifier.size(18.dp),
-                            colorFilter = ColorFilter.tint(ColorProvider(colors.actionButtonIcon))
-                        )
+                        Box(
+                            modifier = GlanceModifier
+                                .size(36.dp)
+                                .background(ColorProvider(colors.actionButtonBg))
+                                .cornerRadius(12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                provider = ImageProvider(R.drawable.ic_widget_arrow_outward),
+                                contentDescription = "Aksi Cepat",
+                                modifier = GlanceModifier.size(18.dp),
+                                colorFilter = ColorFilter.tint(ColorProvider(colors.actionButtonIcon))
+                            )
+                        }
                     }
                 }
             }
@@ -213,7 +226,7 @@ private fun WidgetLayout1x5(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = ">3 hari",
+                            text = data.getBadgeText1x5(),
                             style = TextStyle(
                                 color = ColorProvider(colors.badgeText),
                                 fontSize = 10.5.sp,
@@ -253,7 +266,7 @@ private fun WidgetLayout1x5(
 private fun WidgetLayout1x3(
     data: WidgetDataSnapshot,
     colors: WidgetColorTokens,
-    openMonevAction: androidx.glance.action.Action
+    actionButtonAction: Action
 ) {
     Row(
         modifier = GlanceModifier
@@ -302,21 +315,28 @@ private fun WidgetLayout1x3(
 
         // 3. Zona Kanan: Tombol aksi jika diperlukan
         if (data.showActionButton()) {
-            Spacer(modifier = GlanceModifier.width(8.dp))
+            Spacer(modifier = GlanceModifier.width(4.dp))
+            // Safe touch target container >= 48x48 dp with inner 32x32 dp squircle
             Box(
                 modifier = GlanceModifier
-                    .size(32.dp)
-                    .background(ColorProvider(colors.actionButtonBg))
-                    .cornerRadius(12.dp)
-                    .clickable(openMonevAction),
+                    .size(48.dp)
+                    .clickable(actionButtonAction),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    provider = ImageProvider(R.drawable.ic_widget_arrow_outward),
-                    contentDescription = "Buka Monev",
-                    modifier = GlanceModifier.size(16.dp),
-                    colorFilter = ColorFilter.tint(ColorProvider(colors.actionButtonIcon))
-                )
+                Box(
+                    modifier = GlanceModifier
+                        .size(32.dp)
+                        .background(ColorProvider(colors.actionButtonBg))
+                        .cornerRadius(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        provider = ImageProvider(R.drawable.ic_widget_arrow_outward),
+                        contentDescription = "Aksi Cepat",
+                        modifier = GlanceModifier.size(16.dp),
+                        colorFilter = ColorFilter.tint(ColorProvider(colors.actionButtonIcon))
+                    )
+                }
             }
         }
     }

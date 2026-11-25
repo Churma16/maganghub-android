@@ -1,5 +1,7 @@
 package id.codes.maganghub.widget
 
+import android.content.Context
+import android.content.res.Configuration
 import androidx.compose.ui.graphics.Color
 import id.codes.maganghub.data.model.ThemeMode
 
@@ -22,14 +24,24 @@ data class WidgetColorTokens(
 
 object WidgetColors {
 
-    fun getTokens(status: WidgetStatus, themeMode: ThemeMode): WidgetColorTokens {
-        return when (themeMode) {
-            ThemeMode.LIGHT -> getLightTokens(status)
-            ThemeMode.SYSTEM, ThemeMode.DARK -> getDarkTokens(status)
+    fun getTokens(status: WidgetStatus, themeMode: ThemeMode, context: Context? = null): WidgetColorTokens {
+        val isDark = when (themeMode) {
+            ThemeMode.LIGHT -> false
+            ThemeMode.DARK -> true
+            ThemeMode.SYSTEM -> {
+                if (context != null) {
+                    val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+                    nightMode == Configuration.UI_MODE_NIGHT_YES
+                } else {
+                    true
+                }
+            }
         }
+
+        return if (isDark) getDarkTokens(status) else getLightTokens(status)
     }
 
-    private fun getDarkTokens(status: WidgetStatus): WidgetColorTokens {
+    fun getDarkTokens(status: WidgetStatus): WidgetColorTokens {
         return when (status) {
             WidgetStatus.SUDAH_ABSEN -> WidgetColorTokens(
                 cardBackground = Color(0xFF0D2818),
@@ -114,7 +126,7 @@ object WidgetColors {
         }
     }
 
-    private fun getLightTokens(status: WidgetStatus): WidgetColorTokens {
+    fun getLightTokens(status: WidgetStatus): WidgetColorTokens {
         return when (status) {
             WidgetStatus.SUDAH_ABSEN -> WidgetColorTokens(
                 cardBackground = Color(0xFFECFDF5),

@@ -2,6 +2,7 @@ package id.codes.maganghub.widget
 
 import androidx.compose.ui.graphics.Color
 import id.codes.maganghub.R
+import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ThemeMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -199,5 +200,158 @@ class WidgetDataSnapshotTest {
         // From 22:01 to 23:59 = 1 hour 58 minutes
         assertEquals("1j 58m", text)
         assertTrue(diff < 2 * 3600 * 1000L)
+    }
+
+    @Test
+    fun testFromComponentsSesiBerakhirWhenNoCredentials() {
+        val snapshot = WidgetDataSnapshot.fromComponents(
+            hasCredentials = false,
+            attendanceStatus = AttendanceStatus.HADIR,
+            pendingCount = 2,
+            thresholdDays = 3,
+            themeMode = ThemeMode.SYSTEM
+        )
+
+        assertEquals(WidgetStatus.SESI_BERAKHIR, snapshot.status)
+        assertEquals("Sesi Berakhir", snapshot.getTitle1x5())
+        assertEquals("Perlu Login", snapshot.getTitle1x3())
+    }
+
+    @Test
+    fun testFromComponentsSudahAbsen() {
+        val snapshot = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.HADIR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            themeMode = ThemeMode.DARK
+        )
+
+        assertEquals(WidgetStatus.SUDAH_ABSEN, snapshot.status)
+        assertEquals("Sudah Absen", snapshot.getTitle1x5())
+        assertEquals("Semua laporan sudah di-approve", snapshot.getSubtext1x5())
+    }
+
+    @Test
+    fun testFromComponentsHariLiburAndTidakAktif() {
+        val libur = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.LIBUR,
+            pendingCount = 1,
+            thresholdDays = 3,
+            themeMode = ThemeMode.LIGHT
+        )
+        assertEquals(WidgetStatus.HARI_LIBUR, libur.status)
+
+        val tidakAktif = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.TIDAK_AKTIF,
+            pendingCount = 0,
+            thresholdDays = 3,
+            themeMode = ThemeMode.LIGHT
+        )
+        assertEquals(WidgetStatus.HARI_LIBUR, tidakAktif.status)
+    }
+
+    @Test
+    fun testFromComponentsBelumAbsenVsMendesak() {
+        val wib = TimeZone.getTimeZone("Asia/Jakarta")
+
+        // 14:00 WIB -> >2 hours remaining -> BELUM_ABSEN
+        val calNormal = Calendar.getInstance(wib).apply {
+            set(Calendar.HOUR_OF_DAY, 14)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val normal = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_ABSEN,
+            pendingCount = 0,
+            thresholdDays = 3,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calNormal.timeInMillis
+        )
+        assertEquals(WidgetStatus.BELUM_ABSEN, normal.status)
+
+        // 22:30 WIB -> <2 hours remaining -> MENDESAK
+        val calMendesak = Calendar.getInstance(wib).apply {
+            set(Calendar.HOUR_OF_DAY, 22)
+            set(Calendar.MINUTE, 30)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val mendesak = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_ABSEN,
+            pendingCount = 0,
+            thresholdDays = 3,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calMendesak.timeInMillis
+        )
+        assertEquals(WidgetStatus.MENDESAK, mendesak.status)
+
+        // 23:59:15 WIB -> 44.999 seconds before 23:59:59.999 deadline -> MENDESAK
+        val calLastMinute = Calendar.getInstance(wib).apply {
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 15)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val lastMinute = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_ABSEN,
+            pendingCount = 0,
+            thresholdDays = 3,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calLastMinute.timeInMillis
+        )
+        assertEquals(WidgetStatus.MENDESAK, lastMinute.status)
+    }
+
+    @Test
+    fun testDynamicMentorThresholdAndBadgeText() {
+        // Threshold = 2, pending = 2 -> Overdue
+        val snapshotOverdue = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.HADIR,
+            pendingCount = 2,
+            thresholdDays = 2,
+            themeMode = ThemeMode.SYSTEM
+        )
+        assertTrue(snapshotOverdue.isMentorOverdue)
+        assertEquals(">2 hari", snapshotOverdue.getBadgeText1x5())
+        assertEquals("2 menunggu >2 hr", snapshotOverdue.getSubtext1x3())
+        assertTrue(snapshotOverdue.showBadge1x5())
+
+        // Threshold = 4, pending = 3 -> Not overdue
+        val snapshotNotOverdue = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.HADIR,
+            pendingCount = 3,
+            thresholdDays = 4,
+            themeMode = ThemeMode.SYSTEM
+        )
+        assertFalse(snapshotNotOverdue.isMentorOverdue)
+        assertEquals(">4 hari", snapshotNotOverdue.getBadgeText1x5())
+        assertEquals("3 menunggu approval", snapshotNotOverdue.getSubtext1x3())
+        assertFalse(snapshotNotOverdue.showBadge1x5())
+    }
+
+    @Test
+    fun testFormatDateThreadSafetyAndConsistency() {
+        val wib = TimeZone.getTimeZone("Asia/Jakarta")
+        val cal = Calendar.getInstance(wib).apply {
+            set(Calendar.YEAR, 2026)
+            set(Calendar.MONTH, Calendar.NOVEMBER)
+            set(Calendar.DAY_OF_MONTH, 25)
+            set(Calendar.HOUR_OF_DAY, 10)
+            set(Calendar.MINUTE, 0)
+        }
+        val formatted = WidgetDataSnapshot.formatDate(cal.timeInMillis)
+        // Indonesian locale: Wednesday = "Rab"
+        assertTrue(formatted.startsWith("Rab"))
+        assertTrue(formatted.contains("25"))
+        assertTrue(formatted.contains("Nov"))
     }
 }

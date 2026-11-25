@@ -16,6 +16,7 @@ import id.codes.maganghub.MagangHubApp
 import id.codes.maganghub.data.api.UnauthorizedSessionException
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ReminderSettings
+import id.codes.maganghub.widget.AttendanceWidgetHelper
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
@@ -122,7 +123,7 @@ class AttendanceCheckWorker(
 
             // Reschedule next alarm attempt
             AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
-            id.codes.maganghub.widget.AttendanceWidgetHelper.updateWidget(appContext)
+            AttendanceWidgetHelper.updateWidget(appContext)
             return Result.retry()
         }
 
@@ -167,7 +168,7 @@ class AttendanceCheckWorker(
         }
 
         val homeData = resultData?.data
-        id.codes.maganghub.widget.AttendanceWidgetHelper.updateWidget(appContext)
+        AttendanceWidgetHelper.updateWidget(appContext)
 
         if (homeData == null) {
             AttendanceAlarmScheduler.scheduleNextAlarm(appContext)

@@ -5,9 +5,10 @@ import id.codes.maganghub.R
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.storage.EncryptedPreferences
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
@@ -25,7 +26,8 @@ data class WidgetDataSnapshot(
     val remainingTimeText: String, // e.g. "7j 29m" or "1j 58m"
     val formattedDate: String,    // e.g. "Rab, 25 Nov"
     val pendingMentorCount: Int,
-    val isMentorOverdue: Boolean, // >= 3 days / reports
+    val isMentorOverdue: Boolean,
+    val thresholdDays: Int = 3,
     val themeMode: ThemeMode
 ) {
 
@@ -69,7 +71,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.SUDAH_ABSEN -> {
             when {
                 pendingMentorCount == 0 -> formattedDate
-                isMentorOverdue -> "$pendingMentorCount menunggu >3 hr"
+                isMentorOverdue -> "$pendingMentorCount menunggu >$thresholdDays hr"
                 else -> "$pendingMentorCount menunggu approval"
             }
         }
@@ -78,7 +80,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.HARI_LIBUR -> {
             when {
                 pendingMentorCount == 0 -> "Pengingat off"
-                isMentorOverdue -> "$pendingMentorCount menunggu >3 hr"
+                isMentorOverdue -> "$pendingMentorCount menunggu >$thresholdDays hr"
                 else -> "$pendingMentorCount menunggu approval"
             }
         }
@@ -92,6 +94,8 @@ data class WidgetDataSnapshot(
     fun showBadge1x5(): Boolean {
         return (status == WidgetStatus.SUDAH_ABSEN || status == WidgetStatus.HARI_LIBUR) && isMentorOverdue
     }
+
+    fun getBadgeText1x5(): String = ">$thresholdDays hari"
 
     fun showActionButton(): Boolean {
         return status == WidgetStatus.BELUM_ABSEN ||
@@ -110,20 +114,33 @@ data class WidgetDataSnapshot(
     companion object {
 
         private val WIB_TIMEZONE = TimeZone.getTimeZone("Asia/Jakarta")
-        private val DATE_FORMAT = SimpleDateFormat("EEE, d MMM", Locale("id", "ID")).apply {
-            timeZone = WIB_TIMEZONE
-        }
+        private val WIB_ZONE_ID = ZoneId.of("Asia/Jakarta")
+        private val DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE, d MMM", Locale("id", "ID"))
 
         fun fromPreferences(
             context: Context,
             nowMillis: Long = System.currentTimeMillis()
         ): WidgetDataSnapshot {
             val prefs = EncryptedPreferences(context)
+            return fromComponents(
+                hasCredentials = prefs.hasCredentials(),
+                attendanceStatus = prefs.getLastAttendanceStatus(),
+                pendingCount = prefs.getPendingMentorReviewCount(),
+                thresholdDays = prefs.getReminderSettings().mentorReviewThresholdDays,
+                themeMode = prefs.getThemeMode(),
+                nowMillis = nowMillis
+            )
+        }
 
-            val hasCreds = prefs.hasCredentials()
-            val themeMode = prefs.getThemeMode()
-
-            if (!hasCreds) {
+        fun fromComponents(
+            hasCredentials: Boolean,
+            attendanceStatus: AttendanceStatus,
+            pendingCount: Int,
+            thresholdDays: Int,
+            themeMode: ThemeMode,
+            nowMillis: Long = System.currentTimeMillis()
+        ): WidgetDataSnapshot {
+            if (!hasCredentials) {
                 return WidgetDataSnapshot(
                     status = WidgetStatus.SESI_BERAKHIR,
                     remainingTimeMillis = 0L,
@@ -131,15 +148,13 @@ data class WidgetDataSnapshot(
                     formattedDate = formatDate(nowMillis),
                     pendingMentorCount = 0,
                     isMentorOverdue = false,
+                    thresholdDays = thresholdDays.coerceIn(1, 5),
                     themeMode = themeMode
                 )
             }
 
-            val attendanceStatus = prefs.getLastAttendanceStatus()
-            val pendingCount = prefs.getPendingMentorReviewCount()
-            val reminderSettings = prefs.getReminderSettings()
-            val threshold = reminderSettings.mentorReviewThresholdDays.coerceIn(1, 5)
-            val isOverdue = pendingCount >= threshold || pendingCount >= 3
+            val effectiveThreshold = thresholdDays.coerceIn(1, 5)
+            val isOverdue = pendingCount >= effectiveThreshold
 
             val (remainingMillis, remainingText) = calculateRemainingTime(nowMillis)
 
@@ -152,7 +167,7 @@ data class WidgetDataSnapshot(
                 }
                 else -> {
                     // Belum absen
-                    if (remainingMillis < 2 * 60 * 60 * 1000L && remainingMillis > 0L) {
+                    if (remainingMillis < 2 * 60 * 60 * 1000L) {
                         WidgetStatus.MENDESAK
                     } else {
                         WidgetStatus.BELUM_ABSEN
@@ -167,6 +182,7 @@ data class WidgetDataSnapshot(
                 formattedDate = formatDate(nowMillis),
                 pendingMentorCount = pendingCount,
                 isMentorOverdue = isOverdue,
+                thresholdDays = effectiveThreshold,
                 themeMode = themeMode
             )
         }
@@ -176,8 +192,8 @@ data class WidgetDataSnapshot(
                 timeInMillis = nowMillis
                 set(Calendar.HOUR_OF_DAY, 23)
                 set(Calendar.MINUTE, 59)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
+                set(Calendar.SECOND, 59)
+                set(Calendar.MILLISECOND, 999)
             }
 
             val deadlineMillis = cal.timeInMillis
@@ -191,7 +207,8 @@ data class WidgetDataSnapshot(
         }
 
         fun formatDate(millis: Long): String {
-            return DATE_FORMAT.format(Date(millis))
+            val zonedDateTime = Instant.ofEpochMilli(millis).atZone(WIB_ZONE_ID)
+            return DATE_FORMATTER.format(zonedDateTime)
         }
     }
 }
