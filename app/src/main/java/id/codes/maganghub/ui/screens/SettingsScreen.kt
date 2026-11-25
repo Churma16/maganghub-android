@@ -82,6 +82,7 @@ import id.codes.maganghub.ui.theme.KemnakerSkyContainer
 import id.codes.maganghub.ui.theme.KemnakerSkyOnContainer
 import id.codes.maganghub.ui.theme.PureWhite
 import id.codes.maganghub.ui.theme.Slate400
+import id.codes.maganghub.ui.theme.Slate600
 import id.codes.maganghub.ui.theme.Slate900
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
 
@@ -138,6 +139,10 @@ fun SettingsScreen(
         }
     }
 
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val cardBorder = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline)
+    val cardElevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.5.dp)
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -156,7 +161,8 @@ fun SettingsScreen(
                     .weight(1f)
                     .height(44.dp),
                 shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+                border = cardBorder,
+                elevation = ButtonDefaults.outlinedButtonElevation(defaultElevation = if (isDark) 0.dp else 1.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -187,7 +193,8 @@ fun SettingsScreen(
                     .weight(1f)
                     .height(44.dp),
                 shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+                border = cardBorder,
+                elevation = ButtonDefaults.outlinedButtonElevation(defaultElevation = if (isDark) 0.dp else 1.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -213,7 +220,8 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+            border = cardBorder,
+            elevation = cardElevation
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -318,7 +326,8 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+            border = cardBorder,
+            elevation = cardElevation
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -332,16 +341,15 @@ fun SettingsScreen(
                 )
 
                 // 3-Option Segmented Control
-                val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     color = if (isDark) {
                         Color(0xFF0B1422)
                     } else {
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        Color(0xFFE5E7EB)
                     },
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+                    border = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline)
                 ) {
                     Row(
                         modifier = Modifier
@@ -390,7 +398,8 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+            border = cardBorder,
+            elevation = cardElevation
         ) {
                 Row(
                     modifier = Modifier
@@ -470,7 +479,8 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+            border = cardBorder,
+            elevation = cardElevation
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -482,8 +492,6 @@ fun SettingsScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-
-                val isDark = isSystemInDarkTheme()
 
                 // Jam Mulai (WIB)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -501,39 +509,43 @@ fun SettingsScreen(
                             val selected = settings.startHour == hour
                             val chipBg = when {
                                 selected && isDark -> PureWhite
-                                selected && !isDark -> KemnakerSky
-                                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                selected && !isDark -> PureWhite
+                                isDark -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                else -> Color(0xFFF3F4F6)
                             }
                             val chipText = when {
                                 selected && isDark -> Slate900
-                                selected && !isDark -> PureWhite
-                                else -> MaterialTheme.colorScheme.onSurface
+                                selected && !isDark -> KemnakerSky
+                                isDark -> MaterialTheme.colorScheme.onSurface
+                                else -> Slate600
+                            }
+                            val chipBorder = when {
+                                selected && !isDark -> BorderStroke(2.dp, KemnakerSky)
+                                !selected && !isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                                !selected && isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+                                else -> null
                             }
 
-                            Box(
+                            Surface(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(40.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(chipBg)
-                                    .then(
-                                        if (!selected) Modifier.border(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                                            RoundedCornerShape(8.dp)
-                                        ) else Modifier
-                                    )
-                                    .clickable {
-                                        onUpdateReminderSettings(settings.copy(startHour = hour))
-                                    },
-                                contentAlignment = Alignment.Center
+                                    .height(40.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                color = chipBg,
+                                border = chipBorder,
+                                shadowElevation = if (selected && !isDark) 1.dp else 0.dp,
+                                onClick = {
+                                    onUpdateReminderSettings(settings.copy(startHour = hour))
+                                }
                             ) {
-                                Text(
-                                    text = "$hour:00",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                    color = chipText
-                                )
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "$hour:00",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                        color = chipText
+                                    )
+                                }
                             }
                         }
                     }
@@ -555,39 +567,43 @@ fun SettingsScreen(
                             val selected = settings.intervalMinutes == interval
                             val chipBg = when {
                                 selected && isDark -> PureWhite
-                                selected && !isDark -> KemnakerSky
-                                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                selected && !isDark -> PureWhite
+                                isDark -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                else -> Color(0xFFF3F4F6)
                             }
                             val chipText = when {
                                 selected && isDark -> Slate900
-                                selected && !isDark -> PureWhite
-                                else -> MaterialTheme.colorScheme.onSurface
+                                selected && !isDark -> KemnakerSky
+                                isDark -> MaterialTheme.colorScheme.onSurface
+                                else -> Slate600
+                            }
+                            val chipBorder = when {
+                                selected && !isDark -> BorderStroke(2.dp, KemnakerSky)
+                                !selected && !isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                                !selected && isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+                                else -> null
                             }
 
-                            Box(
+                            Surface(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(40.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(chipBg)
-                                    .then(
-                                        if (!selected) Modifier.border(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                                            RoundedCornerShape(8.dp)
-                                        ) else Modifier
-                                    )
-                                    .clickable {
-                                        onUpdateReminderSettings(settings.copy(intervalMinutes = interval))
-                                    },
-                                contentAlignment = Alignment.Center
+                                    .height(40.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                color = chipBg,
+                                border = chipBorder,
+                                shadowElevation = if (selected && !isDark) 1.dp else 0.dp,
+                                onClick = {
+                                    onUpdateReminderSettings(settings.copy(intervalMinutes = interval))
+                                }
                             ) {
-                                Text(
-                                    text = "$interval",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                    color = chipText
-                                )
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "$interval",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                        color = chipText
+                                    )
+                                }
                             }
                         }
                     }
@@ -652,7 +668,8 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+            border = cardBorder,
+            elevation = cardElevation
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -768,22 +785,30 @@ private fun ThemeSegmentButton(
 ) {
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val backgroundColor = if (selected) {
-        if (isDark) Color.White else MaterialTheme.colorScheme.primary
+        PureWhite
     } else {
         Color.Transparent
     }
 
-    val contentColor = if (selected) {
-        if (isDark) Color(0xFF0F1E36) else MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+    val contentColor = when {
+        selected && isDark -> Color(0xFF0F1E36)
+        selected && !isDark -> KemnakerSky
+        isDark -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> Slate600
+    }
+
+    val border = when {
+        selected && !isDark -> BorderStroke(1.5.dp, KemnakerSky)
+        else -> null
     }
 
     Surface(
         onClick = onClick,
         modifier = modifier.height(38.dp),
         shape = RoundedCornerShape(8.dp),
-        color = backgroundColor
+        color = backgroundColor,
+        border = border,
+        shadowElevation = if (selected && !isDark) 1.5.dp else 0.dp
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -800,7 +825,7 @@ private fun ThemeSegmentButton(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 color = contentColor
             )
         }

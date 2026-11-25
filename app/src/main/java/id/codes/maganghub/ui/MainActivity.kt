@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -151,36 +153,42 @@ fun MainContent(viewModel: AttendanceViewModel) {
             )
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
-                    label = { Text("Dashboard") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = KemnakerSky,
-                        selectedTextColor = KemnakerSky,
-                        indicatorColor = KemnakerSkyContainer,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            Column {
+                Divider(
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outline
                 )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Pengaturan") },
-                    label = { Text("Pengaturan") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = KemnakerSky,
-                        selectedTextColor = KemnakerSky,
-                        indicatorColor = KemnakerSkyContainer,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp
+                ) {
+                    NavigationBarItem(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
+                        label = { Text("Dashboard") },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = KemnakerSky,
+                            selectedTextColor = KemnakerSky,
+                            indicatorColor = KemnakerSkyContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
-                )
+                    NavigationBarItem(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        icon = { Icon(Icons.Default.Settings, contentDescription = "Pengaturan") },
+                        label = { Text("Pengaturan") },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = KemnakerSky,
+                            selectedTextColor = KemnakerSky,
+                            indicatorColor = KemnakerSkyContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
             }
         }
     ) { innerPadding ->

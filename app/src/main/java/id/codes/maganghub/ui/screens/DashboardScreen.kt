@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -281,9 +282,20 @@ private fun HeroStatusCard(
     remainingTimeText: String
 ) {
     val isComplete = uiState.attendanceData?.hasAttendance == true || uiState.attendanceStatus == AttendanceStatus.HADIR
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
-    val containerColor = if (isComplete) HeroCompleteContainer else HeroIncompleteContainer
-    val borderColor = if (isComplete) HeroCompleteBorder else HeroIncompleteBorder
+    val containerColor = when {
+        isDark && isComplete -> HeroCompleteContainer
+        isDark && !isComplete -> HeroIncompleteContainer
+        !isDark && isComplete -> HeroCompleteContainerLight
+        else -> HeroIncompleteContainerLight
+    }
+    val borderColor = when {
+        isDark && isComplete -> HeroCompleteBorder
+        isDark && !isComplete -> HeroIncompleteBorder
+        !isDark && isComplete -> HeroCompleteBorderLight
+        else -> HeroIncompleteBorderLight
+    }
     val badgeColor = if (isComplete) HeroCompleteBadge else HeroIncompleteBadge
     val badgeIcon = if (isComplete) Icons.Default.Check else Icons.Default.Close
     val statusTitle = if (isComplete) "Lengkap" else "Belum lengkap"
@@ -293,12 +305,47 @@ private fun HeroStatusCard(
         "Presensi dan logbook hari ini belum tercatat. Selesaikan sebelum batas waktu."
     }
 
+    val titleColor = when {
+        isDark -> Color.White
+        isComplete -> HeroCompleteTitleLight
+        else -> HeroIncompleteTitleLight
+    }
+    val dateColor = when {
+        isDark -> Color.White.copy(alpha = 0.75f)
+        isComplete -> HeroCompleteTextLight.copy(alpha = 0.8f)
+        else -> HeroIncompleteTextLight.copy(alpha = 0.8f)
+    }
+    val descColor = when {
+        isDark -> Color(0xFFE2E8F0)
+        isComplete -> HeroCompleteTextLight
+        else -> HeroIncompleteTextLight
+    }
+    val metricBoxColor = when {
+        isDark -> Color.Black.copy(alpha = 0.35f)
+        else -> Color.White
+    }
+    val metricBorder = when {
+        isDark -> BorderStroke(1.dp, Color.Transparent)
+        isComplete -> BorderStroke(1.dp, HeroCompleteBorderLight)
+        else -> BorderStroke(1.dp, HeroIncompleteBorderLight)
+    }
+    val metricLabelColor = when {
+        isDark -> Color(0xFF94A3B8)
+        isComplete -> HeroCompleteTextLight.copy(alpha = 0.75f)
+        else -> HeroIncompleteTextLight.copy(alpha = 0.75f)
+    }
+    val metricValueColor = when {
+        isDark -> Color.White
+        isComplete -> HeroCompleteTitleLight
+        else -> HeroIncompleteTitleLight
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor),
         border = BorderStroke(1.dp, borderColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -328,13 +375,13 @@ private fun HeroStatusCard(
                     Text(
                         text = formatHeroDate(uiState.attendanceData?.date),
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.75f)
+                        color = dateColor
                     )
                     Text(
                         text = statusTitle,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = titleColor
                     )
                 }
             }
@@ -343,14 +390,15 @@ private fun HeroStatusCard(
             Text(
                 text = statusDescription,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFFE2E8F0),
+                color = descColor,
                 lineHeight = 20.sp
             )
 
             // Metric Box (Sisa Waktu & Batas Pengisian)
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = Color.Black.copy(alpha = 0.35f),
+                color = metricBoxColor,
+                border = metricBorder,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -362,14 +410,14 @@ private fun HeroStatusCard(
                         Text(
                             text = "Sisa waktu",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF94A3B8)
+                            color = metricLabelColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = remainingTimeText,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = metricValueColor
                         )
                     }
 
@@ -377,14 +425,14 @@ private fun HeroStatusCard(
                         Text(
                             text = "Batas pengisian",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF94A3B8)
+                            color = metricLabelColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "23.59 WIB",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White
+                            color = metricValueColor
                         )
                     }
                 }
@@ -401,6 +449,9 @@ private fun MiniStatusCards(uiState: AttendanceUiState) {
     val isActive = uiState.attendanceData?.activeInternship != false
     val isHoliday = uiState.attendanceData?.isHoliday == true
     val isOffDay = uiState.attendanceData?.isScheduledOffDay == true
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val cardBorder = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline)
+    val cardElevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.5.dp)
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // Card 1: Status Magang
@@ -408,7 +459,8 @@ private fun MiniStatusCards(uiState: AttendanceUiState) {
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            border = cardBorder,
+            elevation = cardElevation
         ) {
             Row(
                 modifier = Modifier
@@ -466,7 +518,8 @@ private fun MiniStatusCards(uiState: AttendanceUiState) {
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            border = cardBorder,
+            elevation = cardElevation
         ) {
             Row(
                 modifier = Modifier
@@ -535,11 +588,13 @@ private fun PengingatCard(
     onNavigateToSettings: () -> Unit,
     haptic: HapticFeedback
 ) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.5.dp)
     ) {
         Row(
             modifier = Modifier
@@ -608,6 +663,9 @@ private fun BottomCtaSection(
     openMonevPortal: () -> Unit,
     haptic: HapticFeedback
 ) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val quickButtonBorder = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -640,7 +698,8 @@ private fun BottomCtaSection(
         Surface(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+            border = quickButtonBorder,
+            shadowElevation = if (isDark) 0.dp else 1.5.dp,
             modifier = Modifier.size(52.dp),
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)

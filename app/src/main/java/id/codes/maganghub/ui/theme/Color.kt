@@ -15,7 +15,8 @@ val Slate400 = Color(0xFF94A3B8)
 val Slate100 = Color(0xFFF1F5F9)
 val Slate50 = Color(0xFFF8FAFC)
 val PureWhite = Color(0xFFFFFFFF)
-val BorderSlate = Color(0xFFE2E8F0)
+val BorderSlate = Color(0xFFD1D5DB) // Upgraded to Gray-300 / Fluent Stroke 1 for clear card separation
+val TeamsCanvasLight = Color(0xFFF3F4F6) // Microsoft Teams & Fluent Canvas (Anti-Glare Gray 96)
 
 // Success / Hadir: Deep Emerald Green (Button), Mint Container (Badge/Circle), Text
 val HadirGreen = Color(0xFF00875A)          // Button Deep Emerald Green
@@ -41,7 +42,7 @@ val BelumHadirRed = DangerRed
 val BelumHadirRedContainer = DangerRedContainer
 val BelumHadirRedText = DangerRedText
 
-// Purpose-First UI Hero Status Card Colors
+// Purpose-First UI Hero Status Card Colors - Dark Mode
 val HeroIncompleteContainer = Color(0xFF38141E)
 val HeroIncompleteBorder = Color(0xFF5C1D2E)
 val HeroIncompleteBadge = Color(0xFFE11D48)
@@ -49,6 +50,17 @@ val HeroIncompleteBadge = Color(0xFFE11D48)
 val HeroCompleteContainer = Color(0xFF0F2E22)
 val HeroCompleteBorder = Color(0xFF16593F)
 val HeroCompleteBadge = Color(0xFF059669)
+
+// Purpose-First UI Hero Status Card Colors - Light Mode (Harmonized, Anti-Glare)
+val HeroIncompleteContainerLight = Color(0xFFFFF1F2) // Soft Rose 50
+val HeroIncompleteBorderLight = Color(0xFFFECDD3)    // Rose 200
+val HeroIncompleteTextLight = Color(0xFF9F1239)      // Rose 800
+val HeroIncompleteTitleLight = Color(0xFF881337)     // Rose 900
+
+val HeroCompleteContainerLight = Color(0xFFECFDF5)   // Soft Emerald 50
+val HeroCompleteBorderLight = Color(0xFFA7F3D0)      // Emerald 200
+val HeroCompleteTextLight = Color(0xFF065F46)        // Emerald 800
+val HeroCompleteTitleLight = Color(0xFF064E3B)       // Emerald 900
 
 // Info Box: Sky
 val InfoSky = KemnakerSky                    // 0xFF0284C7
@@ -76,13 +88,13 @@ val OnSecondaryLight = PureWhite
 val SecondaryContainerLight = Slate100       // 0xFFF1F5F9
 val OnSecondaryContainerLight = Slate900     // 0xFF0F172A
 
-val BackgroundLight = Slate50                // Crisp Slate-50: 0xFFF8FAFC
+val BackgroundLight = TeamsCanvasLight       // Microsoft Teams anti-glare canvas: 0xFFF3F4F6
 val OnBackgroundLight = Slate900             // Primary Slate-900: 0xFF0F172A
 val SurfaceLight = PureWhite                 // Pure White: 0xFFFFFFFF
 val OnSurfaceLight = Slate900                // Primary Slate-900: 0xFF0F172A
-val SurfaceVariantLight = Slate100           // 0xFFF1F5F9
+val SurfaceVariantLight = Color(0xFFE5E7EB)  // Soft Gray-200: 0xFFE5E7EB
 val OnSurfaceVariantLight = Slate600         // Secondary Slate-600: 0xFF475569
-val OutlineLight = BorderSlate               // Outline/Border: 0xFFE2E8F0
+val OutlineLight = BorderSlate               // Outline/Border: 0xFFD1D5DB
 
 // Dark Theme Palette
 val PrimaryDark = Color(0xFF38BDF8)          // Sky-400
