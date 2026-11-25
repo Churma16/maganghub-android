@@ -48,7 +48,8 @@ import id.codes.maganghub.ui.screens.DashboardScreen
 import id.codes.maganghub.ui.screens.LoginDialog
 import id.codes.maganghub.ui.screens.SettingsScreen
 import id.codes.maganghub.ui.theme.KemnakerSky
-import id.codes.maganghub.ui.theme.KemnakerSkyContainer
+import id.codes.maganghub.ui.theme.NavActivePillBg
+import id.codes.maganghub.ui.theme.NavActivePillIcon
 import id.codes.maganghub.ui.theme.MagangHubTheme
 import id.codes.maganghub.ui.viewmodel.AttendanceViewModel
 import id.codes.maganghub.ui.viewmodel.AttendanceViewModelFactory
@@ -168,9 +169,9 @@ fun MainContent(viewModel: AttendanceViewModel) {
                         icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
                         label = { Text("Dashboard") },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = KemnakerSky,
-                            selectedTextColor = KemnakerSky,
-                            indicatorColor = KemnakerSkyContainer,
+                            selectedIconColor = NavActivePillIcon,
+                            selectedTextColor = NavActivePillIcon,
+                            indicatorColor = NavActivePillBg,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -181,9 +182,9 @@ fun MainContent(viewModel: AttendanceViewModel) {
                         icon = { Icon(Icons.Default.Settings, contentDescription = "Pengaturan") },
                         label = { Text("Pengaturan") },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = KemnakerSky,
-                            selectedTextColor = KemnakerSky,
-                            indicatorColor = KemnakerSkyContainer,
+                            selectedIconColor = NavActivePillIcon,
+                            selectedTextColor = NavActivePillIcon,
+                            indicatorColor = NavActivePillBg,
                             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )

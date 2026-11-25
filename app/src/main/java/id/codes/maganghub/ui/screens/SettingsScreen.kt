@@ -73,32 +73,26 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.ReminderSettings
-import id.codes.maganghub.ui.theme.DangerRed
 import id.codes.maganghub.ui.theme.HadirGreen
 import id.codes.maganghub.ui.theme.HadirGreenLight
 import id.codes.maganghub.ui.theme.HadirGreenText
-import id.codes.maganghub.ui.theme.KemnakerSky
-import id.codes.maganghub.ui.theme.KemnakerSkyContainer
-import id.codes.maganghub.ui.theme.KemnakerSkyOnContainer
 import id.codes.maganghub.ui.theme.PureWhite
-import id.codes.maganghub.ui.theme.Slate400
-import id.codes.maganghub.ui.theme.Slate600
-import id.codes.maganghub.ui.theme.Slate900
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
 
 @Composable
 private fun DefaultAvatarPlaceholder(modifier: Modifier = Modifier) {
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     Box(
         modifier = modifier
             .size(44.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(KemnakerSkyContainer),
+            .background(if (isDark) Color(0xFF0B1220) else Color(0xFFDBEAFE)),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = Icons.Default.Person,
             contentDescription = null,
-            tint = KemnakerSkyOnContainer,
+            tint = Color(0xFF0369A1),
             modifier = Modifier.size(24.dp)
         )
     }
@@ -140,8 +134,15 @@ fun SettingsScreen(
     }
 
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val cardBorder = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline)
+    // Exact Token Mapping:
+    // Card border / divider: Dark #263450 | Light #D5DDEA
+    val cardBorderColor = if (isDark) Color(0xFF263450) else Color(0xFFD5DDEA)
+    val cardBorder = BorderStroke(1.dp, cardBorderColor)
     val cardElevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.5.dp)
+
+    // Quick action outline buttons: border #3B4B6B / #94A3B8, icon #E2E8F0 / #334155
+    val quickActionBorder = BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
+    val quickActionIcon = if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155)
 
     Column(
         modifier = modifier
@@ -161,7 +162,7 @@ fun SettingsScreen(
                     .weight(1f)
                     .height(44.dp),
                 shape = RoundedCornerShape(10.dp),
-                border = cardBorder,
+                border = quickActionBorder,
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -170,7 +171,7 @@ fun SettingsScreen(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = KemnakerSky
+                    tint = quickActionIcon
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
@@ -192,7 +193,7 @@ fun SettingsScreen(
                     .weight(1f)
                     .height(44.dp),
                 shape = RoundedCornerShape(10.dp),
-                border = cardBorder,
+                border = quickActionBorder,
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -201,7 +202,7 @@ fun SettingsScreen(
                     imageVector = Icons.Default.OpenInNew,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = KemnakerSky
+                    tint = quickActionIcon
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
@@ -281,19 +282,23 @@ fun SettingsScreen(
                         }
                     }
 
-                    // Full-width "Keluar dari akun" button
+                    // Full-width "Keluar dari akun" outlined button matching tokens:
+                    // Outline btn text #FDA4AF / #9F1239, border #BE3A55 / #BE123C
+                    val logoutBorder = BorderStroke(1.dp, if (isDark) Color(0xFFBE3A55) else Color(0xFFBE123C))
+                    val logoutTextColor = if (isDark) Color(0xFFFDA4AF) else Color(0xFF9F1239)
+
                     OutlinedButton(
                         onClick = { showLogoutConfirm = true },
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = DangerRed
+                            contentColor = logoutTextColor
                         ),
-                        border = BorderStroke(1.dp, DangerRed.copy(alpha = 0.6f))
+                        border = logoutBorder
                     ) {
                         Text(
                             text = "Keluar dari akun",
-                            color = DangerRed,
+                            color = logoutTextColor,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -308,11 +313,11 @@ fun SettingsScreen(
                             onClick = onOpenLoginDialog,
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = KemnakerSky)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0369A1))
                         ) {
-                            Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp), tint = PureWhite)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Masuk Akun Kemnaker")
+                            Text("Masuk Akun Kemnaker", color = PureWhite)
                         }
                     }
                 }
@@ -338,16 +343,13 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                // 3-Option Segmented Control
+                // Segmented control track: #0B1220 / #EEF2F7. Active pill: #DBEAFE bg with #1E3A8A text
+                val trackBg = if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7)
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isDark) {
-                        Color(0xFF0B1422)
-                    } else {
-                        Color(0xFFE5E7EB)
-                    },
-                    border = BorderStroke(1.dp, if (isDark) MaterialTheme.colorScheme.outline.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline)
+                    color = trackBg,
+                    border = BorderStroke(1.dp, cardBorderColor)
                 ) {
                     Row(
                         modifier = Modifier
@@ -399,80 +401,80 @@ fun SettingsScreen(
             border = cardBorder,
             elevation = cardElevation
         ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(
-                                        color = if (isIgnoringBatteryOptimizations) HadirGreen else DangerRed,
-                                        shape = CircleShape
-                                    )
-                            )
-                            Text(
-                                text = "Izin Latar Belakang",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(
+                                    color = if (isIgnoringBatteryOptimizations) Color(0xFF15803D) else Color(0xFFBE123C),
+                                    shape = CircleShape
+                                )
+                        )
                         Text(
-                            text = if (isIgnoringBatteryOptimizations) {
-                                "Baterai tidak dibatasi sistem (Optimal)."
-                            } else {
-                                "Baterai dibatasi sistem. Ubah ke 'Tidak Dibatasi'."
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Izin Latar Belakang",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (isIgnoringBatteryOptimizations) {
+                            "Baterai tidak dibatasi sistem (Optimal)."
+                        } else {
+                            "Baterai dibatasi sistem. Ubah ke 'Tidak Dibatasi'."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
-                    if (!isIgnoringBatteryOptimizations) {
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Button(
-                            onClick = {
+                if (!isIgnoringBatteryOptimizations) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Button(
+                        onClick = {
+                            try {
+                                val intent = Intent(
+                                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                    Uri.parse("package:${context.packageName}")
+                                ).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
                                 try {
-                                    val intent = Intent(
-                                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                        Uri.parse("package:${context.packageName}")
-                                    ).apply {
+                                    val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
                                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                                     }
-                                    context.startActivity(intent)
-                                } catch (e: Exception) {
-                                    try {
-                                        val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
-                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                        }
-                                        context.startActivity(fallback)
-                                    } catch (_: Exception) {}
-                                }
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = DangerRed)
-                        ) {
-                            Text(
-                                text = "Izinkan",
-                                color = PureWhite,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
+                                    context.startActivity(fallback)
+                                } catch (_: Exception) {}
+                            }
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBE123C))
+                    ) {
+                        Text(
+                            text = "Izinkan",
+                            color = PureWhite,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
+        }
 
-        // 4. Pengingat Card: Jam mulai chips, Interval chips, 5 toggle switches
+        // 5. Pengingat Card: Jam mulai chips, Interval chips, 5 toggle switches
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -492,6 +494,7 @@ fun SettingsScreen(
                 )
 
                 // Jam Mulai (WIB)
+                // Chips: Unselected text #E2E8F0 / #1E293B, border #3B4B6B / #94A3B8. Selected: bg #DBEAFE, text #1E3A8A
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = "Jam mulai (WIB)",
@@ -505,24 +508,9 @@ fun SettingsScreen(
                     ) {
                         listOf(15, 16, 17, 18).forEach { hour ->
                             val selected = settings.startHour == hour
-                            val chipBg = when {
-                                selected && isDark -> PureWhite
-                                selected && !isDark -> PureWhite
-                                isDark -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                else -> Color(0xFFF3F4F6)
-                            }
-                            val chipText = when {
-                                selected && isDark -> Slate900
-                                selected && !isDark -> KemnakerSky
-                                isDark -> MaterialTheme.colorScheme.onSurface
-                                else -> Slate600
-                            }
-                            val chipBorder = when {
-                                selected && !isDark -> BorderStroke(2.dp, KemnakerSky)
-                                !selected && !isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                                !selected && isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
-                                else -> null
-                            }
+                            val chipBg = if (selected) Color(0xFFDBEAFE) else (if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7))
+                            val chipText = if (selected) Color(0xFF1E3A8A) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B))
+                            val chipBorder = if (selected) null else BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
 
                             Surface(
                                 modifier = Modifier
@@ -531,7 +519,6 @@ fun SettingsScreen(
                                 shape = RoundedCornerShape(8.dp),
                                 color = chipBg,
                                 border = chipBorder,
-                                shadowElevation = if (selected && !isDark) 1.dp else 0.dp,
                                 onClick = {
                                     onUpdateReminderSettings(settings.copy(startHour = hour))
                                 }
@@ -563,24 +550,9 @@ fun SettingsScreen(
                     ) {
                         listOf(15, 30, 45, 60).forEach { interval ->
                             val selected = settings.intervalMinutes == interval
-                            val chipBg = when {
-                                selected && isDark -> PureWhite
-                                selected && !isDark -> PureWhite
-                                isDark -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                else -> Color(0xFFF3F4F6)
-                            }
-                            val chipText = when {
-                                selected && isDark -> Slate900
-                                selected && !isDark -> KemnakerSky
-                                isDark -> MaterialTheme.colorScheme.onSurface
-                                else -> Slate600
-                            }
-                            val chipBorder = when {
-                                selected && !isDark -> BorderStroke(2.dp, KemnakerSky)
-                                !selected && !isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                                !selected && isDark -> BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
-                                else -> null
-                            }
+                            val chipBg = if (selected) Color(0xFFDBEAFE) else (if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7))
+                            val chipText = if (selected) Color(0xFF1E3A8A) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B))
+                            val chipBorder = if (selected) null else BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
 
                             Surface(
                                 modifier = Modifier
@@ -589,7 +561,6 @@ fun SettingsScreen(
                                 shape = RoundedCornerShape(8.dp),
                                 color = chipBg,
                                 border = chipBorder,
-                                shadowElevation = if (selected && !isDark) 1.dp else 0.dp,
                                 onClick = {
                                     onUpdateReminderSettings(settings.copy(intervalMinutes = interval))
                                 }
@@ -607,13 +578,15 @@ fun SettingsScreen(
                     }
                 }
 
-                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                Divider(color = cardBorderColor)
 
                 // Switch 1: Pengingat berulang
+                // Toggles: Track on #0369A1, off #3B4B6B / #64748B, knob #FFFFFF
                 ReminderToggleRow(
                     title = "Pengingat berulang",
                     subtitle = "Notifikasi berkala sampai 23:59 jika belum presensi dan logbook",
                     checked = settings.isEnabled,
+                    isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(isEnabled = checked))
                     }
@@ -624,6 +597,7 @@ fun SettingsScreen(
                     title = "Pengingat pagi",
                     subtitle = "Satu notifikasi pukul 08:00 sebagai awal hari",
                     checked = settings.morningReminderEnabled,
+                    isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(morningReminderEnabled = checked))
                     }
@@ -634,6 +608,7 @@ fun SettingsScreen(
                     title = "Lewati hari libur",
                     subtitle = "Tidak mengingatkan di hari libur atau off",
                     checked = settings.skipHolidays,
+                    isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(skipHolidays = checked))
                     }
@@ -644,6 +619,7 @@ fun SettingsScreen(
                     title = "Bunyi notifikasi",
                     subtitle = "Putar suara saat pengingat muncul",
                     checked = settings.soundEnabled,
+                    isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(soundEnabled = checked))
                     }
@@ -654,6 +630,7 @@ fun SettingsScreen(
                     title = "Getar notifikasi",
                     subtitle = "Getarkan perangkat saat pengingat muncul",
                     checked = settings.vibrationEnabled,
+                    isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(vibrationEnabled = checked))
                     }
@@ -661,7 +638,7 @@ fun SettingsScreen(
             }
         }
 
-        // 5. Footer: MagangHub Presensi Checker v1.0.0 with explanatory text
+        // 6. Footer: MagangHub Presensi Checker v1.0.0 with explanatory text
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -690,38 +667,45 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(16.dp))
     }
 
-    // Logout Confirmation Dialog
+    // Logout Confirmation Dialog: Dialog bg #3A1620 / #FFE4E6, border #7F2A3B / #FDA4AF. Confirm btn: #BE123C, text #FFFFFF
     if (showLogoutConfirm) {
+        val dialogBg = if (isDark) Color(0xFF3A1620) else Color(0xFFFFE4E6)
+        val dialogBorder = if (isDark) Color(0xFF7F2A3B) else Color(0xFFFDA4AF)
+        val dialogTitleText = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A)
+        val dialogBodyText = if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B)
+
         AlertDialog(
             onDismissRequest = { showLogoutConfirm = false },
             title = {
                 Text(
                     text = "Konfirmasi Keluar",
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = dialogTitleText
                 )
             },
             text = {
                 Text(
                     text = "Apakah Anda yakin ingin menghapus kredensial tersimpan dan keluar dari akun?",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = dialogBodyText
                 )
             },
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = dialogBg,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.border(1.dp, dialogBorder, RoundedCornerShape(16.dp)),
             confirmButton = {
                 Button(
                     onClick = {
                         showLogoutConfirm = false
                         onLogout()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = DangerRed)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBE123C))
                 ) {
-                    Text("Keluar dari akun", color = PureWhite)
+                    Text("Keluar dari akun", color = PureWhite, fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutConfirm = false }) {
-                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Batal", color = if (isDark) Color(0xFFA8B3C7) else Color(0xFF475569))
                 }
             }
         )
@@ -736,6 +720,7 @@ private fun ReminderToggleRow(
     title: String,
     subtitle: String,
     checked: Boolean,
+    isDark: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
@@ -762,9 +747,9 @@ private fun ReminderToggleRow(
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = PureWhite,
-                checkedTrackColor = KemnakerSky,
-                uncheckedThumbColor = Slate400,
-                uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                checkedTrackColor = Color(0xFF0369A1),
+                uncheckedThumbColor = PureWhite,
+                uncheckedTrackColor = if (isDark) Color(0xFF3B4B6B) else Color(0xFF64748B)
             )
         )
     }
@@ -783,30 +768,22 @@ private fun ThemeSegmentButton(
 ) {
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val backgroundColor = if (selected) {
-        PureWhite
+        Color(0xFFDBEAFE)
     } else {
         Color.Transparent
     }
 
     val contentColor = when {
-        selected && isDark -> Color(0xFF0F1E36)
-        selected && !isDark -> KemnakerSky
-        isDark -> MaterialTheme.colorScheme.onSurfaceVariant
-        else -> Slate600
-    }
-
-    val border = when {
-        selected && !isDark -> BorderStroke(1.5.dp, KemnakerSky)
-        else -> null
+        selected -> Color(0xFF1E3A8A)
+        isDark -> Color(0xFFE2E8F0)
+        else -> Color(0xFF1E293B)
     }
 
     Surface(
         onClick = onClick,
         modifier = modifier.height(38.dp),
         shape = RoundedCornerShape(8.dp),
-        color = backgroundColor,
-        border = border,
-        shadowElevation = if (selected && !isDark) 1.5.dp else 0.dp
+        color = backgroundColor
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
