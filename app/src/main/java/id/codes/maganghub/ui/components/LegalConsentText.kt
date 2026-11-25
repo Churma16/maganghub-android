@@ -1,7 +1,5 @@
 package id.codes.maganghub.ui.components
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -66,17 +64,11 @@ fun LegalConsentText(
         onClick = { offset ->
             annotatedText.getStringAnnotations(tag = "TERMS", start = offset, end = offset)
                 .firstOrNull()?.let { annotation ->
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item)).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(intent)
+                    NotificationHelper.openWebUrl(context, annotation.item)
                 }
             annotatedText.getStringAnnotations(tag = "PRIVACY", start = offset, end = offset)
                 .firstOrNull()?.let { annotation ->
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(annotation.item)).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(intent)
+                    NotificationHelper.openWebUrl(context, annotation.item)
                 }
         }
     )

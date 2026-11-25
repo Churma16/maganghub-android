@@ -201,10 +201,7 @@ fun SettingsScreen(
 
             OutlinedButton(
                 onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_MONEV_DASHBOARD)).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(intent)
+                    NotificationHelper.openWebUrl(context, NotificationHelper.URL_MONEV_DASHBOARD)
                 },
                 modifier = Modifier
                     .weight(1f)
@@ -840,10 +837,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_PRIVACY_POLICY)).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
+                            NotificationHelper.openWebUrl(context, NotificationHelper.URL_PRIVACY_POLICY)
                         }
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -874,10 +868,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_TERMS)).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
+                            NotificationHelper.openWebUrl(context, NotificationHelper.URL_TERMS)
                         }
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,

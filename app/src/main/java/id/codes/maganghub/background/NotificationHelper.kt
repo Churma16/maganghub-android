@@ -10,6 +10,7 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import id.codes.maganghub.R
@@ -34,6 +35,20 @@ object NotificationHelper {
     const val URL_MONEV_DASHBOARD = "https://monev.maganghub.kemnaker.go.id/dashboard"
     const val URL_PRIVACY_POLICY = "https://github.com/Churma16/maganghub-logbook-companion/blob/main/PRIVACY_POLICY.md"
     const val URL_TERMS = "https://github.com/Churma16/maganghub-logbook-companion/blob/main/TERMS.md"
+
+    /**
+     * Safely opens an external web URL, handling ActivityNotFoundException if no browser is installed.
+     */
+    fun openWebUrl(context: Context, url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, "Tidak dapat membuka tautan web", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     /**
      * Initializes notification channels required for Android O+ (API 26+).

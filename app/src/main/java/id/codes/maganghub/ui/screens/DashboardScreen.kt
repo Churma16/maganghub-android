@@ -171,10 +171,7 @@ fun DashboardScreen(
     }
 
     val openMonevPortal: () -> Unit = {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_MONEV_DASHBOARD)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        context.startActivity(intent)
+        NotificationHelper.openWebUrl(context, NotificationHelper.URL_MONEV_DASHBOARD)
     }
 
     if (!uiState.isLoggedIn) {
