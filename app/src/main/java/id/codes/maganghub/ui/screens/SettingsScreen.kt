@@ -537,7 +537,7 @@ fun SettingsScreen(
                                 onClick = {
                                     if (!selected) {
                                         onUpdateReminderSettings(settings.copy(startHour = hour))
-                                        showFeedbackToast("Pengingat dimulai pukul $hour:00 WIB")
+                                        showFeedbackToast("Notifikasi dimulai pukul $hour:00 WIB")
                                     }
                                 }
                             ) {
@@ -582,7 +582,7 @@ fun SettingsScreen(
                                 onClick = {
                                     if (!selected) {
                                         onUpdateReminderSettings(settings.copy(intervalMinutes = interval))
-                                        showFeedbackToast("Interval pengingat diatur tiap $interval menit")
+                                        showFeedbackToast("Interval notifikasi diatur tiap $interval menit")
                                     }
                                 }
                             ) {
@@ -610,7 +610,7 @@ fun SettingsScreen(
                     isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(isEnabled = checked))
-                        showFeedbackToast(if (checked) "Pengingat berulang diaktifkan" else "Pengingat berulang dinonaktifkan")
+                        showFeedbackToast(if (checked) "Notifikasi berulang diaktifkan" else "Notifikasi berulang dinonaktifkan")
                     }
                 )
 
@@ -622,7 +622,7 @@ fun SettingsScreen(
                     isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(morningReminderEnabled = checked))
-                        showFeedbackToast(if (checked) "Pengingat pagi diaktifkan" else "Pengingat pagi dinonaktifkan")
+                        showFeedbackToast(if (checked) "Notifikasi pagi diaktifkan" else "Notifikasi pagi dinonaktifkan")
                     }
                 )
 
@@ -698,7 +698,7 @@ fun SettingsScreen(
                     isDark = isDark,
                     onCheckedChange = { checked ->
                         onUpdateReminderSettings(settings.copy(mentorReminderEnabled = checked))
-                        showFeedbackToast(if (checked) "Pengingat mentor diaktifkan" else "Pengingat mentor dinonaktifkan")
+                        showFeedbackToast(if (checked) "Notifikasi mentor diaktifkan" else "Notifikasi mentor dinonaktifkan")
                     }
                 )
 
@@ -787,7 +787,7 @@ fun SettingsScreen(
                                     onClick = {
                                         if (!selected) {
                                             onUpdateReminderSettings(settings.copy(mentorRepeatIntervalMinutes = minutes))
-                                            showFeedbackToast("Pengingat mentor diulang tiap $label")
+                                            showFeedbackToast("Notifikasi mentor diulang tiap $label")
                                         }
                                     }
                                 ) {
