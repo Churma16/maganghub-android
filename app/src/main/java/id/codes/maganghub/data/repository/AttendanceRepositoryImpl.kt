@@ -267,12 +267,17 @@ class AttendanceRepositoryImpl(
         val releaseResult = updateApiClient.getLatestRelease()
         releaseResult.fold(
             onSuccess = { info ->
-                val updateAvailable = VersionComparator.isUpdateAvailable(BuildConfig.VERSION_NAME, info.versionName)
                 storage.saveLastUpdateCheckTimestamp(System.currentTimeMillis())
-                if (updateAvailable) {
-                    Result.success(UpdateCheckState.Available(info))
-                } else {
+                if (info == null) {
+                    // No newer stable release published yet -> current build is up to date
                     Result.success(UpdateCheckState.UpToDate)
+                } else {
+                    val updateAvailable = VersionComparator.isUpdateAvailable(BuildConfig.VERSION_NAME, info.versionName)
+                    if (updateAvailable) {
+                        Result.success(UpdateCheckState.Available(info))
+                    } else {
+                        Result.success(UpdateCheckState.UpToDate)
+                    }
                 }
             },
             onFailure = { e ->

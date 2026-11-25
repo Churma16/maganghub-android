@@ -35,11 +35,11 @@ private data class GithubAsset(
 // ---------------------------------------------------------------------------
 
 interface UpdateApiClient {
-    suspend fun getLatestRelease(): Result<UpdateInfo>
+    suspend fun getLatestRelease(): Result<UpdateInfo?>
 }
 
 class UpdateApiClientImpl(
-    private val releasesUrl: String = DEFAULT_RELEASES_URL,
+    private val releasesUrl: String = DEFAULT_LATEST_RELEASE_URL,
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
@@ -48,11 +48,11 @@ class UpdateApiClientImpl(
 ) : UpdateApiClient {
 
     companion object {
-        const val DEFAULT_RELEASES_URL =
-            "https://api.github.com/repos/Churma16/maganghub-logbook-companion/releases?per_page=5"
+        const val DEFAULT_LATEST_RELEASE_URL =
+            "https://api.github.com/repos/Churma16/maganghub-logbook-companion/releases/latest"
     }
 
-    override suspend fun getLatestRelease(): Result<UpdateInfo> = withContext(Dispatchers.IO) {
+    override suspend fun getLatestRelease(): Result<UpdateInfo?> = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
                 .url(releasesUrl)
@@ -61,6 +61,11 @@ class UpdateApiClientImpl(
                 .build()
 
             client.newCall(request).execute().use { response ->
+                if (response.code == 404) {
+                    // No stable release published yet on repository -> consider up to date
+                    return@withContext Result.success(null)
+                }
+
                 if (!response.isSuccessful) {
                     return@withContext Result.failure(
                         IOException("GitHub API error ${response.code}")
@@ -68,16 +73,16 @@ class UpdateApiClientImpl(
                 }
 
                 val body = response.body?.string().orEmpty()
-                val releases: List<GithubRelease> = try {
-                    val type = object : com.google.gson.reflect.TypeToken<List<GithubRelease>>() {}.type
-                    gson.fromJson(body, type) ?: emptyList()
+                val release: GithubRelease = try {
+                    gson.fromJson(body, GithubRelease::class.java)
                 } catch (e: JsonSyntaxException) {
-                    return@withContext Result.failure(IOException("Failed to parse releases JSON", e))
-                }
+                    return@withContext Result.failure(IOException("Failed to parse release JSON", e))
+                } ?: return@withContext Result.failure(IOException("Empty release response"))
 
-                // Pick the first non-draft, non-PR-preview release
-                val release = releases.firstOrNull { !it.draft && !it.tagName.contains("-pr") }
-                    ?: return@withContext Result.failure(IOException("No published releases found"))
+                // Enforce strictly stable releases (ignore drafts or prereleases)
+                if (release.draft || release.prerelease || release.tagName.contains("-pr")) {
+                    return@withContext Result.success(null)
+                }
 
                 val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
                 val downloadUrl = apkAsset?.browserDownloadUrl?.takeIf { it.isNotBlank() }

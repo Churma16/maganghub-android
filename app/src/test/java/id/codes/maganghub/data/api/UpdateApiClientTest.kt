@@ -7,7 +7,8 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -22,7 +23,7 @@ class UpdateApiClientTest {
         server = MockWebServer()
         server.start()
         client = UpdateApiClientImpl(
-            releasesUrl = server.url("/repos/test/test/releases").toString(),
+            releasesUrl = server.url("/repos/test/test/releases/latest").toString(),
             client = OkHttpClient(),
             gson = Gson()
         )
@@ -33,214 +34,159 @@ class UpdateApiClientTest {
         server.shutdown()
     }
 
-    // ------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------
-
-    private fun enqueueReleasesResponse(body: String, code: Int = 200) {
+    private fun enqueueResponse(body: String, code: Int = 200) {
         server.enqueue(MockResponse().setResponseCode(code).setBody(body))
     }
 
     // ------------------------------------------------------------------
-    // Success paths
+    // Success paths (Strictly Stable Releases)
     // ------------------------------------------------------------------
 
     @Test
-    fun `returns UpdateInfo from first non-draft release with apk asset`() = runTest {
-        enqueueReleasesResponse(
+    fun `returns UpdateInfo from stable release with apk asset`() = runTest {
+        enqueueResponse(
             """
-            [
-              {
-                "tag_name": "v1.1.0",
-                "name": "Release 1.1.0",
-                "body": "- Perbaikan bug notifikasi\n- Tambah fitur baru",
-                "draft": false,
-                "prerelease": false,
-                "html_url": "https://github.com/example/releases/tag/v1.1.0",
-                "published_at": "2026-11-01T00:00:00Z",
-                "assets": [
-                  {
-                    "name": "maganghub-v1.1.0.apk",
-                    "browser_download_url": "https://github.com/example/releases/download/v1.1.0/maganghub-v1.1.0.apk",
-                    "size": 12345678
-                  }
-                ]
-              }
-            ]
+            {
+              "tag_name": "v1.1.0",
+              "name": "Release 1.1.0",
+              "body": "- Perbaikan bug notifikasi\n- Tambah fitur baru",
+              "draft": false,
+              "prerelease": false,
+              "html_url": "https://github.com/example/releases/tag/v1.1.0",
+              "assets": [
+                {
+                  "name": "maganghub-v1.1.0.apk",
+                  "browser_download_url": "https://github.com/example/releases/download/v1.1.0/maganghub-v1.1.0.apk"
+                }
+              ]
+            }
             """.trimIndent()
         )
 
         val result = client.getLatestRelease()
         assertTrue(result.isSuccess)
         val info = result.getOrThrow()
-        assertEquals("v1.1.0", info.versionName)
-        assertEquals("https://github.com/example/releases/download/v1.1.0/maganghub-v1.1.0.apk", info.downloadUrl)
-        // First bullet should be extracted
-        assertTrue(info.changelog.contains("Perbaikan bug notifikasi"))
+        assertNotNull(info)
+        assertEquals("v1.1.0", info?.versionName)
+        assertEquals("https://github.com/example/releases/download/v1.1.0/maganghub-v1.1.0.apk", info?.downloadUrl)
+        assertTrue(info?.changelog?.contains("Perbaikan bug notifikasi") == true)
     }
 
     @Test
     fun `falls back to html_url when no apk asset`() = runTest {
-        enqueueReleasesResponse(
+        enqueueResponse(
             """
-            [
-                {
-                    "tag_name": "v1.0.0",
-                    "name": "Release 1.0.0",
-                    "body": null,
-                    "draft": false,
-                    "prerelease": false,
-                    "html_url": "https://github.com/example/releases/tag/v1.0.0",
-                    "published_at": "2026-10-01T00:00:00Z",
-                    "assets": []
-                }
-            ]
+            {
+              "tag_name": "v1.0.0",
+              "name": "Release 1.0.0",
+              "body": null,
+              "draft": false,
+              "prerelease": false,
+              "html_url": "https://github.com/example/releases/tag/v1.0.0",
+              "assets": []
+            }
             """.trimIndent()
         )
 
         val result = client.getLatestRelease()
         assertTrue(result.isSuccess)
         val info = result.getOrThrow()
-        assertEquals("https://github.com/example/releases/tag/v1.0.0", info.downloadUrl)
-        // Fallback changelog = release name
-        assertEquals("Release 1.0.0", info.changelog)
+        assertNotNull(info)
+        assertEquals("https://github.com/example/releases/tag/v1.0.0", info?.downloadUrl)
+        assertEquals("Release 1.0.0", info?.changelog)
     }
 
     @Test
-    fun `ignores PR preview releases and picks subsequent valid release`() = runTest {
-        enqueueReleasesResponse(
+    fun `returns success null when no stable release published yet (HTTP 404)`() = runTest {
+        enqueueResponse("{\"message\":\"Not Found\"}", code = 404)
+
+        val result = client.getLatestRelease()
+        assertTrue(result.isSuccess)
+        assertNull(result.getOrThrow())
+    }
+
+    @Test
+    fun `returns success null when release is marked prerelease`() = runTest {
+        enqueueResponse(
             """
-            [
-                {
-                    "tag_name": "v0.1.0-pr25.0e5cf3d",
-                    "name": "PR #25 Preview",
-                    "body": "Preview build",
-                    "draft": false,
-                    "prerelease": true,
-                    "html_url": "https://github.com/example/releases/tag/v0.1.0-pr25.0e5cf3d",
-                    "assets": []
-                },
-                {
-                    "tag_name": "v0.1.0-snapshot.7f3f79f",
-                    "name": "v0.1.0-snapshot.7f3f79f",
-                    "body": "Yang baru: Pengingat mentor otomatis",
-                    "draft": false,
-                    "prerelease": true,
-                    "html_url": "https://github.com/example/releases/tag/v0.1.0-snapshot.7f3f79f",
-                    "assets": []
-                }
-            ]
+            {
+              "tag_name": "v1.2.0-snapshot.abc1234",
+              "name": "Snapshot Build",
+              "body": "Development build",
+              "draft": false,
+              "prerelease": true,
+              "html_url": "https://github.com/example/releases/tag/v1.2.0-snapshot.abc1234",
+              "assets": []
+            }
             """.trimIndent()
         )
 
         val result = client.getLatestRelease()
         assertTrue(result.isSuccess)
-        val info = result.getOrThrow()
-        assertEquals("v0.1.0-snapshot.7f3f79f", info.versionName)
-        assertEquals("Pengingat mentor otomatis", info.changelog)
+        assertNull(result.getOrThrow())
     }
 
     @Test
-    fun `skips draft releases`() = runTest {
-        enqueueReleasesResponse(
+    fun `returns success null when release is marked draft`() = runTest {
+        enqueueResponse(
             """
-            [
-              {
-                "tag_name": "v2.0.0-draft",
-                "name": "Draft",
-                "body": null,
-                "draft": true,
-                "prerelease": false,
-                "html_url": "https://github.com/example/releases/tag/v2.0.0-draft",
-                "published_at": "",
-                "assets": []
-              },
-              {
-                "tag_name": "v1.1.0",
-                "name": "Stable",
-                "body": "Yang baru: Bug fix penting",
-                "draft": false,
-                "prerelease": false,
-                "html_url": "https://github.com/example/releases/tag/v1.1.0",
-                "published_at": "2026-11-01T00:00:00Z",
-                "assets": []
-              }
-            ]
+            {
+              "tag_name": "v1.2.0",
+              "name": "Draft Build",
+              "body": null,
+              "draft": true,
+              "prerelease": false,
+              "html_url": "https://github.com/example/releases/tag/v1.2.0",
+              "assets": []
+            }
             """.trimIndent()
         )
 
         val result = client.getLatestRelease()
         assertTrue(result.isSuccess)
-        assertEquals("v1.1.0", result.getOrThrow().versionName)
+        assertNull(result.getOrThrow())
     }
 
     @Test
-    fun `extracts Yang baru changelog line`() = runTest {
-        enqueueReleasesResponse(
+    fun `extracts Yang baru changelog line without prefix`() = runTest {
+        enqueueResponse(
             """
-            [
-              {
-                "tag_name": "v1.2.0",
-                "name": "Release",
-                "body": "Release notes\nYang baru: Fitur keren ditambahkan\nBug lainnya diperbaiki",
-                "draft": false,
-                "prerelease": false,
-                "html_url": "https://github.com/example/releases/tag/v1.2.0",
-                "published_at": "2026-11-15T00:00:00Z",
-                "assets": []
-              }
-            ]
+            {
+              "tag_name": "v1.2.0",
+              "name": "Release 1.2.0",
+              "body": "Release notes\nYang baru: Fitur mode gelap\nPerbaikan bug",
+              "draft": false,
+              "prerelease": false,
+              "html_url": "https://github.com/example/releases/tag/v1.2.0",
+              "assets": []
+            }
             """.trimIndent()
         )
 
         val info = client.getLatestRelease().getOrThrow()
-        assertEquals("Fitur keren ditambahkan", info.changelog)
+        assertNotNull(info)
+        assertEquals("Fitur mode gelap", info?.changelog)
     }
 
     @Test
     fun `empty Yang baru header falls through to bullet points`() = runTest {
-        enqueueReleasesResponse(
+        enqueueResponse(
             """
-            [
-              {
-                "tag_name": "v1.3.0",
-                "name": "Release 1.3.0",
-                "body": "Yang baru:\n- Integrasi laporan presensi mentor\n- Mode gelap",
-                "draft": false,
-                "prerelease": false,
-                "html_url": "https://github.com/example/releases/tag/v1.3.0",
-                "assets": []
-              }
-            ]
+            {
+              "tag_name": "v1.3.0",
+              "name": "Release 1.3.0",
+              "body": "Yang baru:\n- Integrasi laporan presensi mentor\n- Mode gelap",
+              "draft": false,
+              "prerelease": false,
+              "html_url": "https://github.com/example/releases/tag/v1.3.0",
+              "assets": []
+            }
             """.trimIndent()
         )
 
         val info = client.getLatestRelease().getOrThrow()
-        assertEquals("Integrasi laporan presensi mentor", info.changelog)
-    }
-
-    @Test
-    fun `prerelease non-draft is accepted as update`() = runTest {
-        enqueueReleasesResponse(
-            """
-            [
-              {
-                "tag_name": "v1.2.0-snapshot.abc1234",
-                "name": "Snapshot build",
-                "body": null,
-                "draft": false,
-                "prerelease": true,
-                "html_url": "https://github.com/example/releases/tag/v1.2.0-snapshot.abc1234",
-                "published_at": "2026-11-20T00:00:00Z",
-                "assets": []
-              }
-            ]
-            """.trimIndent()
-        )
-
-        val result = client.getLatestRelease()
-        assertTrue(result.isSuccess)
-        assertEquals("v1.2.0-snapshot.abc1234", result.getOrThrow().versionName)
+        assertNotNull(info)
+        assertEquals("Integrasi laporan presensi mentor", info?.changelog)
     }
 
     // ------------------------------------------------------------------
@@ -248,32 +194,8 @@ class UpdateApiClientTest {
     // ------------------------------------------------------------------
 
     @Test
-    fun `returns failure when all releases are drafts`() = runTest {
-        enqueueReleasesResponse(
-            """
-            [
-              {
-                "tag_name": "v2.0.0",
-                "name": "Draft Only",
-                "body": null,
-                "draft": true,
-                "prerelease": false,
-                "html_url": "https://github.com/example/releases/tag/v2.0.0",
-                "published_at": "",
-                "assets": []
-              }
-            ]
-            """.trimIndent()
-        )
-
-        val result = client.getLatestRelease()
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull()?.message?.contains("No published releases") == true)
-    }
-
-    @Test
-    fun `returns failure on HTTP 403`() = runTest {
-        enqueueReleasesResponse("{\"message\":\"API rate limit exceeded\"}", code = 403)
+    fun `returns failure on HTTP 403 rate limit`() = runTest {
+        enqueueResponse("{\"message\":\"API rate limit exceeded\"}", code = 403)
         val result = client.getLatestRelease()
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull()?.message?.contains("403") == true)
@@ -281,16 +203,8 @@ class UpdateApiClientTest {
 
     @Test
     fun `returns failure on malformed JSON`() = runTest {
-        enqueueReleasesResponse("<html>Not JSON</html>")
+        enqueueResponse("<html>Not JSON</html>")
         val result = client.getLatestRelease()
         assertTrue(result.isFailure)
-    }
-
-    @Test
-    fun `returns failure on empty array`() = runTest {
-        enqueueReleasesResponse("[]")
-        val result = client.getLatestRelease()
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull()?.message?.contains("No published releases") == true)
     }
 }
