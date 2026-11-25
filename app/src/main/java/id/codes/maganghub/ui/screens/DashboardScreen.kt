@@ -158,7 +158,9 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onDismissMessage: () -> Unit = {},
-    onSnoozeMentorReminder: () -> Unit = {}
+    onSnoozeMentorReminder: () -> Unit = {},
+    onOpenPrivacyPolicy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -177,7 +179,9 @@ fun DashboardScreen(
     if (!uiState.isLoggedIn) {
         WelcomeScreen(
             onOpenLoginDialog = onOpenLoginDialog,
-            modifier = modifier
+            modifier = modifier,
+            onOpenPrivacyPolicy = onOpenPrivacyPolicy,
+            onOpenTerms = onOpenTerms
         )
         return
     }

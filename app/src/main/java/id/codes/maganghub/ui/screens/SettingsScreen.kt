@@ -120,6 +120,8 @@ fun SettingsScreen(
     onLogout: () -> Unit,
     onTestNotification: () -> Unit,
     onOpenFeedback: () -> Unit = {},
+    onOpenPrivacyPolicy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -836,9 +838,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            NotificationHelper.openWebUrl(context, NotificationHelper.URL_PRIVACY_POLICY)
-                        }
+                        .clickable { onOpenPrivacyPolicy() }
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -867,9 +867,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            NotificationHelper.openWebUrl(context, NotificationHelper.URL_TERMS)
-                        }
+                        .clickable { onOpenTerms() }
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween

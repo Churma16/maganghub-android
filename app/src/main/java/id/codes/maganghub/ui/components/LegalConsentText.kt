@@ -4,30 +4,29 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
-import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.ui.theme.KemnakerSky
 
 /**
  * Reusable legal consent disclaimer text linking to Terms and Privacy Policy.
- * Conforms to the visual specification in the login mockup.
+ * Triggers in-app bottom sheet callbacks without opening an external browser.
  */
 @Composable
 fun LegalConsentText(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenTerms: () -> Unit = {},
+    onOpenPrivacyPolicy: () -> Unit = {}
 ) {
-    val context = LocalContext.current
     val linkColor = KemnakerSky
 
     val annotatedText = buildAnnotatedString {
         append("Dengan masuk, kamu menyetujui ")
-        pushStringAnnotation(tag = "TERMS", annotation = NotificationHelper.URL_TERMS)
+        pushStringAnnotation(tag = "TERMS", annotation = "terms")
         withStyle(
             style = SpanStyle(
                 color = linkColor,
@@ -39,7 +38,7 @@ fun LegalConsentText(
         }
         pop()
         append(" serta ")
-        pushStringAnnotation(tag = "PRIVACY", annotation = NotificationHelper.URL_PRIVACY_POLICY)
+        pushStringAnnotation(tag = "PRIVACY", annotation = "privacy")
         withStyle(
             style = SpanStyle(
                 color = linkColor,
@@ -63,12 +62,12 @@ fun LegalConsentText(
         ),
         onClick = { offset ->
             annotatedText.getStringAnnotations(tag = "TERMS", start = offset, end = offset)
-                .firstOrNull()?.let { annotation ->
-                    NotificationHelper.openWebUrl(context, annotation.item)
+                .firstOrNull()?.let {
+                    onOpenTerms()
                 }
             annotatedText.getStringAnnotations(tag = "PRIVACY", start = offset, end = offset)
-                .firstOrNull()?.let { annotation ->
-                    NotificationHelper.openWebUrl(context, annotation.item)
+                .firstOrNull()?.let {
+                    onOpenPrivacyPolicy()
                 }
         }
     )

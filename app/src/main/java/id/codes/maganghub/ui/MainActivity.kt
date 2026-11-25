@@ -41,11 +41,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import id.codes.maganghub.MagangHubApp
+import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.background.AttendanceAlarmScheduler
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.ui.screens.DashboardScreen
 import id.codes.maganghub.ui.screens.FeedbackBottomSheet
+import id.codes.maganghub.ui.screens.LegalDocumentBottomSheet
 import id.codes.maganghub.ui.screens.LoginDialog
 import id.codes.maganghub.ui.screens.SettingsScreen
 import id.codes.maganghub.ui.theme.KemnakerSky
@@ -199,6 +201,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 uiState = uiState,
                 onCheckNow = { viewModel.checkAttendanceNow(silent = false) },
                 onOpenLoginDialog = { viewModel.setLoginDialogOpen(true) },
+                onOpenPrivacyPolicy = { viewModel.showLegalDocument(LegalDocumentType.PRIVACY_POLICY) },
+                onOpenTerms = { viewModel.showLegalDocument(LegalDocumentType.TERMS_OF_SERVICE) },
                 onNavigateToSettings = { selectedTab = 1 },
                 onDismissMessage = { viewModel.clearMessages() },
                 onSnoozeMentorReminder = { viewModel.snoozeMentorReminderOneDay() },
@@ -212,6 +216,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 onUpdateReminderSettings = { viewModel.updateReminderSettings(it) },
                 onSetThemeMode = { viewModel.setThemeMode(it) },
                 onOpenLoginDialog = { viewModel.setLoginDialogOpen(true) },
+                onOpenPrivacyPolicy = { viewModel.showLegalDocument(LegalDocumentType.PRIVACY_POLICY) },
+                onOpenTerms = { viewModel.showLegalDocument(LegalDocumentType.TERMS_OF_SERVICE) },
                 onLogout = { viewModel.logout() },
                 onTestNotification = {
                     viewModel.testNotification(MagangHubApp.instance.applicationContext)
@@ -229,6 +235,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
             isLoading = uiState.isLoading,
             errorMessage = uiState.errorMessage,
             onDismiss = { viewModel.setLoginDialogOpen(false) },
+            onOpenPrivacyPolicy = { viewModel.showLegalDocument(LegalDocumentType.PRIVACY_POLICY) },
+            onOpenTerms = { viewModel.showLegalDocument(LegalDocumentType.TERMS_OF_SERVICE) },
             onLogin = { username, password ->
                 viewModel.login(username, password)
             }
@@ -243,6 +251,12 @@ fun MainContent(viewModel: AttendanceViewModel) {
             onSubmit = { type, message ->
                 viewModel.submitFeedback(type, message)
             }
+        )
+
+        // Shared In-App Legal Document Bottom Sheet overlay
+        LegalDocumentBottomSheet(
+            documentType = uiState.activeLegalDocument,
+            onDismiss = { viewModel.dismissLegalDocument() }
         )
     }
 }

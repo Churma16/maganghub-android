@@ -12,6 +12,7 @@ import id.codes.maganghub.data.model.AttendanceCheckResult
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.FeedbackRequest
 import id.codes.maganghub.data.model.FeedbackType
+import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.repository.AttendanceRepository
@@ -240,6 +241,20 @@ class AttendanceViewModel(
      */
     fun setFeedbackSheetOpen(open: Boolean) {
         _uiState.update { it.copy(isFeedbackSheetOpen = open, errorMessage = null) }
+    }
+
+    /**
+     * Shows the in-app legal document bottom sheet (Privacy Policy or Terms of Service).
+     */
+    fun showLegalDocument(type: LegalDocumentType) {
+        _uiState.update { it.copy(activeLegalDocument = type) }
+    }
+
+    /**
+     * Dismisses the active legal document bottom sheet.
+     */
+    fun dismissLegalDocument() {
+        _uiState.update { it.copy(activeLegalDocument = null) }
     }
 
     /**

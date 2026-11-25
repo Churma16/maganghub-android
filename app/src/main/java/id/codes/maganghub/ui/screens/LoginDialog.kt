@@ -61,6 +61,8 @@ fun LoginDialog(
     isLoading: Boolean,
     errorMessage: String?,
     onDismiss: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
     onLogin: (username: String, password: String) -> Unit
 ) {
     if (!isOpen) return
@@ -214,7 +216,9 @@ fun LoginDialog(
 
                 Spacer(modifier = Modifier.height(4.dp))
                 LegalConsentText(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    onOpenTerms = onOpenTerms,
+                    onOpenPrivacyPolicy = onOpenPrivacyPolicy
                 )
             }
         },

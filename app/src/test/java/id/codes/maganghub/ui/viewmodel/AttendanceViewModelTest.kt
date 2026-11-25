@@ -6,6 +6,7 @@ import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.FeedbackRequest
 import id.codes.maganghub.data.model.FeedbackResponse
 import id.codes.maganghub.data.model.FeedbackType
+import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UserProfileData
@@ -23,6 +24,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -382,5 +384,22 @@ class AttendanceViewModelTest {
         assertEquals(true, viewModel.uiState.value.reminderSettings.mentorReminderEnabled)
         assertEquals(5, viewModel.uiState.value.reminderSettings.mentorReviewThresholdDays)
         assertEquals(60, viewModel.uiState.value.reminderSettings.mentorRepeatIntervalMinutes)
+    }
+
+    @Test
+    fun testShowAndDismissLegalDocument() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        assertNull(viewModel.uiState.value.activeLegalDocument)
+
+        viewModel.showLegalDocument(LegalDocumentType.PRIVACY_POLICY)
+        assertEquals(LegalDocumentType.PRIVACY_POLICY, viewModel.uiState.value.activeLegalDocument)
+
+        viewModel.showLegalDocument(LegalDocumentType.TERMS_OF_SERVICE)
+        assertEquals(LegalDocumentType.TERMS_OF_SERVICE, viewModel.uiState.value.activeLegalDocument)
+
+        viewModel.dismissLegalDocument()
+        assertNull(viewModel.uiState.value.activeLegalDocument)
     }
 }

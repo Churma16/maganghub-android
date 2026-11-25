@@ -44,7 +44,9 @@ import id.codes.maganghub.ui.theme.PureWhite
 @Composable
 fun WelcomeScreen(
     onOpenLoginDialog: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenPrivacyPolicy: () -> Unit = {},
+    onOpenTerms: () -> Unit = {}
 ) {
     BoxWithConstraints(
         modifier = modifier.fillMaxSize()
@@ -145,7 +147,9 @@ fun WelcomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LegalConsentText(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    onOpenTerms = onOpenTerms,
+                    onOpenPrivacyPolicy = onOpenPrivacyPolicy
                 )
             }
         }
