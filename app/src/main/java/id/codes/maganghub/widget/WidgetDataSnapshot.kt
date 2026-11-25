@@ -17,7 +17,9 @@ enum class WidgetStatus {
     BELUM_ABSEN,
     MENDESAK,
     HARI_LIBUR,
-    SESI_BERAKHIR
+    SESI_BERAKHIR,
+    MENUNGGU_KERJA,
+    SEDANG_BEKERJA
 }
 
 data class WidgetDataSnapshot(
@@ -32,7 +34,9 @@ data class WidgetDataSnapshot(
     val reminderEnabled: Boolean = true,
     val reminderStartHour: Int = 16,
     val reminderIntervalMinutes: Int = 15,
-    val themeMode: ThemeMode
+    val themeMode: ThemeMode,
+    val workStartHour: Int = 8,
+    val workStartMinute: Int = 0
 ) {
 
     fun getTitle1x5(): String = when (status) {
@@ -41,6 +45,8 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Belum Absen"
         WidgetStatus.HARI_LIBUR -> "Hari Libur"
         WidgetStatus.SESI_BERAKHIR -> "Sesi Berakhir"
+        WidgetStatus.MENUNGGU_KERJA -> "Menunggu jam kerja"
+        WidgetStatus.SEDANG_BEKERJA -> "Selamat bekerja"
     }
 
     fun getTitle1x3(): String = when (status) {
@@ -49,6 +55,8 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Belum Absen"
         WidgetStatus.HARI_LIBUR -> "Hari Libur"
         WidgetStatus.SESI_BERAKHIR -> "Perlu Login"
+        WidgetStatus.MENUNGGU_KERJA -> "Menunggu"
+        WidgetStatus.SEDANG_BEKERJA -> "Bekerja"
     }
 
     fun getSubtext1x5(): String = when (status) {
@@ -69,6 +77,13 @@ data class WidgetDataSnapshot(
             }
         }
         WidgetStatus.SESI_BERAKHIR -> "Ketuk untuk masuk kembali ke SSO"
+        WidgetStatus.MENUNGGU_KERJA -> {
+            val workTime = String.format(Locale.ROOT, "%02d:%02d", workStartHour, workStartMinute)
+            "Jam kerja dimulai pukul $workTime WIB"
+        }
+        WidgetStatus.SEDANG_BEKERJA -> {
+            "Selamat menjalani aktivitas magang"
+        }
     }
 
     fun getSubtext1x3(): String = when (status) {
@@ -89,11 +104,27 @@ data class WidgetDataSnapshot(
             }
         }
         WidgetStatus.SESI_BERAKHIR -> "Masuk ke SSO"
+        WidgetStatus.MENUNGGU_KERJA -> {
+            val workTime = String.format(Locale.ROOT, "%02d:%02d", workStartHour, workStartMinute)
+            "Mulai $workTime"
+        }
+        WidgetStatus.SEDANG_BEKERJA -> {
+            formattedDate
+        }
+    }
+
+    fun getRightValue1x5(): String = when (status) {
+        WidgetStatus.SUDAH_ABSEN, WidgetStatus.HARI_LIBUR -> formattedDate
+        WidgetStatus.MENUNGGU_KERJA, WidgetStatus.SEDANG_BEKERJA -> formattedDate
+        WidgetStatus.BELUM_ABSEN, WidgetStatus.MENDESAK -> remainingTimeText
+        WidgetStatus.SESI_BERAKHIR -> ""
     }
 
     fun getRightLabel1x5(): String = when (status) {
         WidgetStatus.SUDAH_ABSEN -> "Lengkap"
         WidgetStatus.HARI_LIBUR -> "Hari Off"
+        WidgetStatus.MENUNGGU_KERJA -> "Menunggu"
+        WidgetStatus.SEDANG_BEKERJA -> "Bekerja"
         WidgetStatus.BELUM_ABSEN, WidgetStatus.MENDESAK -> "tersisa"
         WidgetStatus.SESI_BERAKHIR -> ""
     }
@@ -103,6 +134,10 @@ data class WidgetDataSnapshot(
         !reminderEnabled -> "Notifikasi nonaktif"
         status == WidgetStatus.HARI_LIBUR -> "Notifikasi dijeda hari ini"
         status == WidgetStatus.SUDAH_ABSEN -> "Tidak ada notifikasi lagi"
+        status == WidgetStatus.MENUNGGU_KERJA || status == WidgetStatus.SEDANG_BEKERJA -> {
+            val timeStr = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
+            "Notifikasi mulai $timeStr • tiap ${reminderIntervalMinutes}m"
+        }
         else -> {
             // BELUM_ABSEN or MENDESAK
             val hour = if (nowHour >= 0) nowHour else Calendar.getInstance(WIB_TIMEZONE).get(Calendar.HOUR_OF_DAY)
@@ -120,6 +155,10 @@ data class WidgetDataSnapshot(
         !reminderEnabled -> "Nonaktif"
         status == WidgetStatus.HARI_LIBUR -> "Dijeda hari ini"
         status == WidgetStatus.SUDAH_ABSEN -> "Notif berhenti"
+        status == WidgetStatus.MENUNGGU_KERJA || status == WidgetStatus.SEDANG_BEKERJA -> {
+            val timeStr = String.format(Locale.ROOT, "%02d:00", reminderStartHour)
+            "Mulai $timeStr"
+        }
         else -> {
             // BELUM_ABSEN or MENDESAK
             val hour = if (nowHour >= 0) nowHour else Calendar.getInstance(WIB_TIMEZONE).get(Calendar.HOUR_OF_DAY)
@@ -164,6 +203,8 @@ data class WidgetDataSnapshot(
         WidgetStatus.BELUM_ABSEN -> R.drawable.ic_widget_clock
         WidgetStatus.MENDESAK -> R.drawable.ic_widget_warning
         WidgetStatus.HARI_LIBUR -> R.drawable.ic_widget_moon
+        WidgetStatus.MENUNGGU_KERJA -> R.drawable.ic_widget_clock
+        WidgetStatus.SEDANG_BEKERJA -> R.drawable.ic_widget_clock
         WidgetStatus.SESI_BERAKHIR -> null
     }
 
@@ -190,7 +231,9 @@ data class WidgetDataSnapshot(
                 reminderStartHour = settings.startHour,
                 reminderIntervalMinutes = settings.intervalMinutes,
                 themeMode = prefs.getThemeMode(),
-                nowMillis = nowMillis
+                nowMillis = nowMillis,
+                workStartHour = settings.workStartHour,
+                workStartMinute = settings.workStartMinute
             )
         }
 
@@ -204,7 +247,9 @@ data class WidgetDataSnapshot(
             reminderStartHour: Int = 16,
             reminderIntervalMinutes: Int = 15,
             themeMode: ThemeMode,
-            nowMillis: Long = System.currentTimeMillis()
+            nowMillis: Long = System.currentTimeMillis(),
+            workStartHour: Int = 8,
+            workStartMinute: Int = 0
         ): WidgetDataSnapshot {
             if (!hasCredentials) {
                 return WidgetDataSnapshot(
@@ -219,7 +264,9 @@ data class WidgetDataSnapshot(
                     reminderEnabled = reminderEnabled,
                     reminderStartHour = reminderStartHour,
                     reminderIntervalMinutes = reminderIntervalMinutes,
-                    themeMode = themeMode
+                    themeMode = themeMode,
+                    workStartHour = workStartHour,
+                    workStartMinute = workStartMinute
                 )
             }
 
@@ -228,6 +275,13 @@ data class WidgetDataSnapshot(
 
             val (remainingMillis, remainingText) = calculateRemainingTime(nowMillis)
 
+            val cal = Calendar.getInstance(WIB_TIMEZONE).apply {
+                timeInMillis = nowMillis
+            }
+            val currentMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+            val workStartMinutes = workStartHour * 60 + workStartMinute
+            val reportStartMinutes = reminderStartHour * 60
+
             val widgetStatus = when {
                 attendanceStatus == AttendanceStatus.LIBUR || attendanceStatus == AttendanceStatus.TIDAK_AKTIF -> {
                     WidgetStatus.HARI_LIBUR
@@ -235,13 +289,17 @@ data class WidgetDataSnapshot(
                 attendanceStatus == AttendanceStatus.HADIR -> {
                     WidgetStatus.SUDAH_ABSEN
                 }
+                currentMinutes < workStartMinutes -> {
+                    WidgetStatus.MENUNGGU_KERJA
+                }
+                currentMinutes < reportStartMinutes -> {
+                    WidgetStatus.SEDANG_BEKERJA
+                }
+                remainingMillis < 2 * 60 * 60 * 1000L -> {
+                    WidgetStatus.MENDESAK
+                }
                 else -> {
-                    // Belum absen
-                    if (remainingMillis < 2 * 60 * 60 * 1000L) {
-                        WidgetStatus.MENDESAK
-                    } else {
-                        WidgetStatus.BELUM_ABSEN
-                    }
+                    WidgetStatus.BELUM_ABSEN
                 }
             }
 
@@ -257,7 +315,9 @@ data class WidgetDataSnapshot(
                 reminderEnabled = reminderEnabled,
                 reminderStartHour = reminderStartHour,
                 reminderIntervalMinutes = reminderIntervalMinutes,
-                themeMode = themeMode
+                themeMode = themeMode,
+                workStartHour = workStartHour,
+                workStartMinute = workStartMinute
             )
         }
 

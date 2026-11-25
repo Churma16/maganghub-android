@@ -523,7 +523,7 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Awal fase 'Selamat bekerja' sebelum jam presensi dibuka",
+                            text = "Awal fase 'Selamat bekerja' sebelum notifikasi presensi dimulai",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

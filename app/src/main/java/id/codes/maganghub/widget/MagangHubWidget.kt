@@ -110,7 +110,9 @@ private fun WidgetLayout1x5(
     ) {
         // --- Baris Utama: Status, Subteks, dan Aksi Kanan ---
         Row(
-            modifier = GlanceModifier.fillMaxWidth(),
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .height(48.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 1. Zona Kiri: Garis aksen vertikal tipis (lebar 4dp, tinggi 28dp, pill)
@@ -246,7 +248,7 @@ private fun WidgetLayout1x5(
                 else -> {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = data.formattedDate,
+                            text = data.getRightValue1x5(),
                             style = TextStyle(
                                 color = ColorProvider(colors.rightValue),
                                 fontSize = 10.5.sp,
@@ -329,7 +331,9 @@ private fun WidgetLayout1x3(
     ) {
         // --- Baris Utama: Status Ringkas & Aksi ---
         Row(
-            modifier = GlanceModifier.fillMaxWidth(),
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .height(44.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 1. Zona Kiri: Garis aksen vertikal tipis
