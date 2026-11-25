@@ -1,7 +1,5 @@
 package id.codes.maganghub.ui.screens
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -33,14 +31,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -964,8 +960,6 @@ private fun MentorReviewCard(
 
     val progressValue = if (isWarning) 1f else (pendingCount / threshold.toFloat()).coerceIn(0f, 1f)
 
-    val reminderTemplate = "Halo Bapak/Ibu Mentor, mohon kesediaannya untuk meninjau laporan kehadiran magang saya di MagangHub Kemnaker yang telah terkirim. Terima kasih banyak!"
-
     val intervalText = when (uiState.reminderSettings.mentorRepeatIntervalMinutes) {
         30 -> "30 mnt"
         60 -> "1 jam"
@@ -1059,105 +1053,34 @@ private fun MentorReviewCard(
                 )
             }
 
-            // Warning State Action Buttons & Footer
+            // Warning State Action Button & Footer
             if (isWarning) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                OutlinedButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSnoozeMentorReminder()
+                        Toast.makeText(context, "Pengingat mentor ditunda 1 hari", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFFB45309) else Color(0xFFD97706)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
+                    )
                 ) {
-                    // Action 1: Tunda 1 hari with snooze icon
-                    OutlinedButton(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onSnoozeMentorReminder()
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(40.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, if (isDark) Color(0xFFB45309) else Color(0xFFD97706)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Schedule,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Tunda 1 hari",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    // Action 2: Salin Pesan Pengingat
-                    Button(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clip = ClipData.newPlainText("Pesan Pengingat Mentor", reminderTemplate)
-                            clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, "Pesan pengingat berhasil disalin!", Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier
-                            .weight(1.2f)
-                            .height(40.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isDark) Color(0xFFB45309) else Color(0xFFD97706),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCopy,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Salin Pesan",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    // Action 3: Quick WhatsApp / Share Intent
-                    Surface(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                putExtra(Intent.EXTRA_TEXT, reminderTemplate)
-                                type = "text/plain"
-                                `package` = "com.whatsapp"
-                            }
-                            try {
-                                context.startActivity(sendIntent)
-                            } catch (_: Exception) {
-                                val chooser = Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                                    putExtra(Intent.EXTRA_TEXT, reminderTemplate)
-                                    type = "text/plain"
-                                }, "Kirim Pengingat Mentor")
-                                context.startActivity(chooser)
-                            }
-                        },
-                        modifier = Modifier.size(40.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        color = if (isDark) Color(0xFF78350F) else Color(0xFFFEF3C7),
-                        border = BorderStroke(1.dp, if (isDark) Color(0xFFB45309) else Color(0xFFFDE68A))
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = "Kirim ke WhatsApp / Bagikan",
-                                tint = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Tunda 1 hari",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 // Footer text: Pengingat otomatis diulang tiap ${intervalText}.

@@ -290,6 +290,7 @@ class AttendanceViewModel(
     fun snoozeMentorReminderOneDay() {
         viewModelScope.launch {
             repository.snoozeMentorReminderOneDay()
+            _uiState.update { it.copy(successMessage = "Pengingat mentor ditunda 1 hari") }
         }
     }
 }

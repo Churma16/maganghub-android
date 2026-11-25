@@ -249,6 +249,7 @@ class AttendanceViewModelTest {
 
         val snoozedUntil = viewModel.uiState.value.reminderSettings.mentorSnoozedUntil
         assertTrue(snoozedUntil >= beforeSnooze + 23 * 60 * 60 * 1000L)
+        assertEquals("Pengingat mentor ditunda 1 hari", viewModel.uiState.value.successMessage)
     }
 
     @Test
@@ -259,14 +260,14 @@ class AttendanceViewModelTest {
 
         val updated = ReminderSettings(
             mentorReminderEnabled = true,
-            mentorReviewThresholdDays = 7,
+            mentorReviewThresholdDays = 5,
             mentorRepeatIntervalMinutes = 60
         )
         viewModel.updateReminderSettings(updated)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(true, viewModel.uiState.value.reminderSettings.mentorReminderEnabled)
-        assertEquals(7, viewModel.uiState.value.reminderSettings.mentorReviewThresholdDays)
+        assertEquals(5, viewModel.uiState.value.reminderSettings.mentorReviewThresholdDays)
         assertEquals(60, viewModel.uiState.value.reminderSettings.mentorRepeatIntervalMinutes)
     }
 }

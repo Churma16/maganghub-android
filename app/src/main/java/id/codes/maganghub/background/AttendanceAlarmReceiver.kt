@@ -38,6 +38,11 @@ class AttendanceAlarmReceiver : BroadcastReceiver() {
             NotificationHelper.ACTION_SNOOZE_MENTOR_ONE_DAY -> {
                 Log.i(TAG, "User triggered 'Tunda 1 Hari' mentor reminder snooze")
                 NotificationHelper.cancelMentorReminder(context)
+                try {
+                    android.widget.Toast.makeText(context, "Pengingat mentor ditunda 1 hari", android.widget.Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not show snooze toast", e)
+                }
                 val snoozedUntil = System.currentTimeMillis() + (24 * 60 * 60 * 1000L)
                 try {
                     MagangHubApp.instance.encryptedPreferences.saveMentorSnoozedUntil(snoozedUntil)
