@@ -50,6 +50,8 @@ class EncryptedPreferences(context: Context) {
         const val KEY_MENTOR_INTERVAL = "pref_mentor_repeat_interval_minutes"
         const val KEY_MENTOR_SNOOZED_UNTIL = "pref_mentor_snoozed_until"
         const val KEY_MENTOR_PENDING_COUNT = "pref_mentor_pending_count"
+
+        private const val KEY_LAST_UPDATE_CHECK_TIMESTAMP = "pref_last_update_check_timestamp"
     }
 
     private val gson = Gson()
@@ -228,6 +230,13 @@ class EncryptedPreferences(context: Context) {
     fun setMentorSnoozedUntil(timestampMillis: Long) = saveMentorSnoozedUntil(timestampMillis)
 
     fun getMentorSnoozedUntil(): Long = prefs.getLong(KEY_MENTOR_SNOOZED_UNTIL, 0L)
+
+    // Last update check timestamp
+    fun saveLastUpdateCheckTimestamp(timestamp: Long) {
+        prefs.edit().putLong(KEY_LAST_UPDATE_CHECK_TIMESTAMP, timestamp).apply()
+    }
+
+    fun getLastUpdateCheckTimestamp(): Long = prefs.getLong(KEY_LAST_UPDATE_CHECK_TIMESTAMP, 0L)
 
     // Theme display mode
     fun getThemeMode(): ThemeMode {

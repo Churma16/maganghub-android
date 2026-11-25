@@ -226,6 +226,8 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 isPreviewBuild = viewModel.isPreviewOrDebugBuild,
                 onOpenTestNotificationSheet = { viewModel.setTestNotificationSheetOpen(true) },
                 onOpenFeedback = { viewModel.setFeedbackSheetOpen(true) },
+                onCheckForUpdates = { viewModel.checkForUpdates() },
+                formatLastUpdateCheck = { viewModel.formatLastUpdateCheck(it) },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)

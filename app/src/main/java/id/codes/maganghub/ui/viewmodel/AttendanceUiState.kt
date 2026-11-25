@@ -5,6 +5,7 @@ import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
+import id.codes.maganghub.data.model.UpdateCheckState
 
 /**
  * State representing current UI presentation in MagangHub.
@@ -29,7 +30,9 @@ data class AttendanceUiState(
     val isFeedbackSheetOpen: Boolean = false,
     val isSubmittingFeedback: Boolean = false,
     val activeLegalDocument: LegalDocumentType? = null,
-    val isTestNotificationSheetOpen: Boolean = false
+    val isTestNotificationSheetOpen: Boolean = false,
+    val updateCheckState: UpdateCheckState = UpdateCheckState.Idle,
+    val lastUpdateCheckTimestamp: Long = 0L
 ) {
     val isAttended: Boolean
         get() = attendanceStatus == AttendanceStatus.HADIR

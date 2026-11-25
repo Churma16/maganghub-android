@@ -2,6 +2,7 @@ package id.codes.maganghub.ui.screens
 
 import id.codes.maganghub.BuildConfig
 import id.codes.maganghub.data.model.ThemeMode
+import id.codes.maganghub.data.model.UpdateCheckState
 
 import android.content.Context
 import android.content.Intent
@@ -37,11 +38,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DesktopWindows
@@ -124,6 +127,8 @@ fun SettingsScreen(
     onOpenFeedback: () -> Unit = {},
     onOpenPrivacyPolicy: () -> Unit = {},
     onOpenTerms: () -> Unit = {},
+    onCheckForUpdates: () -> Unit = {},
+    formatLastUpdateCheck: (Long) -> String = { "" },
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -896,16 +901,211 @@ fun SettingsScreen(
             }
         }
 
-        // 7. Footer: Clean centered version label matching mockups
-        Text(
-            text = "MagangHub Logbook Companion v${BuildConfig.VERSION_NAME}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            textAlign = TextAlign.Center
-        )
+        // 8. Tentang app Card (replaces plain footer version text)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = cardBorder,
+            elevation = cardElevation
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Header: title + app name + version
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "Tentang app",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "MagangHub Logbook Companion",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Versi ${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Last checked timestamp: only shown in Awal / Idle / Error state matching Figma mockup
+                if (uiState.lastUpdateCheckTimestamp > 0 &&
+                    (uiState.updateCheckState is UpdateCheckState.Idle || uiState.updateCheckState is UpdateCheckState.Error)) {
+                    val lastCheckedText = formatLastUpdateCheck(uiState.lastUpdateCheckTimestamp)
+                    if (lastCheckedText.isNotBlank()) {
+                        Text(
+                            text = lastCheckedText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // State-dependent content matching the 4 mockup conditions
+                when (val checkState = uiState.updateCheckState) {
+                    is UpdateCheckState.Idle, is UpdateCheckState.Error -> {
+                        // State 1 (Awal / Error): OutlinedButton with Refresh icon
+                        OutlinedButton(
+                            onClick = onCheckForUpdates,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            border = quickActionBorder
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = if (isDark) KemnakerSky else MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Cek pembaruan",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        // Show error message if check failed
+                        if (checkState is UpdateCheckState.Error) {
+                            Text(
+                                text = checkState.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    is UpdateCheckState.Checking -> {
+                        // State 2 (Memeriksa): disabled button with spinner matching mockup
+                        OutlinedButton(
+                            onClick = {},
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            border = quickActionBorder
+                        ) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = if (isDark) KemnakerSky else MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Memeriksa...",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    is UpdateCheckState.UpToDate -> {
+                        // State 3 (Sudah terbaru): green info banner with checkmark + Cek pembaruan button
+                        val successBg = if (isDark) Color(0xFF14532D) else Color(0xFFDCFCE7)
+                        val successFg = if (isDark) Color(0xFF86EFAC) else Color(0xFF15803D)
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = successBg
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = successFg
+                                )
+                                Text(
+                                    text = "Kamu sudah memakai versi terbaru.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = successFg,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = onCheckForUpdates,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            border = quickActionBorder
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = if (isDark) KemnakerSky else MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Cek pembaruan",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    is UpdateCheckState.Available -> {
+                        // State 4 (Pembaruan tersedia): deep blue info banner + Perbarui sekarang button
+                        val updateInfo = checkState.updateInfo
+                        val infoBg = if (isDark) Color(0xFF163E5C) else Color(0xFFDBEAFE)
+                        val titleFg = if (isDark) PureWhite else Color(0xFF1E40AF)
+                        val subFg = if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8)
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = infoBg
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Versi ${updateInfo.versionName} tersedia",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = titleFg
+                                )
+                                if (updateInfo.changelog.isNotBlank()) {
+                                    Text(
+                                        text = "Yang baru: ${updateInfo.changelog}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = subFg
+                                    )
+                                }
+                            }
+                        }
+                        Button(
+                            onClick = {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.downloadUrl))
+                                        .apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+                                    context.startActivity(intent)
+                                } catch (_: Exception) {
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = KemnakerSky,
+                                contentColor = PureWhite
+                            )
+                        ) {
+                            Text(
+                                text = "Perbarui sekarang",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
     }
