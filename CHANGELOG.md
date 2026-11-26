@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.2.0] - 2026-11-26
+
+* docs: add public beta release disclaimers to README and Terms of Service (#43)
+* feat(state): centralize work phase resolver and harmonize dashboard-widget state parity (#42)
+* feat(widget): trigger on-demand sync from widget entry and instant event update on login (#40)
+* feat(copy): streamline presensi and logbook copy to unified logbook entity (#41)
+* fix(widget): isolate action button touch target to prevent app redirection (#39)
+* fix(ui): pause and resume login dialog when legal document drawer opens (#38)
+* perf(build): enable R8 minification and resource shrinking for release builds (#37)
+* perf(battery): optimize background sync with confirmed attendance early-return and 3-hour mentor check TTL (#36)
+* docs: update README with app screenshots and new features documentation (#34)
+* fix(security): resolve CWE security findings across storage, network, and manifest (#35)
+* feat(widget): implementasi adaptasi fase harian dan token warna tema widget (#32)
+* feat(widget): add previewLayout and static XML preview for widget picker (#33)
+* feat(dashboard): implement adaptive daily work phases and work start time picker (#31)
+* feat(widget): add footer row with notification status microcopy and sync timestamp (#30)
+* feat(settings): add toast and haptic feedback on reminder preferences change (#29)
+* feat(dashboard): streamline bottom CTA to full-width dynamic Monev action (#28)
+* feat(update): implement in-app update checker matching Figma mockups (#26)
+* feat(notification): align notification layout, calm tone, and actions with mockup (#25)
+* feat(feedback): implement feedback modal bottom sheet and telegram bridge contract (#23)
+* feat(legal): implement privacy policy, terms of service, and settings bantuan card (#24)
+* feat(mentor): implement mentor review reminder card, background alerts, and settings (#22)
+* fix(reminder): reschedule exact alarm immediately on settings update and display dynamic reminder time (#21)
+* feat(ui): make system navigation bar adaptive to theme (#20)
+* fix(ci): use direct glob and fail-on-unmatched for snapshot apk release asset (#19)
+* feat(ui): implement light and dark mode override theme slider (#14)
+* chore(ui): rename settings footer title to MagangHub Logbook Companion (#18)
+* feat(ui): unify internship status and day type into single card (#17)
+* feat(notification): streamline action buttons to plain snooze and buka monev (#16)
+* ci: parallelize snapshot test & build jobs and add preview cleanup workflow (#15)
+* chore(version): set project base version to 0.1.0 (alpha) (#12)
+* feat(profile): dynamically fetch user profile and display avatar via Coil (#13)
+* feat(ui): redesign dashboard and settings with purpose-first utility and background permission (#10)
+* chore: update repository references to maganghub-logbook-companion (#11)
+* docs: rewrite README with plain language, remove emojis, and rename project to MagangHub Logbook Companion (#9)
+* ci: make release APK build on-demand to speed up PR CI verification (#7)
+* feat(ci): add dedicated PR preview build workflow (#5)
+* feat(ui): align theme and dashboard layout with official Kemnaker Monev web (#4)
+* feat(resilience): add anti-ban mobile UA, HTTP 429 backoff, jitter, and SSO circuit breaker (#6)
+* refactor: simplify deeply nested conditionals with guard clauses and early exits (#3)
+* fix(security): permit Kemnaker cleartext redirects and enforce HTTPS auto-upgrade (#2)
+* fix(app): resolve Kotlin compilation errors in MagangHubApiClient and repository (#1)
+* feat(release): implement automated snapshot & manual release pipelines matching wallet forwarder
+* feat: initial commit for MagangHub Android app (Compose + WorkManager + SSO)
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
