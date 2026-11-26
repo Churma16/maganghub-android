@@ -213,7 +213,7 @@ data class WidgetDataSnapshot(
     companion object {
 
         private val WIB_TIMEZONE = TimeZone.getTimeZone("Asia/Jakarta")
-        private val WIB_ZONE_ID = ZoneId.of("Asia/Jakarta")
+        private val WIB_ZONE_ID = WorkPhaseResolver.ZONE_WIB
         private val DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE, d MMM", Locale("id", "ID"))
         private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale("id", "ID"))
 
@@ -321,16 +321,8 @@ data class WidgetDataSnapshot(
         }
 
         fun calculateRemainingTime(nowMillis: Long): Pair<Long, String> {
-            val cal = Calendar.getInstance(WIB_TIMEZONE).apply {
-                timeInMillis = nowMillis
-                set(Calendar.HOUR_OF_DAY, 23)
-                set(Calendar.MINUTE, 59)
-                set(Calendar.SECOND, 59)
-                set(Calendar.MILLISECOND, 999)
-            }
-
-            val deadlineMillis = cal.timeInMillis
-            val diff = (deadlineMillis - nowMillis).coerceAtLeast(0L)
+            val nowWib = Instant.ofEpochMilli(nowMillis).atZone(WIB_ZONE_ID)
+            val diff = WorkPhaseResolver.calculateRemainingMillis(nowWib)
 
             val hours = diff / (1000 * 60 * 60)
             val minutes = (diff / (1000 * 60)) % 60

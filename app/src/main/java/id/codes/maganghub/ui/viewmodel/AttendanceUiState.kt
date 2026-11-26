@@ -46,7 +46,7 @@ data class AttendanceUiState(
     val isPending: Boolean
         get() = attendanceStatus == AttendanceStatus.BELUM_HADIR
 
-    fun getDailyWorkPhase(nowWib: java.time.ZonedDateTime = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Jakarta"))): DailyWorkPhase {
+    fun getDailyWorkPhase(nowWib: java.time.ZonedDateTime = java.time.ZonedDateTime.now(WorkPhaseResolver.ZONE_WIB)): DailyWorkPhase {
         val hasAttendance = attendanceData?.hasAttendance == true || isAttended
         val holiday = attendanceData?.isHoliday == true || attendanceData?.isScheduledOffDay == true || isHoliday
         return WorkPhaseResolver.resolve(

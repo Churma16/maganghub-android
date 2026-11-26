@@ -77,6 +77,7 @@ import id.codes.maganghub.ui.theme.AccentSkyLight
 import id.codes.maganghub.ui.theme.HeroCompleteBgDark
 import id.codes.maganghub.ui.theme.HeroCompleteBgLight
 import id.codes.maganghub.data.model.DailyWorkPhase
+import id.codes.maganghub.data.model.WorkPhaseResolver
 import id.codes.maganghub.ui.theme.HeroCompleteBorderDark
 import id.codes.maganghub.ui.theme.HeroCompleteBorderLight
 import id.codes.maganghub.ui.theme.HeroCompleteDateDark
@@ -1161,7 +1162,7 @@ private fun MentorReviewCard(
     }
 }
 
-private val ZONE_WIB = ZoneId.of("Asia/Jakarta")
+private val ZONE_WIB = WorkPhaseResolver.ZONE_WIB
 private val INDONESIAN_HERO_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, d MMM yyyy", Locale("id", "ID"))
 
 private fun formatHeroDate(dateStr: String?): String {
