@@ -124,7 +124,12 @@ class AttendanceCheckWorker(
             // Reschedule next alarm attempt
             AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
             AttendanceWidgetHelper.updateWidget(appContext)
-            return Result.retry()
+            return if (runAttemptCount >= 3) {
+                Log.w(TAG, "Attendance check failed after $runAttemptCount attempts. Abandoning worker retry.")
+                Result.failure()
+            } else {
+                Result.retry()
+            }
         }
 
         val resultData = checkResult.getOrNull()
