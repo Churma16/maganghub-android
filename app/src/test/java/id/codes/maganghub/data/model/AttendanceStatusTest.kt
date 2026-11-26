@@ -1,7 +1,7 @@
 package id.codes.maganghub.data.model
 
 import id.codes.maganghub.ui.viewmodel.AttendanceUiState
-import id.codes.maganghub.ui.viewmodel.DailyWorkPhase
+import id.codes.maganghub.data.model.DailyWorkPhase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -80,8 +80,12 @@ class AttendanceStatusTest {
         val timeWorking = ZonedDateTime.of(today, LocalTime.of(11, 0), wib)
         assertEquals(DailyWorkPhase.WORKING, statePending.getDailyWorkPhase(timeWorking))
 
-        // 5. Reporting Window (17:30 WIB, after 16:00)
-        val timeReporting = ZonedDateTime.of(today, LocalTime.of(17, 30), wib)
-        assertEquals(DailyWorkPhase.REPORTING_WINDOW, statePending.getDailyWorkPhase(timeReporting))
+        // 5. Reporting Window Normal (17:30 WIB, after 16:00, > 4h left to 23:59)
+        val timeReportingNormal = ZonedDateTime.of(today, LocalTime.of(17, 30), wib)
+        assertEquals(DailyWorkPhase.REPORTING_NORMAL, statePending.getDailyWorkPhase(timeReportingNormal))
+
+        // 6. Reporting Window Urgent (20:30 WIB, after 20:00, < 4h left to 23:59)
+        val timeReportingUrgent = ZonedDateTime.of(today, LocalTime.of(20, 30), wib)
+        assertEquals(DailyWorkPhase.REPORTING_URGENT, statePending.getDailyWorkPhase(timeReportingUrgent))
     }
 }

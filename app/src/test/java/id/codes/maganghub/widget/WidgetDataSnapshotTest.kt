@@ -27,8 +27,8 @@ class WidgetDataSnapshotTest {
             themeMode = ThemeMode.SYSTEM
         )
 
-        assertEquals("Sudah Absen", snapshot.getTitle1x5())
-        assertEquals("Sudah Absen", snapshot.getTitle1x3())
+        assertEquals("Lengkap", snapshot.getTitle1x5())
+        assertEquals("Lengkap", snapshot.getTitle1x3())
         assertEquals("Semua laporan sudah di-approve", snapshot.getSubtext1x5())
         assertEquals("Rab, 25 Nov", snapshot.getSubtext1x3())
         assertFalse(snapshot.isSubtextWarning())
@@ -49,8 +49,8 @@ class WidgetDataSnapshotTest {
             themeMode = ThemeMode.DARK
         )
 
-        assertEquals("Sudah Absen", snapshot.getTitle1x5())
-        assertEquals("Sudah Absen", snapshot.getTitle1x3())
+        assertEquals("Lengkap", snapshot.getTitle1x5())
+        assertEquals("Lengkap", snapshot.getTitle1x3())
         assertEquals("2 laporan menunggu approval", snapshot.getSubtext1x5())
         assertEquals("2 menunggu approval", snapshot.getSubtext1x3())
         assertFalse(snapshot.isSubtextWarning())
@@ -70,7 +70,7 @@ class WidgetDataSnapshotTest {
             themeMode = ThemeMode.DARK
         )
 
-        assertEquals("Sudah Absen", snapshot.getTitle1x5())
+        assertEquals("Lengkap", snapshot.getTitle1x5())
         assertEquals("2 laporan belum di-approve", snapshot.getSubtext1x5())
         assertEquals("2 menunggu >3 hr", snapshot.getSubtext1x3())
         assertTrue(snapshot.isSubtextWarning())
@@ -90,8 +90,8 @@ class WidgetDataSnapshotTest {
             themeMode = ThemeMode.SYSTEM
         )
 
-        assertEquals("Belum Absen", snapshot.getTitle1x5())
-        assertEquals("Belum Absen", snapshot.getTitle1x3())
+        assertEquals("Belum Lengkap", snapshot.getTitle1x5())
+        assertEquals("Belum Lengkap", snapshot.getTitle1x3())
         assertEquals("Batas hari ini 23:59 WIB", snapshot.getSubtext1x5())
         assertEquals("Sisa 7j 29m", snapshot.getSubtext1x3())
         assertFalse(snapshot.isSubtextWarning())
@@ -112,8 +112,8 @@ class WidgetDataSnapshotTest {
             themeMode = ThemeMode.SYSTEM
         )
 
-        assertEquals("Belum Absen", snapshot.getTitle1x5())
-        assertEquals("Belum Absen", snapshot.getTitle1x3())
+        assertEquals("Mendesak", snapshot.getTitle1x5())
+        assertEquals("Mendesak", snapshot.getTitle1x3())
         assertEquals("Segera isi sebelum 23:59 WIB", snapshot.getSubtext1x5())
         assertEquals("Sisa 1j 58m", snapshot.getSubtext1x3())
         assertFalse(snapshot.isSubtextWarning())
@@ -136,8 +136,8 @@ class WidgetDataSnapshotTest {
 
         assertEquals("Hari Libur", base.getTitle1x5())
         assertEquals("Hari Libur", base.getTitle1x3())
-        assertEquals("Tidak wajib presensi hari ini", base.getSubtext1x5())
-        assertEquals("Tidak wajib absen", base.getSubtext1x3())
+        assertEquals("Tidak wajib isi logbook", base.getSubtext1x5())
+        assertEquals("Tidak wajib logbook", base.getSubtext1x3())
         assertFalse(base.showBadge1x5())
         assertEquals(R.drawable.ic_widget_moon, base.getInlineIconResId())
 
@@ -232,7 +232,7 @@ class WidgetDataSnapshotTest {
         )
 
         assertEquals(WidgetStatus.SUDAH_ABSEN, snapshot.status)
-        assertEquals("Sudah Absen", snapshot.getTitle1x5())
+        assertEquals("Lengkap", snapshot.getTitle1x5())
         assertEquals("Semua laporan sudah di-approve", snapshot.getSubtext1x5())
     }
 
@@ -261,7 +261,7 @@ class WidgetDataSnapshotTest {
     fun testFromComponentsBelumAbsenVsMendesak() {
         val wib = TimeZone.getTimeZone("Asia/Jakarta")
 
-        // 18:00 WIB -> >2 hours remaining and after 16:00 -> BELUM_ABSEN
+        // 18:00 WIB -> >4 hours remaining and after 16:00 -> BELUM_ABSEN
         val calNormal = Calendar.getInstance(wib).apply {
             set(Calendar.HOUR_OF_DAY, 18)
             set(Calendar.MINUTE, 0)
@@ -279,7 +279,43 @@ class WidgetDataSnapshotTest {
         )
         assertEquals(WidgetStatus.BELUM_ABSEN, normal.status)
 
-        // 22:30 WIB -> <2 hours remaining -> MENDESAK
+        // 19:30 WIB -> 4h 29m remaining (>4 hours) -> BELUM_ABSEN
+        val calBeforeThreshold = Calendar.getInstance(wib).apply {
+            set(Calendar.HOUR_OF_DAY, 19)
+            set(Calendar.MINUTE, 30)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val beforeThreshold = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            reminderStartHour = 16,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calBeforeThreshold.timeInMillis
+        )
+        assertEquals(WidgetStatus.BELUM_ABSEN, beforeThreshold.status)
+
+        // 20:30 WIB -> 3h 29m remaining (<4 hours) -> MENDESAK
+        val calAfterThreshold = Calendar.getInstance(wib).apply {
+            set(Calendar.HOUR_OF_DAY, 20)
+            set(Calendar.MINUTE, 30)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val afterThreshold = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            reminderStartHour = 16,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calAfterThreshold.timeInMillis
+        )
+        assertEquals(WidgetStatus.MENDESAK, afterThreshold.status)
+
+        // 22:30 WIB -> <4 hours remaining -> MENDESAK
         val calMendesak = Calendar.getInstance(wib).apply {
             set(Calendar.HOUR_OF_DAY, 22)
             set(Calendar.MINUTE, 30)
@@ -564,7 +600,7 @@ class WidgetDataSnapshotTest {
         )
         assertEquals(WidgetStatus.SEDANG_BEKERJA, snapshotWorking.status)
 
-        // 16:00 WIB -> Report window opens -> BELUM_ABSEN
+        // 16:00 WIB -> Report window opens (>4h remaining) -> BELUM_ABSEN
         val calReportStart = createCal(16, 0)
         val snapshotReportStart = WidgetDataSnapshot.fromComponents(
             hasCredentials = true,
@@ -578,6 +614,21 @@ class WidgetDataSnapshotTest {
             nowMillis = calReportStart.timeInMillis
         )
         assertEquals(WidgetStatus.BELUM_ABSEN, snapshotReportStart.status)
+
+        // 20:30 WIB -> Report window urgent (<4h remaining) -> MENDESAK
+        val calReportUrgent = createCal(20, 30)
+        val snapshotReportUrgent = WidgetDataSnapshot.fromComponents(
+            hasCredentials = true,
+            attendanceStatus = AttendanceStatus.BELUM_HADIR,
+            pendingCount = 0,
+            thresholdDays = 3,
+            reminderStartHour = 16,
+            workStartHour = 8,
+            workStartMinute = 0,
+            themeMode = ThemeMode.SYSTEM,
+            nowMillis = calReportUrgent.timeInMillis
+        )
+        assertEquals(WidgetStatus.MENDESAK, snapshotReportUrgent.status)
 
         // Holiday overrides work phases
         val snapshotHoliday = WidgetDataSnapshot.fromComponents(

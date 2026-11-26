@@ -2,10 +2,12 @@ package id.codes.maganghub.ui.viewmodel
 
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.DailyWorkPhase
 import id.codes.maganghub.data.model.LegalDocumentType
 import id.codes.maganghub.data.model.ReminderSettings
 import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UpdateCheckState
+import id.codes.maganghub.data.model.WorkPhaseResolver
 
 /**
  * State representing current UI presentation in MagangHub.
@@ -45,28 +47,15 @@ data class AttendanceUiState(
         get() = attendanceStatus == AttendanceStatus.BELUM_HADIR
 
     fun getDailyWorkPhase(nowWib: java.time.ZonedDateTime = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Jakarta"))): DailyWorkPhase {
-        if (attendanceData?.hasAttendance == true || isAttended) return DailyWorkPhase.COMPLETED
-        if (attendanceData?.isHoliday == true || attendanceData?.isScheduledOffDay == true || isHoliday) return DailyWorkPhase.HOLIDAY
-
-        val currentMinutes = nowWib.hour * 60 + nowWib.minute
-        val workStartMinutes = reminderSettings.workStartHour * 60 + reminderSettings.workStartMinute
-        val reportStartMinutes = reminderSettings.startHour * 60
-
-        return when {
-            currentMinutes < workStartMinutes -> DailyWorkPhase.BEFORE_WORK
-            currentMinutes < reportStartMinutes -> DailyWorkPhase.WORKING
-            else -> DailyWorkPhase.REPORTING_WINDOW
-        }
+        val hasAttendance = attendanceData?.hasAttendance == true || isAttended
+        val holiday = attendanceData?.isHoliday == true || attendanceData?.isScheduledOffDay == true || isHoliday
+        return WorkPhaseResolver.resolve(
+            hasAttendance = hasAttendance,
+            isHoliday = holiday,
+            workStartHour = reminderSettings.workStartHour,
+            workStartMinute = reminderSettings.workStartMinute,
+            reportStartHour = reminderSettings.startHour,
+            nowWib = nowWib
+        )
     }
-}
-
-/**
- * Representation of the intern's daily progression phases.
- */
-enum class DailyWorkPhase {
-    COMPLETED,
-    HOLIDAY,
-    BEFORE_WORK,
-    WORKING,
-    REPORTING_WINDOW
 }
