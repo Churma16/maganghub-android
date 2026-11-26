@@ -37,6 +37,15 @@
             </intent-filter>
         </activity>
 
+        <!-- Translucent Trampoline Activity to safely launch Monev web from Glance Widget on Android 14+ -->
+        <activity
+            android:name=".ui.MonevWebRedirectActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="" />
+
         <!-- Alarm Receiver for Scheduled Attendance Checks -->
         <receiver
             android:name=".background.AttendanceAlarmReceiver"

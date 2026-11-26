@@ -1,8 +1,6 @@
 package id.codes.maganghub.widget
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -17,7 +15,6 @@ import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
-import androidx.glance.appwidget.action.actionStartActivity as actionStartActivityIntent
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -38,8 +35,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import id.codes.maganghub.R
-import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.ui.MainActivity
+import id.codes.maganghub.ui.MonevWebRedirectActivity
 
 class MagangHubWidget : GlanceAppWidget() {
 
@@ -54,10 +51,8 @@ class MagangHubWidget : GlanceAppWidget() {
         val snapshot = WidgetDataSnapshot.fromPreferences(context)
         val colors = WidgetColors.getTokens(snapshot.status, snapshot.themeMode, context)
 
-        val monevIntent = Intent(Intent.ACTION_VIEW, Uri.parse(NotificationHelper.URL_MONEV_DASHBOARD)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        val openMonevAction = actionStartActivityIntent(monevIntent)
+        // Use explicit Activity PendingIntents to comply with Android 14+ (API 34+) security rules
+        val openMonevAction = actionStartActivity<MonevWebRedirectActivity>()
         val openAppAction = actionStartActivity<MainActivity>()
 
         // When SESI_BERAKHIR, tapping quick action should open the app to login to SSO, not the web browser
