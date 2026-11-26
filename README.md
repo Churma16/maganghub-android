@@ -4,103 +4,227 @@
 [![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-brightgreen.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.23-blue.svg)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.04.01-informational.svg)](https://developer.android.com/jetpack/compose)
+[![Glance](https://img.shields.io/badge/Jetpack%20Glance-1.1.0-darkgreen.svg)](https://developer.android.com/jetpack/androidx/releases/glance)
 [![Material 3](https://img.shields.io/badge/Design-Material%203-teal.svg)](https://m3.material.io)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
-Aplikasi Android pengingat presensi dan pengisian logbook harian untuk peserta MagangHub Kemnaker (Monev). Aplikasi ini mengecek status kehadiran secara berkala dan membunyikan alarm pengingat antara pukul 16:00 sampai 23:59 WIB jika kamu belum mengisi presensi hari ini.
+Aplikasi Android untuk membantu peserta MagangHub Kemnaker memantau presensi dan mengingatkan pengisian logbook harian.
+Cek status presensi langsung dari home screen, atur pengingat sore, dan pantau laporan yang masih menunggu persetujuan mentor. Semuanya bisa dilakukan dari satu aplikasi, tanpa perlu membuka dashboard Monev setiap kali ingin mengecek status.
 
 ---
 
-## Daftar Isi
-1. [Latar Belakang](#latar-belakang)
-2. [Fitur Utama](#fitur-utama)
-3. [Arsitektur Aplikasi](#arsitektur-aplikasi)
-4. [Download dan Cara Pasang APK](#download-dan-cara-pasang-apk)
-5. [Pengaturan Agar Tidak Dimatikan OS (Anti-Kill)](#pengaturan-agar-tidak-dimatikan-os-anti-kill)
-6. [Kompilasi dari Source Code](#kompilasi-dari-source-code)
-7. [Keamanan dan Privasi Kredensial](#keamanan-dan-privasi-kredensial)
-8. [Siklus Rilis dan Versioning](#siklus-rilis-dan-versioning)
-9. [CI/CD Workflow](#cicd-workflow)
-10. [Lisensi](#lisensi)
+## Tampilan Aplikasi
+
+| Dashboard & Status Harian | Pengaturan Presensi | Pengingat Approval Mentor |
+|:---:|:---:|:---:|
+| <img src="docs/images/dashboard.png" width="240" alt="Dashboard" /> | <img src="docs/images/settings_reminders.png" width="240" alt="Pengaturan Presensi" /> | <img src="docs/images/settings_mentor.png" width="240" alt="Pengingat Approval Mentor" /> |
+
+<br/>
+
+### Widget Home Screen
+
+Cek status presensi dan approval mentor langsung dari home screen.
+
+<p align="center">
+  <img src="docs/images/widget_card.png" width="600" alt="Widget Home Screen" />
+</p>
 
 ---
 
-## Latar Belakang
+## Kenapa Membuat Aplikasi Ini?
 
-Bagi peserta program magang bersertifikat Kementerian Ketenagakerjaan Republik Indonesia (Kemnaker) di portal MagangHub Monev, pengisian presensi dan laporan kegiatan harian wajib diselesaikan paling lambat pukul 23:59 WIB setiap hari kerja. Jika terlewat, sistem mencatat status tidak hadir (alpa) dan tidak ada mekanisme susulan.
+Mengisi logbook merupakan salah satu rutinitas peserta MagangHub. Karena batas pengisiannya sampai pukul 23:59 WIB, terkadang ada saja hari ketika kita lupa mengisi laporan, apalagi setelah seharian bekerja.
 
-MagangHub Logbook Companion memindahkan logika pemantau presensi mandiri ke aplikasi mobile Android. Aplikasi berjalan langsung di perangkat pengguna tanpa server perantara, hemat baterai, dan tetap bisa memicu alarm tepat waktu meskipun ponsel berada dalam kondisi Doze mode.
+Masalahnya, lupa mengisi logbook bisa berdampak pada pencatatan kehadiran dan uang saku.
 
----
+MagangHub Logbook Companion dibuat untuk membantu mengurangi risiko tersebut. Aplikasi akan memeriksa status presensi, menampilkan informasi yang relevan, dan mengirim pengingat ketika laporan harian belum diselesaikan.
 
-## Fitur Utama
-
-### 1. Penjadwal Pengingat Sore dan Malam (16:00 - 23:59 WIB)
-* **AlarmManager Exact Clock (`RTC_WAKEUP`)**: Menggunakan `setAlarmClock` yang diizinkan sistem Android untuk menembus Doze mode pada jam yang sudah ditentukan tanpa tertunda oleh deep sleep perangkat.
-* **WorkManager Periodic Safety Net**: Pengecekan cadangan berbasis koneksi jaringan aktif (`NetworkType.CONNECTED`) jika AlarmManager dibatasi oleh sistem.
-* **Boot dan Update Receiver**: Menjadwalkan ulang alarm otomatis setelah ponsel dinyalakan ulang (`BOOT_COMPLETED`) atau setelah aplikasi diperbarui (`MY_PACKAGE_REPLACED`).
-* **Pengecekan Hari Libur**: Otomatis mendeteksi hari libur nasional atau jadwal libur mingguan dari data Monev, sehingga tidak akan memicu alarm di hari libur.
-* **Auto-Mute Setelah Absen**: Begitu presensi hari ini terdeteksi sudah diisi, alarm pengingat hari itu langsung berhenti dan dijadwalkan kembali untuk besok sore pukul 16:00 WIB.
-
-### 2. Notifikasi Prioritas Tinggi dan Aksi Cepat
-* **Kanal Notifikasi Prioritas Tinggi**: Notifikasi muncul di bagian atas layar (heads-up banner) disertai suara dan getar.
-* **Tombol Aksi Cepat pada Notifikasi**:
-  * **Buka Monev**: Membuka dashboard Monev MagangHub langsung di browser bawaan ponsel.
-  * **Cek Ulang**: Memeriksa ulang status kehadiran ke server Kemnaker di latar belakang tanpa membuka aplikasi.
-  * **Tunda 30 Menit**: Menunda jadwal alarm pengingat berikutnya selama 30 menit.
-* **Konfirmasi Harian**: Menampilkan notifikasi pemberitahuan saat kehadiran berhasil diverifikasi sudah masuk.
-
-### 3. Autentikasi SIAPkerja Kemnaker SSO 4-Tahap
-* Menangani alur login SSO resmi:
-  1. `GET /auth/login` MagangHub API untuk mendapatkan URL autorisasi SSO Kemnaker.
-  2. `GET SSO authorization page` dengan penanganan cookie sesi dan pengambilan `csrf-token`.
-  3. `POST /auth/login` kredensial akun Kemnaker dengan header `X-CSRF-TOKEN` dan penangkapan authorization code via redirect HTTP 302.
-  4. `GET /auth/login/callback` penukaran authorization code dengan Bearer token Monev.
-* **Pembaruan Sesi Otomatis**: Jika token sesi kedaluwarsa (HTTP 401), aplikasi otomatis memperbarui token di latar belakang.
-* **Ketahanan Rate Limit dan Anti-Ban**:
-  * Menggunakan User-Agent mobile Android yang wajar untuk menjaga konsistensi trafik.
-  * Mendukung parser `Retry-After` saat menerima respons HTTP 429 dan menjadwalkan ulang alarm sesuai durasi jeda yang diminta server.
-  * Menerapkan variasi acak (jitter) pada interval pengingat dan seed acak perangkat agar trafik ribuan pengguna tidak membanjiri server Kemnaker pada menit yang persis sama.
-  * Memasang circuit breaker yang menangguhkan auto-login setelah 3 kali gagal autentikasi berturut-turut demi melindungi akun dari pemblokiran brute-force SSO.
-* **Penyimpanan Terenkripsi**: Password dan token disimpan menggunakan enkripsi AES-256 hardware Keystore (`EncryptedSharedPreferences`).
-
-### 4. Tampilan Jetpack Compose dan Material 3
-* Status kehadiran jelas: indikator visual tegas untuk status sudah absen atau belum absen.
-* Kartu informasi real-time: menampilkan tanggal, status laporan harian, dan jadwal pengingat berikutnya.
-* Pengaturan lengkap: atur jam mulai pengingat (bawaan: 16:00 WIB), interval alarm (bawaan: 30 menit), serta toggle suara dan getar.
-* Tombol uji notifikasi instan untuk memastikan perizinan kanal notifikasi di ponsel berfungsi dengan baik.
+Aplikasi ini juga menyediakan widget agar status presensi bisa dilihat tanpa harus membuka aplikasi.
 
 ---
 
-## Arsitektur Aplikasi
+## Fitur
 
-Aplikasi dibangun dengan arsitektur terpisah antara tampilan, logika background, dan jaringan:
+### 1. Dashboard dan status harian
+Dashboard menampilkan informasi sesuai waktu dan kondisi presensi:
+* **Pra-kerja**: informasi waktu mulai kerja dan jadwal pengingat.
+* **Jam kerja**: status dan sisa waktu kerja.
+* **Waktu pelaporan**: periode pengingat untuk mengisi logbook dan presensi, mulai pukul 16:00 sampai 23:59 WIB.
+* **Selesai**: informasi ketika kewajiban harian sudah terpenuhi.
+* **Hari libur**: mengenali akhir pekan dan tanggal libur berdasarkan data Monev.
+
+Jam mulai kerja dapat diubah melalui pengaturan. Default-nya pukul 08:00 WIB.
+
+### 2. Widget home screen
+Tidak perlu membuka aplikasi hanya untuk mengecek presensi.
+Widget menampilkan:
+* Status presensi hari ini.
+* Status laporan dan approval mentor.
+* Jadwal pengingat berikutnya.
+* Waktu sinkronisasi terakhir.
+* Tombol refresh untuk mengambil status terbaru.
+* Pintasan untuk membuka aplikasi.
+
+Widget tersedia dalam dua ukuran, yaitu 1x3 dan 1x5, serta menyesuaikan tampilannya dengan ruang yang tersedia.
+
+Warna digunakan untuk membedakan status:
+* 🟢 **Hijau**: sudah presensi dan logbook selesai.
+* 🔵 **Biru**: jam kerja sedang berlangsung.
+* 🟠 **Oranye**: belum presensi hari ini.
+* 🔴 **Merah**: presensi terlewat atau waktu pengisian mendesak.
+* 🟣 **Ungu**: hari libur atau akhir pekan.
+* ⚪ **Abu-abu**: pra-kerja atau sesi telah berakhir.
+
+### 3. Pengingat presensi
+Pengingat aktif pada periode pukul 16:00–23:59 WIB.
+Beberapa hal yang bisa diatur:
+* Jam mulai pengingat.
+* Interval pengingat: 15, 30, 45, atau 60 menit.
+* Tunda pengingat selama 30 menit.
+* Cek ulang status presensi dari notifikasi.
+
+Aplikasi menggunakan Android AlarmManager untuk menjadwalkan alarm dan WorkManager sebagai mekanisme pengecekan tambahan.
+Setelah presensi terdeteksi selesai, pengingat untuk hari tersebut akan dihentikan.
+
+### 4. Pantau approval mentor
+Laporan yang sudah dikirim belum tentu langsung disetujui mentor.
+Aplikasi menampilkan laporan yang masih menunggu approval, termasuk berapa lama laporan tersebut belum diproses.
+Kamu juga bisa menentukan kapan ingin diingatkan kembali, dengan pilihan:
+* 1 hari.
+* 3 hari.
+* 5 hari.
+
+Jika laporan masih belum disetujui setelah melewati batas yang dipilih, aplikasi akan mengirimkan notifikasi pengingat.
+
+### 5. Notifikasi dan tindakan cepat
+Notifikasi tidak hanya berfungsi sebagai pengingat. Ada beberapa tindakan yang bisa dilakukan langsung dari notifikasi:
+* **Buka Monev**: membuka dashboard Monev melalui browser.
+* **Cek ulang**: mengambil status presensi terbaru.
+* **Tunda 30 menit**: menjadwalkan ulang pengingat.
+
+Aplikasi juga memberikan notifikasi ketika presensi sudah terdeteksi selesai.
+
+### 6. Login SIAPkerja dan sinkronisasi data
+Aplikasi menggunakan alur autentikasi SSO SIAPkerja Kemnaker untuk mengakses data Monev.
+Proses autentikasi meliputi:
+1. Meminta URL autentikasi dari MagangHub API.
+2. Membuka halaman SSO dan menangani cookie serta CSRF token.
+3. Mengirim kredensial melalui proses login resmi.
+4. Menukarkan authorization code dengan access token Monev.
+
+Jika token kedaluwarsa, aplikasi akan mencoba melakukan autentikasi ulang.
+
+Ada beberapa mekanisme tambahan untuk menangani kegagalan request:
+* Mengikuti `Retry-After` ketika server memberikan HTTP 429.
+* Menggunakan jitter pada interval request.
+* Menghentikan percobaan otomatis setelah tiga kegagalan berturut-turut.
+
+Kredensial dan token disimpan menggunakan enkripsi AES-256 GCM melalui Android Keystore.
+
+### 7. Tampilan dan pengaturan
+Antarmuka menggunakan Jetpack Compose dan Material 3.
+Pengaturan yang tersedia:
+* Tema terang, gelap, atau mengikuti sistem.
+* Jam mulai kerja.
+* Jam mulai pengingat.
+* Interval notifikasi.
+* Pengingat approval mentor.
+* Tes notifikasi untuk memastikan izin perangkat sudah aktif.
+
+---
+
+## Download dan Instalasi
+
+APK tersedia melalui halaman [GitHub Releases](../../releases).
+
+Ada tiga jenis build yang tersedia:
+1. **Official Release (`maganghub-v<version>.apk`)**: build stabil resmi untuk penggunaan sehari-hari.
+2. **Snapshot Pre-Release (`maganghub-v<version>-snapshot.<sha>.apk`)**: dibuat otomatis setiap ada commit baru di branch `main`.
+3. **PR Preview Build**: APK pratinjau saat PR diberi label `build-preview`.
+
+### Cara instalasi
+1. Buka halaman GitHub Releases.
+2. Pilih versi yang ingin dipasang.
+3. Unduh file APK.
+4. Buka APK melalui File Manager.
+5. Jika diminta, izinkan instalasi aplikasi dari sumber tersebut.
+6. Lanjutkan instalasi.
+
+> **Catatan**: aplikasi membutuhkan Android 8.0 (API 26) atau lebih baru.
+
+---
+
+## Pengaturan Android
+
+Android memiliki mekanisme pengelolaan baterai yang dapat membatasi aktivitas aplikasi di latar belakang. Beberapa produsen juga menerapkan pembatasan tambahan.
+
+Agar pengingat dapat berjalan lebih konsisten, periksa pengaturan berikut:
+* **Izin notifikasi**: Izinkan notifikasi ketika aplikasi pertama kali dijalankan. Pada Android 13 ke atas, izin ini perlu diberikan secara eksplisit.
+* **Exact Alarm**: Pada Android 12 ke atas, aktifkan izin alarm tepat waktu melalui pengaturan aplikasi jika diminta.
+* **Penggunaan baterai**: Jika perangkat sering menghentikan aplikasi di latar belakang, ubah pengaturan baterai MagangHub menjadi *Unrestricted* atau *Tidak Dibatasi*.
+* **Autostart**: Pada beberapa perangkat Xiaomi, OPPO, dan vivo, aktifkan fitur *Autostart* jika tersedia.
+
+*Nama dan lokasi pengaturan dapat berbeda tergantung versi Android dan antarmuka masing-masing produsen.*
+
+---
+
+## Untuk Developer
+
+### Teknologi yang Digunakan
+* **Kotlin**: 1.9.23
+* **UI**: Jetpack Compose (BOM 2024.04.01) & Material 3
+* **Widget**: Jetpack Glance 1.1.0
+* **Background Tasks**: Android AlarmManager (`setAlarmClock`) & WorkManager 2.9.0
+* **Networking**: OkHttp 4.12.0
+* **Security**: Androidx Security Crypto (AES-256 GCM EncryptedSharedPreferences via Android Keystore)
+* **Testing**: JUnit 4, Kotlinx Coroutines Test, MockWebServer, Robolectric
+
+### Arsitektur
+Aplikasi memisahkan antarmuka, pengelolaan data, dan proses background agar masing-masing bagian memiliki tanggung jawab yang jelas.
 
 ```mermaid
 flowchart TD
-    subgraph UI ["Layer UI (Jetpack Compose & Material 3)"]
-        A[MainActivity] --> B[DashboardScreen]
-        A --> C[SettingsScreen & LoginDialog]
-        B --> D[AttendanceViewModel]
+    subgraph UI["UI Layer"]
+        A[MainActivity]
+        B[DashboardScreen]
+        C[SettingsScreen]
+        D[AttendanceViewModel]
+        W[AttendanceGlanceWidget]
+        A --> B
+        A --> C
+        B --> D
         C --> D
     end
 
-    subgraph Background ["Layer Background & Notification"]
-        E[BootReceiver] -->|Reschedule on Boot| G[AttendanceAlarmScheduler]
-        F[AttendanceAlarmReceiver] -->|Alarm Trigger / Snooze| G
-        G -->|Exact Alarm Wakeup| F
-        F -->|Trigger Worker| H[AttendanceCheckWorker]
-        I[NotificationHelper] <-- Displays & Actions --> F
-        H -->|Show Alerts| I
+    subgraph Background["Background Layer"]
+        E[BootReceiver]
+        F[AttendanceAlarmReceiver]
+        G[AttendanceAlarmScheduler]
+        H[AttendanceCheckWorker]
+        I[NotificationHelper]
+        J[AttendanceWidgetUpdateWorker]
+        E --> G
+        G --> F
+        F --> H
+        F --> I
+        H --> I
+        H --> J
+        J --> W
     end
 
-    subgraph Data ["Layer Data & Network"]
-        D <--> J[AttendanceRepository]
-        H <--> J
-        J <--> K[MagangHubApiClient]
-        J <--> L[EncryptedPreferences]
-        K -->|4-Step SSO & Fetch Status| M[(Kemnaker SSO & Monev API)]
-        L -->|AES-256 Storage| N[(Android Keystore)]
+    subgraph Data["Data Layer"]
+        K[AttendanceRepository]
+        L[MagangHubApiClient]
+        M[EncryptedPreferences]
+        N[(Kemnaker SSO & Monev API)]
+        O[(Android Keystore)]
+        D <--> K
+        H <--> K
+        W <--> K
+        K <--> L
+        K <--> M
+        L <--> N
+        M --> O
     end
 ```
 
@@ -110,162 +234,143 @@ flowchart TD
 app/src/main/
 ├── AndroidManifest.xml
 ├── java/id/codes/maganghub/
-│   ├── MagangHubApp.kt                     # Application class & DI locator
-│   ├── background/                         # Penjadwalan & Notifikasi
-│   │   ├── AttendanceAlarmScheduler.kt     # Pengatur jam exact alarm (WIB UTC+7)
-│   │   ├── AttendanceAlarmReceiver.kt     # Penerima sinyal alarm & aksi tombol notifikasi
-│   │   ├── AttendanceCheckWorker.kt       # CoroutineWorker WorkManager
-│   │   ├── BootReceiver.kt                # Penerima BOOT_COMPLETED setelah restart
-│   │   └── NotificationHelper.kt          # Kanal notifikasi, layout, & aksi cepat
-│   ├── data/                               # Data & Jaringan
+│   ├── MagangHubApp.kt
+│   ├── background/
+│   │   ├── AttendanceAlarmScheduler.kt
+│   │   ├── AttendanceAlarmReceiver.kt
+│   │   ├── AttendanceCheckWorker.kt
+│   │   ├── BootReceiver.kt
+│   │   └── NotificationHelper.kt
+│   ├── data/
 │   │   ├── api/
-│   │   │   ├── MagangHubApiClient.kt      # Klien HTTP & SSO 4-Step Kemnaker
-│   │   │   ├── InMemoryCookieJar.kt       # Manajemen cookie sesi redirect SSO
-│   │   │   └── Exceptions.kt              # Hierarki exception API & Auth
+│   │   │   ├── MagangHubApiClient.kt
+│   │   │   ├── InMemoryCookieJar.kt
+│   │   │   └── Exceptions.kt
 │   │   ├── model/
-│   │   │   ├── AttendanceHomeData.kt      # Model respons endpoint /users/me/home
-│   │   │   ├── AttendanceStatus.kt        # Enum status presensi (HADIR, dsb.)
-│   │   │   └── UserSession.kt             # Data session & preferensi pengingat
+│   │   │   ├── AttendanceHomeData.kt
+│   │   │   ├── AttendanceStatus.kt
+│   │   │   └── UserSession.kt
 │   │   ├── repository/
-│   │   │   ├── AttendanceRepository.kt    # Kontrak repository
-│   │   │   └── AttendanceRepositoryImpl.kt# Implementasi sinkronisasi & cache
+│   │   │   ├── AttendanceRepository.kt
+│   │   │   └── AttendanceRepositoryImpl.kt
 │   │   └── storage/
-│   │       └── EncryptedPreferences.kt    # Enkripsi kredensial AES-256
-│   └── ui/                                 # Antarmuka Jetpack Compose
-│       ├── MainActivity.kt                # Activity utama aplikasi
-│       ├── components/                    # Komponen UI modular
-│       ├── screens/                       # DashboardScreen & SettingsScreen
-│       ├── theme/                         # Color, Theme, & Typography M3
-│       └── viewmodel/
-│           ├── AttendanceViewModel.kt     # Logika state UI & handler user
-│           └── AttendanceUiState.kt       # State immutability holder
+│   │       └── EncryptedPreferences.kt
+│   ├── ui/
+│   │   ├── MainActivity.kt
+│   │   ├── components/
+│   │   ├── screens/
+│   │   ├── theme/
+│   │   └── viewmodel/
+│   │       ├── AttendanceViewModel.kt
+│   │       └── AttendanceUiState.kt
+│   └── widget/
+│       ├── AttendanceGlanceWidget.kt
+│       ├── AttendanceWidgetReceiver.kt
+│       ├── AttendanceWidgetUpdateWorker.kt
+│       └── WidgetTheme.kt
+└── res/
+    ├── layout/
+    │   └── widget_attendance_preview.xml
+    └── xml/
+        └── attendance_widget_info.xml
 ```
 
----
+### Menjalankan Project
 
-## Download dan Cara Pasang APK
+#### Prasyarat
+* JDK 17
+* Android SDK 34
+* Gradle 8.7 (sudah tersedia melalui Gradle Wrapper)
 
-### Pilihan Unduhan APK
-1. **Official Release APK (`maganghub-v<version>.apk`)**:
-   - Unduh file APK rilis stabil dari halaman [GitHub Releases](../../releases).
-   - Direkomendasikan untuk penggunaan sehari-hari.
-2. **Snapshot Pre-Release APK (`maganghub-v<version>-snapshot.<sha>.apk`)**:
-   - Dibuat otomatis setiap ada commit yang masuk ke branch `main`.
-   - Berguna untuk menguji perbaikan terbaru sebelum rilis resmi keluar.
-3. **Preview APK Pull Request**:
-   - Tersedia saat pengembang memasang label `build-preview` atau menjalankan build preview secara manual di PR.
-
-### Cara Memasang di Ponsel Android
-1. Unduh file `.apk` ke ponsel Android kamu.
-2. Buka file `.apk` lewat File Manager atau browser download.
-3. Jika muncul dialog peringatan instalasi dari sumber luar, masuk ke **Setelan / Settings** lalu aktifkan opsi **Izinkan dari sumber ini**.
-4. Tekan **Instal** dan tunggu proses pemasangan selesai.
-
----
-
-## Pengaturan Agar Tidak Dimatikan OS (Anti-Kill)
-
-Sistem antarmuka Android seperti MIUI / HyperOS (Xiaomi), ColorOS (Oppo/Realme), FuntouchOS (Vivo), dan One UI (Samsung) memiliki manajemen baterai ketat yang sering mematikan proses background. Terapkan pengaturan berikut agar alarm presensi tetap andal berbunyi tepat waktu:
-
-1. **Izinkan Notifikasi (Android 13 ke atas)**:
-   * Saat pertama kali membuka aplikasi, pilih **Izinkan / Allow** pada dialog permintaan izin notifikasi.
-2. **Izin Alarm Tepat Waktu (Android 12 ke atas)**:
-   * Masuk ke *Pengaturan HP* > *Aplikasi* > *MagangHub* > *Alarm & Pengingat* > Aktifkan **Izinkan penyetelan alarm tepat waktu**.
-3. **Penghemat Baterai (Battery Optimization)**:
-   * Masuk ke *Pengaturan HP* > *Aplikasi* > *MagangHub* > *Baterai* > Pilih **Tidak Dibatasi / Unrestricted**.
-4. **Mulai Otomatis / Autostart (Khusus Xiaomi, Oppo, Vivo)**:
-   * Buka info aplikasi MagangHub > Aktifkan opsi **Mulai Otomatis / Autostart**.
-
----
-
-## Kompilasi dari Source Code
-
-### Prasyarat
-* **Java Development Kit (JDK)**: Versi 17 (disarankan Eclipse Temurin atau OpenJDK 17).
-* **Android SDK**: Compile SDK 34, Min SDK 26.
-* **Gradle**: 8.7 (disediakan via wrapper `gradlew`).
-
-### Perintah Build Terminal
+#### Perintah Build Terminal
 
 ```bash
-# Clone repositori
+# Clone repository
 git clone https://github.com/Churma16/maganghub-logbook-companion.git
 cd maganghub-logbook-companion
-
-# Berikan izin eksekusi wrapper gradle
 chmod +x gradlew
 
-# Jalankan Unit Tests
+# Menjalankan unit test
 ./gradlew testDebugUnitTest
 
-# Build Debug APK (output: app/build/outputs/apk/debug/maganghub-v0.1.0-dev.apk)
+# Build Debug APK
 ./gradlew assembleDebug
 
-# Build Signed Release APK (output: app/build/outputs/apk/release/maganghub-v0.1.0.apk)
+# Build Release APK
 ./gradlew assembleRelease
 
-# Build Snapshot APK dengan Version Suffix
+# Build Snapshot
 ./gradlew assembleRelease -PversionSuffix="-snapshot.abc1234"
 ```
 
-Lokasi file APK hasil kompilasi:
-* Debug APK: `app/build/outputs/apk/debug/maganghub-v<version>-dev.apk`
-* Release APK: `app/build/outputs/apk/release/maganghub-v<version>.apk`
+Hasil build tersedia di:
+* `app/build/outputs/apk/debug/`
+* `app/build/outputs/apk/release/`
 
 ---
 
-## Keamanan dan Privasi Kredensial
+## Keamanan dan Privasi
 
-* **Enkripsi Hardware Keystore**: Password akun Kemnaker tidak disimpan sebagai teks polos, melainkan dienkripsi dengan AES-256 GCM yang kuncinya dikelola oleh Android Keystore hardware security module.
-* **Koneksi Langsung**: Aplikasi hanya berkomunikasi langsung dengan server resmi Kemnaker:
-  * SSO Kemnaker: `https://siapkerja.kemnaker.go.id/auth/login`
-  * API MagangHub: `https://monev-api.maganghub.kemnaker.go.id/api/v1`
-* **Tanpa Server Perantara**: Tidak ada pelacak analitik pihak ketiga, tidak ada iklan, dan tidak ada server eksternal perantara. Seluruh kredensial tetap berada di dalam perangkat pengguna.
+Aplikasi menyimpan data autentikasi secara lokal dan tidak menggunakan server perantara untuk mengakses akun.
 
----
+Beberapa hal yang perlu diketahui:
+* Password dan token disimpan menggunakan enkripsi AES-256 GCM melalui Android Keystore.
+* Request dikirim langsung ke layanan SIAPkerja dan MagangHub Kemnaker.
+* Tidak menggunakan layanan analitik pihak ketiga.
+* Tidak menampilkan iklan.
+* Tidak memiliki server backend milik proyek untuk menyimpan kredensial pengguna.
 
-## Siklus Rilis dan Versioning
+Endpoint yang digunakan:
+* SSO Kemnaker: `https://siapkerja.kemnaker.go.id/auth/login`
+* API MagangHub: `https://monev-api.maganghub.kemnaker.go.id/api/v1`
 
-Repositori ini menerapkan siklus rilis berbasis GitHub Actions dan Semantic Versioning:
-
-### 1. Pengembangan dan Pull Request (PR)
-* Jangan mengubah nilai `versionCode` atau `versionName` di `app/build.gradle.kts` secara manual di PR fitur atau perbaikan.
-* Gunakan format commit konvensional:
-  * `feat:` — Fitur baru (menaikkan versi Minor, misal `0.1.0` ke `0.2.0`).
-  * `fix:` — Perbaikan bug (menaikkan versi Patch, misal `0.1.0` ke `0.1.1`).
-  * `BREAKING CHANGE:` — Perubahan struktural breaking (menaikkan versi Major).
-  * `chore:`, `docs:`, `style:`, `refactor:`, `test:` — Perawatan rutin tanpa menaikkan versi rilis.
-* Script `verify-no-manual-version-bump.js` memverifikasi aturan versi di setiap PR secara otomatis.
-
-### 2. Snapshot Builds (Otomatis saat Merge ke `main`)
-* Setiap commit yang masuk ke branch `main` secara otomatis memicu workflow Snapshot Pre-Release.
-* Gradle mengompilasi APK pratinjau `maganghub-v<version>-snapshot.<sha>.apk` dan mempublikasikannya sebagai GitHub Pre-Release.
-
-### 3. Rilis Resmi (Manual Workflow Dispatch)
-* Rilis resmi diterbitkan melalui workflow Manual Release pada tab GitHub Actions.
-* Workflow membaca seluruh commit sejak rilis stabil terakhir, menentukan tipe bump SemVer, memperbarui `CHANGELOG.md`, membuat git tag versi baru, mengompilasi release APK, dan mempublikasikan GitHub Release resmi.
+> **Catatan**: aplikasi ini merupakan proyek independen, bukan aplikasi resmi Kemnaker. Pengguna tetap perlu memastikan status presensi dan logbook melalui portal resmi Monev.
 
 ---
 
-## CI/CD Workflow
+## Siklus Rilis
 
-* **CI Verification (`.github/workflows/build-apk.yml`)**:
-  1. Validasi skrip rilis dengan unit test Node.js (`tests/releaseScripts.test.js`).
-  2. Pengecekan guardrail versi PR (`verify-no-manual-version-bump.js`).
-  3. Setup JDK 17 dan Gradle caching.
-  4. Eksekusi unit test dan linting Android (`./gradlew testDebugUnitTest`).
-  5. Kompilasi signed APK berjalan on-demand hanya jika PR memiliki label `build-apk` atau dipicu via `workflow_dispatch`.
-* **Snapshot Release (`.github/workflows/snapshot-release.yml`)**:
-  - Berjalan otomatis saat ada push/merge ke `main`: menjalankan unit test dan kompilasi signed APK secara paralel di dua runner terpisah, lalu mempublikasikan rilis snapshot jika keduanya lulus.
-* **Manual Release (`.github/workflows/manual-release.yml`)**:
-  - Dijalankan manual (`workflow_dispatch`) untuk menerbitkan versi rilis stabil resmi.
-* **PR Preview Build (`.github/workflows/preview-build.yml`)**:
-  - Dijalankan on-demand saat PR diberi label `build-preview` untuk menghasilkan APK pratinjau terisolasi (`id.codes.maganghub.preview`).
-* **Cleanup PR Preview (`.github/workflows/cleanup-preview.yml`)**:
-  - Berjalan otomatis saat PR di-merge atau ditutup untuk menghapus pre-release dan tag preview terkait agar daftar rilis tetap bersih.
+Repository menggunakan Semantic Versioning dan GitHub Actions untuk mengelola versi aplikasi.
+
+### Pull Request
+Perubahan fitur dan perbaikan bug tidak perlu mengubah `versionCode` atau `versionName` secara manual.
+
+Commit mengikuti [Conventional Commits](https://www.conventionalcommits.org/):
+* `feat:` — fitur baru (menaikkan versi Minor).
+* `fix:` — perbaikan bug (menaikkan versi Patch).
+* `BREAKING CHANGE:` — perubahan besar yang merusak kompatibilitas (menaikkan versi Major).
+* `chore:`, `docs:`, `style:`, `refactor:`, `test:` — pemeliharaan rutin tanpa kenaikan versi rilis.
+
+Validasi versi dilakukan secara otomatis oleh `verify-no-manual-version-bump.js`.
+
+### Snapshot Release
+Setiap perubahan yang masuk ke branch `main` akan memicu workflow snapshot.
+Jika test dan build berhasil, APK snapshot akan dipublikasikan melalui GitHub Pre-Releases.
+Format nama file: `maganghub-v<version>-snapshot.<sha>.apk`.
+
+### Official Release
+Rilis stabil dilakukan secara manual melalui GitHub Actions (`workflow_dispatch`).
+Workflow akan:
+1. Membaca commit sejak rilis stabil terakhir.
+2. Menentukan jenis perubahan dan kenaikan versi.
+3. Memperbarui `CHANGELOG.md`.
+4. Membuat Git tag.
+5. Build APK release.
+6. Mempublikasikan GitHub Release resmi.
+
+---
+
+## CI/CD
+
+Ada beberapa workflow yang digunakan untuk mengotomatisasi proses build dan rilis:
+* **CI Verification (`build-apk.yml`)**: memeriksa unit test Node.js untuk script rilis, validasi aturan versioning PR, unit test Android (`./gradlew testDebugUnitTest`), dan build APK sesuai konfigurasi.
+* **Snapshot Release (`snapshot-release.yml`)**: berjalan otomatis saat push ke `main` untuk menguji dan mempublikasikan pre-release snapshot.
+* **Manual Release (`manual-release.yml`)**: menerbitkan rilis stabil resmi via `workflow_dispatch`.
+* **PR Preview Build (`preview-build.yml`)**: mengompilasi APK pratinjau saat PR diberi label `build-preview`.
+* **Cleanup Preview (`cleanup-preview.yml`)**: membersihkan aset pre-release preview saat PR di-merge atau ditutup.
 
 ---
 
 ## Lisensi
 
-Didistribusikan di bawah lisensi **MIT**. Silakan gunakan, pelajari, dan kembangkan sesuai kebutuhan pemagangan Anda.
+Proyek ini menggunakan lisensi [MIT](LICENSE).
