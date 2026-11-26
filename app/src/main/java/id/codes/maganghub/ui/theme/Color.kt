@@ -35,7 +35,7 @@ val SegmentedTrackDark = Color(0xFF0B1220)
 val SegmentedTrackLight = Color(0xFFEEF2F7)
 
 // ==========================================
-// 2. Kartu status "Belum lengkap" (Merah)
+// 2. Kartu status "Belum lengkap - Mendesak" (Merah)
 // ==========================================
 val HeroIncompleteBgDark = Color(0xFF3A1620)
 val HeroIncompleteBorderDark = Color(0xFF7F2A3B)
@@ -50,6 +50,23 @@ val HeroIncompleteDateLight = Color(0xFF9F1239)
 val HeroIncompleteIconLight = Color(0xFFBE123C)
 val HeroIncompleteDescLight = Color(0xFF1E293B)
 val HeroIncompleteTitleLight = Color(0xFF9F1239)
+
+// ==========================================
+// 2a. Kartu status "Belum lengkap - Normal" (Amber / Oranye)
+// ==========================================
+val HeroNormalBgDark = Color(0xFF251A0A)
+val HeroNormalBorderDark = Color(0xFF78350F)
+val HeroNormalDateDark = Color(0xFFFDE68A)
+val HeroNormalIconDark = Color(0xFFF59E0B)
+val HeroNormalDescDark = Color(0xFFFEF3C7)
+val HeroNormalTitleDark = Color(0xFFFFFFFF)
+
+val HeroNormalBgLight = Color(0xFFFEF3C7)
+val HeroNormalBorderLight = Color(0xFFFCD34D)
+val HeroNormalDateLight = Color(0xFFB45309)
+val HeroNormalIconLight = Color(0xFFD97706)
+val HeroNormalDescLight = Color(0xFF92400E)
+val HeroNormalTitleLight = Color(0xFF78350F)
 
 // ==========================================
 // 3. Kartu status "Sudah lengkap" (Hijau)

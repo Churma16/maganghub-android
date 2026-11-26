@@ -3,7 +3,9 @@ package id.codes.maganghub.widget
 import android.content.Context
 import id.codes.maganghub.R
 import id.codes.maganghub.data.model.AttendanceStatus
+import id.codes.maganghub.data.model.DailyWorkPhase
 import id.codes.maganghub.data.model.ThemeMode
+import id.codes.maganghub.data.model.WorkPhaseResolver
 import id.codes.maganghub.data.storage.EncryptedPreferences
 import java.time.Instant
 import java.time.ZoneId
@@ -40,9 +42,9 @@ data class WidgetDataSnapshot(
 ) {
 
     fun getTitle1x5(): String = when (status) {
-        WidgetStatus.SUDAH_ABSEN -> "Sudah Absen"
-        WidgetStatus.BELUM_ABSEN -> "Belum Absen"
-        WidgetStatus.MENDESAK -> "Belum Absen"
+        WidgetStatus.SUDAH_ABSEN -> "Lengkap"
+        WidgetStatus.BELUM_ABSEN -> "Belum Lengkap"
+        WidgetStatus.MENDESAK -> "Segera Isi"
         WidgetStatus.HARI_LIBUR -> "Hari Libur"
         WidgetStatus.SESI_BERAKHIR -> "Sesi Berakhir"
         WidgetStatus.MENUNGGU_KERJA -> "Menunggu jam kerja"
@@ -50,9 +52,9 @@ data class WidgetDataSnapshot(
     }
 
     fun getTitle1x3(): String = when (status) {
-        WidgetStatus.SUDAH_ABSEN -> "Sudah Absen"
-        WidgetStatus.BELUM_ABSEN -> "Belum Absen"
-        WidgetStatus.MENDESAK -> "Belum Absen"
+        WidgetStatus.SUDAH_ABSEN -> "Lengkap"
+        WidgetStatus.BELUM_ABSEN -> "Belum Lengkap"
+        WidgetStatus.MENDESAK -> "Segera Isi"
         WidgetStatus.HARI_LIBUR -> "Hari Libur"
         WidgetStatus.SESI_BERAKHIR -> "Perlu Login"
         WidgetStatus.MENUNGGU_KERJA -> "Menunggu"
@@ -71,7 +73,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Segera isi sebelum 23:59 WIB"
         WidgetStatus.HARI_LIBUR -> {
             when {
-                pendingMentorCount == 0 -> "Tidak wajib presensi hari ini"
+                pendingMentorCount == 0 -> "Tidak wajib isi logbook"
                 isMentorOverdue -> "$pendingMentorCount laporan belum di-approve"
                 else -> "$pendingMentorCount laporan menunggu approval"
             }
@@ -98,7 +100,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Sisa $remainingTimeText"
         WidgetStatus.HARI_LIBUR -> {
             when {
-                pendingMentorCount == 0 -> "Tidak wajib absen"
+                pendingMentorCount == 0 -> "Tidak wajib logbook"
                 isMentorOverdue -> "$pendingMentorCount menunggu >$thresholdDays hr"
                 else -> "$pendingMentorCount menunggu approval"
             }
@@ -211,7 +213,7 @@ data class WidgetDataSnapshot(
     companion object {
 
         private val WIB_TIMEZONE = TimeZone.getTimeZone("Asia/Jakarta")
-        private val WIB_ZONE_ID = ZoneId.of("Asia/Jakarta")
+        private val WIB_ZONE_ID = WorkPhaseResolver.ZONE_WIB
         private val DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE, d MMM", Locale("id", "ID"))
         private val TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm", Locale("id", "ID"))
 
@@ -274,33 +276,25 @@ data class WidgetDataSnapshot(
             val isOverdue = pendingCount >= effectiveThreshold
 
             val (remainingMillis, remainingText) = calculateRemainingTime(nowMillis)
+            val nowWib = Instant.ofEpochMilli(nowMillis).atZone(WIB_ZONE_ID)
 
-            val cal = Calendar.getInstance(WIB_TIMEZONE).apply {
-                timeInMillis = nowMillis
-            }
-            val currentMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
-            val workStartMinutes = workStartHour * 60 + workStartMinute
-            val reportStartMinutes = reminderStartHour * 60
+            val workPhase = WorkPhaseResolver.resolve(
+                hasAttendance = attendanceStatus == AttendanceStatus.HADIR,
+                isHoliday = attendanceStatus == AttendanceStatus.LIBUR || attendanceStatus == AttendanceStatus.TIDAK_AKTIF,
+                workStartHour = workStartHour,
+                workStartMinute = workStartMinute,
+                reportStartHour = reminderStartHour,
+                nowWib = nowWib,
+                remainingMillis = remainingMillis
+            )
 
-            val widgetStatus = when {
-                attendanceStatus == AttendanceStatus.LIBUR || attendanceStatus == AttendanceStatus.TIDAK_AKTIF -> {
-                    WidgetStatus.HARI_LIBUR
-                }
-                attendanceStatus == AttendanceStatus.HADIR -> {
-                    WidgetStatus.SUDAH_ABSEN
-                }
-                currentMinutes < workStartMinutes -> {
-                    WidgetStatus.MENUNGGU_KERJA
-                }
-                currentMinutes < reportStartMinutes -> {
-                    WidgetStatus.SEDANG_BEKERJA
-                }
-                remainingMillis < 2 * 60 * 60 * 1000L -> {
-                    WidgetStatus.MENDESAK
-                }
-                else -> {
-                    WidgetStatus.BELUM_ABSEN
-                }
+            val widgetStatus = when (workPhase) {
+                DailyWorkPhase.COMPLETED -> WidgetStatus.SUDAH_ABSEN
+                DailyWorkPhase.HOLIDAY -> WidgetStatus.HARI_LIBUR
+                DailyWorkPhase.BEFORE_WORK -> WidgetStatus.MENUNGGU_KERJA
+                DailyWorkPhase.WORKING -> WidgetStatus.SEDANG_BEKERJA
+                DailyWorkPhase.REPORTING_NORMAL -> WidgetStatus.BELUM_ABSEN
+                DailyWorkPhase.REPORTING_URGENT -> WidgetStatus.MENDESAK
             }
 
             return WidgetDataSnapshot(
@@ -327,16 +321,8 @@ data class WidgetDataSnapshot(
         }
 
         fun calculateRemainingTime(nowMillis: Long): Pair<Long, String> {
-            val cal = Calendar.getInstance(WIB_TIMEZONE).apply {
-                timeInMillis = nowMillis
-                set(Calendar.HOUR_OF_DAY, 23)
-                set(Calendar.MINUTE, 59)
-                set(Calendar.SECOND, 59)
-                set(Calendar.MILLISECOND, 999)
-            }
-
-            val deadlineMillis = cal.timeInMillis
-            val diff = (deadlineMillis - nowMillis).coerceAtLeast(0L)
+            val nowWib = Instant.ofEpochMilli(nowMillis).atZone(WIB_ZONE_ID)
+            val diff = WorkPhaseResolver.calculateRemainingMillis(nowWib)
 
             val hours = diff / (1000 * 60 * 60)
             val minutes = (diff / (1000 * 60)) % 60
