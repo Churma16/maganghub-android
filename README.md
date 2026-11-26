@@ -46,9 +46,9 @@ Aplikasi Android pengingat presensi dan logbook harian peserta MagangHub Kemnake
 
 ## Kenapa Aplikasi Ini Dibuat?
 
-Peserta magang bersertifikat Kemnaker di portal MagangHub Monev wajib mengisi presensi dan logbook harian sebelum pukul 23:59 WIB setiap hari kerja. Lewat semenit saja, sistem langsung mencatat alpa tanpa ada opsi susulan. Kalau sampai alpa, uang saku harian bakal langsung dipotong—dan ngeri juga kalau pas pencairan nanti uang saku berkurang cuma gara-gara kelupaan absen satu hari.
+Peserta magang MagangHub wajib mengisi logbook harian sebelum jam 23:59 WIB setiap hari kerja. Lewat semenit saja, sistem langsung mencatat tidak hadir tanpa ada opsi susulan. Kalau sampai engga absen, uang saku harian bakal langsung dipotong.
 
-MagangHub Logbook Companion dibuat supaya kamu tidak lupa absen, biar tidak sedih di kemudian hari melihat pembagian uang saku hangus beberapa hari. Aplikasi ini berjalan langsung di HP tanpa server perantara, hemat baterai, dan alarmnya tetap tembus tepat waktu meskipun ponsel sedang masuk mode tidur lelap (Doze mode).
+MagangHub Logbook Companion dibuat supaya kamu tidak lupa absen, supaya engga sedih di akhir periode ngeliat pembagian uang saku hangus beberapa hari. Aplikasi ini berjalan langsung di HP tanpa server perantara.
 
 ---
 
@@ -84,7 +84,7 @@ MagangHub Logbook Companion dibuat supaya kamu tidak lupa absen, biar tidak sedi
 * **Alarm Notifikasi**: HP bakal membunyikan pengingat berkala jika laporan masih belum di-approve setelah lewat batas waktu yang kamu pilih.
 
 ### 4. Alarm Pengingat Sore dan Malam (16:00–23:59 WIB)
-* **Tembus Doze Mode**: memakai `AlarmManager.setAlarmClock` (`RTC_WAKEUP`), jenis alarm exact resmi Android yang dijamin bangun meski HP sedang deep sleep.
+* **Alarm Tepat Waktu**: memanfaatkan API AlarmManager `setAlarmClock` (`RTC_WAKEUP`) agar pengingat berbunyi sesuai jadwal yang ditentukan.
 * **Jaring Pengaman WorkManager**: pengecekan cadangan berbasis koneksi internet aktif (`NetworkType.CONNECTED`) jika alarm sistem sempat dibatasi OS.
 * **Jadwal Ulang Otomatis**: alarm otomatis diset ulang setelah HP menyala kembali (`BOOT_COMPLETED`) atau sehabis update aplikasi (`MY_PACKAGE_REPLACED`).
 * **Deteksi Hari Libur**: membaca jadwal libur nasional dan hari off dari server Monev, jadi tidak bakal berisik saat kamu cuti atau libur.
