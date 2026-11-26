@@ -138,7 +138,7 @@ fun TestNotificationBottomSheet(
                 iconColor = Color(0xFFEF4444),
                 iconBg = Color(0xFFEF4444).copy(alpha = 0.15f),
                 title = "1. Pengingat Harian (Belum Lengkap)",
-                description = "Presensi dan logbook belum lengkap • Sisa waktu ke 23.59 WIB\nAksi: [Buka Monev] [Tunda] [Sudah isi]",
+                description = "Logbook hari ini belum diisi • Sisa waktu ke 23.59 WIB\nAksi: [Buka Monev] [Tunda] [Sudah isi]",
                 cardBg = cardBg,
                 onClick = onTriggerDailyReminder
             )
@@ -160,7 +160,7 @@ fun TestNotificationBottomSheet(
                 iconColor = Color(0xFF10B981),
                 iconBg = Color(0xFF10B981).copy(alpha = 0.15f),
                 title = "3. Semua Beres Hari Ini (Sukses)",
-                description = "Presensi dan logbook sudah lengkap\nPerilaku: Auto-dismiss hilang otomatis dalam 12 detik",
+                description = "Logbook hari ini sudah lengkap\nPerilaku: Auto-dismiss hilang otomatis dalam 12 detik",
                 cardBg = cardBg,
                 onClick = onTriggerSuccess
             )

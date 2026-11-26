@@ -219,7 +219,7 @@ class AttendanceViewModelTest {
             .atZone(java.time.ZoneId.of("Asia/Jakarta"))
         viewModel.updateNextReminderString(nearMidnight)
 
-        assertEquals("Batas akhir presensi 23:59 WIB", viewModel.uiState.value.nextReminderFormatted)
+        assertEquals("Batas akhir logbook 23:59 WIB", viewModel.uiState.value.nextReminderFormatted)
     }
 
     @Test

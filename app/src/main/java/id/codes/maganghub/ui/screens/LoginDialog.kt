@@ -115,7 +115,7 @@ fun LoginDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Masukkan kredensial akun SiapKerja / Monev Kemnaker Anda untuk mengaktifkan pemantauan dan pengingat presensi otomatis.",
+                    text = "Masukkan kredensial akun SiapKerja / Monev Kemnaker Anda untuk mengaktifkan pemantauan dan pengingat logbook otomatis.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
