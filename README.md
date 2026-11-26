@@ -8,7 +8,7 @@
 [![Material 3](https://img.shields.io/badge/Design-Material%203-teal.svg)](https://m3.material.io)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
-Aplikasi Android pengingat presensi dan logbook harian peserta MagangHub Kemnaker (Monev). Cek status kehadiran otomatis, pantau langsung dari widget layar utama, dan nyalakan alarm tepat waktu kalau kamu belum absen sampai sore (16:00–23:59 WIB).
+Aplikasi Android pengingat presensi dan logbook harian peserta MagangHub Kemnaker (Monev). Cek status kehadiran otomatis, pantau langsung dari widget layar utama, dan pasang alarm pengingat kalau kamu belum absen sampai sore (16:00–23:59 WIB).
 
 ---
 
@@ -81,11 +81,11 @@ MagangHub Logbook Companion dibuat supaya kamu tidak lupa absen, supaya engga se
 * **Deteksi Laporan Tertunda**: langsung tahu kalau laporan yang sudah kamu kirim masih tertahan menunggu persetujuan pembimbing atau mentor.
 * **Kartu Progres Visual**: kartu di dashboard menampilkan berapa hari laporan sudah menunggu dan kapan batas toleransinya habis.
 * **Batas Toleransi Fleksibel**: pilih batas pengingat setelah 1 hari, 3 hari, atau 5 hari belum di-approve.
-* **Alarm Notifikasi**: HP bakal membunyikan pengingat berkala jika laporan masih belum di-approve setelah lewat batas waktu yang kamu pilih.
+* **Notifikasi Pengingat**: mengirimkan pemberitahuan berkala jika laporan masih belum disetujui mentor setelah lewat batas waktu yang kamu pilih.
 
 ### 4. Alarm Pengingat Sore dan Malam (16:00–23:59 WIB)
 * **Alarm Tepat Waktu**: memanfaatkan API AlarmManager `setAlarmClock` (`RTC_WAKEUP`) agar pengingat berbunyi sesuai jadwal yang ditentukan.
-* **Jaring Pengaman WorkManager**: pengecekan cadangan berbasis koneksi internet aktif (`NetworkType.CONNECTED`) jika alarm sistem sempat dibatasi OS.
+* **Pengecekan Cadangan WorkManager**: pengecekan berkala di latar belakang saat terhubung ke internet sebagai cadangan sinkronisasi jika alarm sistem sempat dibatasi OS.
 * **Jadwal Ulang Otomatis**: alarm otomatis diset ulang setelah HP menyala kembali (`BOOT_COMPLETED`) atau sehabis update aplikasi (`MY_PACKAGE_REPLACED`).
 * **Deteksi Hari Libur**: membaca jadwal libur nasional dan hari off dari server Monev, jadi tidak bakal berisik saat kamu cuti atau libur.
 * **Mati Otomatis Begitu Absen**: begitu sistem mendeteksi kamu sudah presensi, alarm hari itu langsung berhenti dan otomatis dijadwalkan ulang buat besok sore pukul 16:00 WIB.
@@ -105,10 +105,10 @@ MagangHub Logbook Companion dibuat supaya kamu tidak lupa absen, supaya engga se
   3. Kirim kredensial akun Kemnaker via `POST /auth/login` dengan header `X-CSRF-TOKEN` dan tangkap kode otorisasi dari redirect 302.
   4. Tukar authorization code dengan Bearer token Monev via `GET /auth/login/callback`.
 * **Refresh Token Otomatis**: kalau token kedaluwarsa (HTTP 401), aplikasi otomatis login ulang di latar belakang.
-* **Aman dari Blokir & Rate Limit**:
-  * User-Agent mobile Android yang wajar agar tidak diblokir firewall.
+* **Mitigasi Rate Limit & Keamanan Akun**:
+  * User-Agent mobile Android yang wajar untuk menjaga konsistensi header request.
   * Membaca jeda `Retry-After` saat menerima respons HTTP 429 dan menjadwalkan ulang pengecekan sesuai instruksi server.
-  * Variasi acak (jitter) pada interval pengingat agar ribuan pengguna tidak membanjiri server Kemnaker di detik yang sama.
+  * Variasi acak (jitter) pada interval pengingat agar request berkala tidak menembak server di detik yang persis sama.
   * Circuit breaker: berhenti mencoba otomatis setelah 3 kali gagal berturut-turut untuk melindungi akun dari risiko terkunci.
 * **Enkripsi Kredensial**: password dan token dienkripsi pakai AES-256 GCM berbasis hardware Android Keystore (`EncryptedSharedPreferences`).
 
@@ -282,7 +282,7 @@ Lokasi file APK hasil build:
 * **Koneksi Langsung Tanpa Perantara**: aplikasi hanya berkomunikasi langsung dengan server resmi Kemnaker:
   * SSO Kemnaker: `https://siapkerja.kemnaker.go.id/auth/login`
   * API MagangHub: `https://monev-api.maganghub.kemnaker.go.id/api/v1`
-* **Nol Pelacak**: tidak ada library analitik pihak ketiga, tidak ada iklan, dan tidak ada server eksternal perantara. Semua kredensial tetap aman di HP kamu.
+* **Nol Pelacak**: tidak ada library analitik pihak ketiga, tidak ada iklan, dan tidak ada server eksternal perantara. Seluruh data dan kredensial hanya tersimpan secara lokal di dalam HP kamu.
 
 ---
 
