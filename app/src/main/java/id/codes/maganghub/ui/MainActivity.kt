@@ -33,6 +33,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -235,17 +236,19 @@ fun MainContent(viewModel: AttendanceViewModel) {
         }
 
         // Shared Login Dialog overlay
-        LoginDialog(
-            isOpen = uiState.isLoginDialogOpen,
-            isLoading = uiState.isLoading,
-            errorMessage = uiState.errorMessage,
-            onDismiss = { viewModel.setLoginDialogOpen(false) },
-            onOpenPrivacyPolicy = { viewModel.showLegalDocument(LegalDocumentType.PRIVACY_POLICY) },
-            onOpenTerms = { viewModel.showLegalDocument(LegalDocumentType.TERMS_OF_SERVICE) },
-            onLogin = { username, password ->
-                viewModel.login(username, password)
-            }
-        )
+        key(uiState.isLoggedIn) {
+            LoginDialog(
+                isOpen = uiState.isLoginDialogOpen,
+                isLoading = uiState.isLoading,
+                errorMessage = uiState.errorMessage,
+                onDismiss = { viewModel.setLoginDialogOpen(false) },
+                onOpenPrivacyPolicy = { viewModel.showLegalDocument(LegalDocumentType.PRIVACY_POLICY) },
+                onOpenTerms = { viewModel.showLegalDocument(LegalDocumentType.TERMS_OF_SERVICE) },
+                onLogin = { username, password ->
+                    viewModel.login(username, password)
+                }
+            )
+        }
 
         // Shared Feedback Bottom Sheet overlay
         FeedbackBottomSheet(
