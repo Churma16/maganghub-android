@@ -27,6 +27,7 @@ data class AttendanceUiState(
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val isLoginDialogOpen: Boolean = false,
+    val resumeLoginOnLegalDismiss: Boolean = false,
     val isFeedbackSheetOpen: Boolean = false,
     val isSubmittingFeedback: Boolean = false,
     val activeLegalDocument: LegalDocumentType? = null,

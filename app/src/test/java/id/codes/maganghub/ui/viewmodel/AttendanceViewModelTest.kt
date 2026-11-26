@@ -413,6 +413,31 @@ class AttendanceViewModelTest {
 
         viewModel.dismissLegalDocument()
         assertNull(viewModel.uiState.value.activeLegalDocument)
+        assertFalse(viewModel.uiState.value.isLoginDialogOpen)
+        assertFalse(viewModel.uiState.value.resumeLoginOnLegalDismiss)
+    }
+
+    @Test
+    fun testShowLegalDocument_FromLoginDialog_PausesAndResumesLoginDialog() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        // 1. User opens Login Dialog
+        viewModel.setLoginDialogOpen(true)
+        assertTrue(viewModel.uiState.value.isLoginDialogOpen)
+        assertFalse(viewModel.uiState.value.resumeLoginOnLegalDismiss)
+
+        // 2. User taps Privacy Policy link from inside Login Dialog
+        viewModel.showLegalDocument(LegalDocumentType.PRIVACY_POLICY)
+        assertEquals(LegalDocumentType.PRIVACY_POLICY, viewModel.uiState.value.activeLegalDocument)
+        assertFalse(viewModel.uiState.value.isLoginDialogOpen)
+        assertTrue(viewModel.uiState.value.resumeLoginOnLegalDismiss)
+
+        // 3. User closes Privacy Policy drawer -> Login Dialog automatically resumes
+        viewModel.dismissLegalDocument()
+        assertNull(viewModel.uiState.value.activeLegalDocument)
+        assertTrue(viewModel.uiState.value.isLoginDialogOpen)
+        assertFalse(viewModel.uiState.value.resumeLoginOnLegalDismiss)
     }
 
     @Test

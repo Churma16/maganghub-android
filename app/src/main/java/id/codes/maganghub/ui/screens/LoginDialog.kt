@@ -36,7 +36,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,18 +65,23 @@ fun LoginDialog(
     onOpenTerms: () -> Unit = {},
     onLogin: (username: String, password: String) -> Unit
 ) {
-    if (!isOpen) return
+    var username by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    if (!isOpen) return
 
     val focusManager = LocalFocusManager.current
     val ctaColor = Color(0xFF0369A1)
 
     AlertDialog(
         onDismissRequest = {
-            if (!isLoading) onDismiss()
+            if (!isLoading) {
+                username = ""
+                password = ""
+                passwordVisible = false
+                onDismiss()
+            }
         },
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier
@@ -252,7 +257,12 @@ fun LoginDialog(
         },
         dismissButton = {
             TextButton(
-                onClick = onDismiss,
+                onClick = {
+                    username = ""
+                    password = ""
+                    passwordVisible = false
+                    onDismiss()
+                },
                 enabled = !isLoading
             ) {
                 Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
