@@ -5,6 +5,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
+import id.codes.maganghub.BuildConfig
 import id.codes.maganghub.data.model.ApiErrorResponse
 import id.codes.maganghub.data.model.AttendanceHomeData
 import id.codes.maganghub.data.model.AttendanceHomeResponse
@@ -105,7 +106,7 @@ class MagangHubApiClient(
     private val gson = Gson()
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BASIC
+        level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
     }
 
     private val baseHttpClient: OkHttpClient = OkHttpClient.Builder()

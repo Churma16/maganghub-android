@@ -43,6 +43,16 @@ class AttendanceRepositoryImpl(
 
     companion object {
         private const val TAG = "AttendanceRepo"
+
+        fun maskUsername(raw: String): String {
+            val trimmed = raw.trim()
+            if (trimmed.isEmpty()) return "***"
+            return if (trimmed.length <= 4) {
+                "***"
+            } else {
+                "***" + trimmed.takeLast(4)
+            }
+        }
     }
 
     private val authMutex = Mutex()
@@ -71,13 +81,13 @@ class AttendanceRepositoryImpl(
                         Log.w(TAG, "Best-effort profile fetch after login failed: ${pe.message}")
                     }
                     _sessionFlow.value = storage.getUserSession()
-                    Log.i(TAG, "Successfully authenticated user $username with Kemnaker SSO")
+                    Log.i(TAG, "Successfully authenticated user ${maskUsername(username)} with Kemnaker SSO")
                     Result.success(token)
                 } catch (e: Exception) {
                     if (e is id.codes.maganghub.data.api.KemnakerAuthException) {
                         storage.incrementLoginFailureCount()
                     }
-                    Log.e(TAG, "Login failed for user $username (failure count: ${storage.getLoginFailureCount()})", e)
+                    Log.e(TAG, "Login failed for user ${maskUsername(username)} (failure count: ${storage.getLoginFailureCount()})", e)
                     Result.failure(e)
                 }
             }

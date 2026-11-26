@@ -27,6 +27,10 @@ android {
         }
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     signingConfigs {
         create("release") {
             val keystoreFile = file("${project.rootDir}/release.jks")
