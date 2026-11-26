@@ -56,6 +56,7 @@ class EncryptedPreferences(
         const val KEY_MENTOR_INTERVAL = "pref_mentor_repeat_interval_minutes"
         const val KEY_MENTOR_SNOOZED_UNTIL = "pref_mentor_snoozed_until"
         const val KEY_MENTOR_PENDING_COUNT = "pref_mentor_pending_count"
+        const val KEY_MENTOR_LAST_CHECK_TIME = "pref_mentor_last_check_timestamp"
 
         private const val KEY_LAST_UPDATE_CHECK_TIMESTAMP = "pref_last_update_check_timestamp"
 
@@ -273,6 +274,12 @@ class EncryptedPreferences(
     }
 
     fun getPendingMentorReviewCount(): Int = prefs.getInt(KEY_MENTOR_PENDING_COUNT, 0)
+
+    fun saveLastMentorCheckTimestamp(timestamp: Long = System.currentTimeMillis()) {
+        prefs.edit().putLong(KEY_MENTOR_LAST_CHECK_TIME, timestamp).apply()
+    }
+
+    fun getLastMentorCheckTimestamp(): Long = prefs.getLong(KEY_MENTOR_LAST_CHECK_TIME, 0L)
 
     fun saveMentorSnoozedUntil(snoozedUntil: Long) {
         prefs.edit().putLong(KEY_MENTOR_SNOOZED_UNTIL, snoozedUntil).apply()

@@ -43,6 +43,22 @@ class AttendanceRepositoryImpl(
 
     companion object {
         private const val TAG = "AttendanceRepo"
+        const val MENTOR_CHECK_TTL_MILLIS = 3 * 60 * 60 * 1000L // 3 hours
+
+        /**
+         * Pure function to determine whether mentor review fetch should be executed.
+         * Throttled to at most once per 3 hours to conserve battery and API bandwidth.
+         */
+        fun isMentorCheckDue(
+            currentTimeMillis: Long,
+            lastCheckMillis: Long,
+            ttlMillis: Long = MENTOR_CHECK_TTL_MILLIS
+        ): Boolean {
+            if (lastCheckMillis <= 0L) return true
+            val elapsed = currentTimeMillis - lastCheckMillis
+            if (elapsed < 0L) return true // Clock drifted or reset
+            return elapsed >= ttlMillis
+        }
 
         fun maskUsername(raw: String): String {
             val trimmed = raw.trim()
@@ -166,17 +182,32 @@ class AttendanceRepositoryImpl(
                     }
                 }
 
-                // Best-effort fetch attendances to calculate and cache pending mentor review count
+                // Best-effort fetch attendances to calculate and cache pending mentor review count.
+                // Throttled to at most once every 3 hours to conserve battery and API bandwidth,
+                // but respects forceRefresh = true for explicit manual user refreshes.
                 var pendingCount = storage.getPendingMentorReviewCount()
-                try {
-                    val validToken = storage.getAccessToken().orEmpty()
-                    if (validToken.isNotBlank()) {
-                        val attendances = apiClient.fetchAttendances(validToken)
-                        pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
-                        storage.savePendingMentorReviewCount(pendingCount)
+                val lastMentorCheck = storage.getLastMentorCheckTimestamp()
+                val isDue = isMentorCheckDue(
+                    currentTimeMillis = now,
+                    lastCheckMillis = lastMentorCheck,
+                    ttlMillis = MENTOR_CHECK_TTL_MILLIS
+                )
+
+                if (forceRefresh || isDue) {
+                    try {
+                        val validToken = storage.getAccessToken().orEmpty()
+                        if (validToken.isNotBlank()) {
+                            val attendances = apiClient.fetchAttendances(validToken)
+                            pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
+                            storage.savePendingMentorReviewCount(pendingCount)
+                            storage.saveLastMentorCheckTimestamp(now)
+                            Log.i(TAG, "Refreshed pending mentor review count: $pendingCount (next check in 3h)")
+                        }
+                    } catch (ae: Exception) {
+                        Log.w(TAG, "Best-effort attendances fetch for mentor review count failed: ${ae.message}")
                     }
-                } catch (ae: Exception) {
-                    Log.w(TAG, "Best-effort attendances fetch for mentor review count failed: ${ae.message}")
+                } else {
+                    Log.d(TAG, "Skipping mentor review fetch (throttled, last check: ${(now - lastMentorCheck) / 60000} mins ago)")
                 }
 
                 _sessionFlow.value = storage.getUserSession()
