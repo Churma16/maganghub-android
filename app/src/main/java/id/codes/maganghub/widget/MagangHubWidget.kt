@@ -45,7 +45,7 @@ class MagangHubWidget : GlanceAppWidget() {
     companion object {
         private val SIZE_1X3 = DpSize(180.dp, 56.dp)
         private val SIZE_1X5 = DpSize(320.dp, 56.dp)
-        val KEY_FROM_WIDGET = ActionParameters.Key<Boolean>("FROM_WIDGET")
+        val KEY_FROM_WIDGET = ActionParameters.Key<Boolean>(MainActivity.EXTRA_FROM_WIDGET)
     }
 
     override val sizeMode: SizeMode = SizeMode.Responsive(setOf(SIZE_1X3, SIZE_1X5))

@@ -87,8 +87,10 @@ class MainActivity : ComponentActivity() {
         // Ensure background alarm schedule is active
         AttendanceAlarmScheduler.scheduleNextAlarm(applicationContext)
 
-        // Handle entry point triggers (e.g. opened from home screen widget)
-        handleWidgetIntent(intent)
+        // Handle entry point triggers (e.g. opened from home screen widget) only on fresh start
+        if (savedInstanceState == null) {
+            handleWidgetIntent(intent)
+        }
 
         setContent {
             val uiState by viewModel.uiState.collectAsState()
@@ -113,6 +115,7 @@ class MainActivity : ComponentActivity() {
 
     private fun handleWidgetIntent(intent: Intent?) {
         if (intent?.getBooleanExtra(EXTRA_FROM_WIDGET, false) == true) {
+            intent.removeExtra(EXTRA_FROM_WIDGET)
             viewModel.onOpenedFromWidget()
         }
     }

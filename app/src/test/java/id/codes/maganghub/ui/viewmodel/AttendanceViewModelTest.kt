@@ -564,4 +564,20 @@ class AttendanceViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         assertFalse(viewModel.uiState.value.isChecking)
     }
+
+    @Test
+    fun testOnOpenedFromWidgetWithoutCredentialsSelectsDashboardAndDoesNotCheck() = runTest {
+        val repo = FakeAttendanceRepository()
+        // No login, hasSavedCredentials() is false
+        val viewModel = AttendanceViewModel(repo)
+
+        viewModel.selectTab(1)
+        assertEquals(1, viewModel.selectedTab.value)
+
+        viewModel.onOpenedFromWidget()
+        assertEquals(0, viewModel.selectedTab.value)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isChecking)
+    }
 }
