@@ -523,7 +523,7 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Awal fase 'Selamat bekerja' sebelum notifikasi presensi dimulai",
+                            text = "Awal fase 'Selamat bekerja' sebelum pengingat logbook dimulai",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -578,7 +578,7 @@ fun SettingsScreen(
                 // Chips: Unselected text #E2E8F0 / #1E293B, border #3B4B6B / #94A3B8. Selected: bg #DBEAFE, text #1E3A8A
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Jam mulai notifikasi presensi (WIB)",
+                        text = "Jam mulai pengingat logbook (WIB)",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -675,7 +675,7 @@ fun SettingsScreen(
                 // Toggles: Track on #0369A1, off #3B4B6B / #64748B, knob #FFFFFF
                 ReminderToggleRow(
                     title = "Pengingat berulang",
-                    subtitle = "Notifikasi berkala sampai 23:59 jika belum presensi dan logbook",
+                    subtitle = "Notifikasi berkala sampai 23:59 jika logbook belum diisi",
                     checked = settings.isEnabled,
                     isDark = isDark,
                     onCheckedChange = { checked ->
@@ -748,13 +748,13 @@ fun SettingsScreen(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Pengingat Approval Presensi Mentor",
+                        text = "Pengingat Approval Mentor",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Beri tahu jika mentor belum meng-approve logbook presensi",
+                        text = "Beri tahu jika mentor belum meng-approve logbook",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

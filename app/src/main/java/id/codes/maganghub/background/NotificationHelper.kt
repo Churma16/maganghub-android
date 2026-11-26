@@ -70,10 +70,10 @@ object NotificationHelper {
         // 1. High Priority Reminder Channel (with sound & vibration)
         val reminderChannel = NotificationChannel(
             CHANNEL_REMINDER_ID,
-            "Pengingat Harian Presensi",
+            "Pengingat Harian Logbook",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Pengingat berkala jika presensi & logbook hari ini belum lengkap"
+            description = "Pengingat berkala jika logbook hari ini belum diisi"
             enableLights(true)
             lightColor = Color.RED
             enableVibration(true)
@@ -85,10 +85,10 @@ object NotificationHelper {
         // 2. Default Priority Confirmation Channel
         val confirmationChannel = NotificationChannel(
             CHANNEL_CONFIRMATION_ID,
-            "Status Presensi Selesai",
+            "Status Logbook Selesai",
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "Pemberitahuan singkat ketika presensi & logbook hari ini sudah lengkap"
+            description = "Pemberitahuan singkat ketika logbook hari ini sudah lengkap"
             enableLights(true)
             lightColor = Color.GREEN
             enableVibration(false)
@@ -202,9 +202,9 @@ object NotificationHelper {
         )
 
         val remainingText = formatRemainingTimeToDeadline(nowWib)
-        val title = "Presensi dan logbook belum lengkap"
-        val contentText = "Sisa $remainingText sampai 23.59 WIB. Buka Monev untuk mengisi laporan hari ini."
-        val bigText = "Sisa $remainingText sampai 23.59 WIB.\nBuka Monev untuk mengisi laporan hari ini."
+        val title = "Logbook hari ini belum diisi"
+        val contentText = "Sisa $remainingText sampai 23.59 WIB. Buka Monev untuk mengisi logbook hari ini."
+        val bigText = "Sisa $remainingText sampai 23.59 WIB.\nBuka Monev untuk mengisi logbook hari ini."
 
         val snoozeLabel = if (intervalMinutes > 0) "Tunda $intervalMinutes menit" else "Tunda 30 menit"
 
@@ -260,7 +260,7 @@ object NotificationHelper {
         )
 
         val title = "Semua beres hari ini"
-        val message = "Presensi dan logbook sudah lengkap. Pengingat berhenti sampai besok."
+        val message = "Logbook hari ini sudah lengkap. Pengingat berhenti sampai besok."
 
         val builder = NotificationCompat.Builder(context, CHANNEL_CONFIRMATION_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)

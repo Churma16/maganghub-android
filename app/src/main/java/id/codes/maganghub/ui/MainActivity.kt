@@ -124,7 +124,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
             TopAppBar(
                 title = {
                     Text(
-                        text = if (selectedTab == 0) "Presensi MagangHub" else "Pengaturan Presensi",
+                        text = if (selectedTab == 0) "Logbook MagangHub" else "Pengaturan",
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground
@@ -145,7 +145,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
                             } else {
                                 Icon(
                                     imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Perbarui Presensi",
+                                    contentDescription = "Perbarui Logbook",
                                     tint = KemnakerSky
                                 )
                             }

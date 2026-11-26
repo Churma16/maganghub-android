@@ -123,7 +123,7 @@ class AttendanceViewModel(
                             attendanceData = checkResult.data,
                             pendingMentorReviewCount = checkResult.pendingMentorReviewCount,
                             lastSyncTimestamp = checkResult.checkedAt,
-                            successMessage = if (!silent) "Presensi berhasil dicek!" else null,
+                            successMessage = if (!silent) "Logbook berhasil dicek!" else null,
                             errorMessage = null
                         )
                     }
@@ -132,7 +132,7 @@ class AttendanceViewModel(
                     _uiState.update { current ->
                         current.copy(
                             isChecking = false,
-                            errorMessage = error.message ?: "Gagal memeriksa status presensi"
+                            errorMessage = error.message ?: "Gagal memeriksa status logbook"
                         )
                     }
                 }
@@ -344,7 +344,7 @@ class AttendanceViewModel(
     }
 
     /**
-     * Triggers the daily reminder notification mockup ("Presensi dan logbook belum lengkap").
+     * Triggers the daily reminder notification mockup ("Logbook hari ini belum diisi").
      */
     fun testDailyReminderNotification(context: Context) {
         val settings = _uiState.value.reminderSettings
@@ -427,12 +427,12 @@ class AttendanceViewModel(
                 val nextMinute = ((now.minute / interval) + 1) * interval
                 val nextTime = now.plusMinutes((nextMinute - now.minute).toLong()).withSecond(0)
                 if (nextTime.toLocalDate() != now.toLocalDate() || nextTime.hour >= settings.endHour) {
-                    "Batas akhir presensi 23:59 WIB"
+                    "Batas akhir logbook 23:59 WIB"
                 } else {
                     "Aktif pukul ${nextTime.format(timeFormatter)} WIB (setiap $interval m)"
                 }
             }
-            else -> "Batas presensi 23:59 WIB telah lewat"
+            else -> "Batas logbook 23:59 WIB telah lewat"
         }
 
         _uiState.update { it.copy(nextReminderFormatted = text) }

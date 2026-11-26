@@ -91,7 +91,7 @@ fun WelcomeScreen(
 
                 // Title
                 Text(
-                    text = "Presensi MagangHub",
+                    text = "Logbook MagangHub",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -102,7 +102,7 @@ fun WelcomeScreen(
 
                 // Subtitle
                 Text(
-                    text = "Pengingat presensi dan logbook magangmu, supaya tidak ada hari yang terlewat.",
+                    text = "Pengingat logbook magangmu, supaya tidak ada hari yang terlewat.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

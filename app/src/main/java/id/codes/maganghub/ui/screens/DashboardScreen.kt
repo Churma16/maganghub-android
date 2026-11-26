@@ -417,11 +417,11 @@ private fun HeroStatusCard(
     }
 
     val statusDescription = when (phase) {
-        DailyWorkPhase.COMPLETED -> "Presensi dan kehadiran Anda hari ini sudah tercatat lengkap."
-        DailyWorkPhase.HOLIDAY -> "Hari ini hari libur atau off day terjadwal. Tidak ada kewajiban presensi."
-        DailyWorkPhase.BEFORE_WORK -> "Jam kerja dimulai pukul $workStartTimeStr WIB. Notifikasi laporan presensi dimulai pukul $reportStartTimeStr WIB."
-        DailyWorkPhase.WORKING -> "Selamat menjalani aktivitas magang hari ini. Notifikasi laporan presensi dimulai pukul $reportStartTimeStr WIB."
-        DailyWorkPhase.REPORTING_WINDOW -> "Presensi dan logbook hari ini belum tercatat. Selesaikan sebelum batas waktu."
+        DailyWorkPhase.COMPLETED -> "Logbook hari ini sudah tercatat lengkap."
+        DailyWorkPhase.HOLIDAY -> "Hari ini hari libur atau off day terjadwal. Tidak ada kewajiban mengisi logbook."
+        DailyWorkPhase.BEFORE_WORK -> "Jam kerja dimulai pukul $workStartTimeStr WIB. Pengingat logbook dimulai pukul $reportStartTimeStr WIB."
+        DailyWorkPhase.WORKING -> "Selamat menjalani aktivitas magang hari ini. Pengingat logbook dimulai pukul $reportStartTimeStr WIB."
+        DailyWorkPhase.REPORTING_WINDOW -> "Logbook hari ini belum tercatat. Selesaikan sebelum batas waktu."
     }
 
     val (metricLeftLabel, metricLeftValue) = when (phase) {
@@ -795,7 +795,7 @@ private fun PengingatCard(
 
 /**
  * Full-width Bottom Floating Primary CTA Button.
- * When pending (attendance/logbook not completed today), displays a solid primary blue CTA "Isi laporan hari ini ↗".
+ * When pending (logbook not completed today), displays a solid primary blue CTA "Isi logbook hari ini ↗".
  * When completed (HADIR or LIBUR), transitions to an outlined calm button "Buka Portal Monev ↗".
  */
 @Composable
@@ -863,7 +863,7 @@ private fun BottomCtaSection(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Isi laporan hari ini",
+                        text = "Isi logbook hari ini",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = OnPrimaryCta

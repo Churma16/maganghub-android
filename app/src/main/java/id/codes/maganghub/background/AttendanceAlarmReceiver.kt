@@ -30,7 +30,7 @@ class AttendanceAlarmReceiver : BroadcastReceiver() {
             NotificationHelper.ACTION_CHECK_NOW -> {
                 Log.i(TAG, "User triggered 'Sudah isi' / 'Cek Ulang' from notification action")
                 try {
-                    android.widget.Toast.makeText(context, "Memeriksa status presensi...", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(context, "Memeriksa status logbook...", android.widget.Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
                     Log.w(TAG, "Could not show check toast", e)
                 }
