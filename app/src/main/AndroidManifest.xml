@@ -29,6 +29,7 @@
             android:name=".ui.MainActivity"
             android:exported="true"
             android:label="${appName}"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.MagangHub"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

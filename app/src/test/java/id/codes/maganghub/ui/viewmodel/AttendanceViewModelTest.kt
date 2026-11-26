@@ -532,4 +532,52 @@ class AttendanceViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(UpdateCheckState.UpToDate, viewModel.uiState.value.updateCheckState)
     }
+
+    @Test
+    fun testSelectTabUpdatesStateFlow() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        assertEquals(0, viewModel.selectedTab.value)
+
+        viewModel.selectTab(1)
+        assertEquals(1, viewModel.selectedTab.value)
+
+        viewModel.selectTab(0)
+        assertEquals(0, viewModel.selectedTab.value)
+    }
+
+    @Test
+    fun testOnOpenedFromWidgetSelectsDashboardAndSyncs() = runTest {
+        val repo = FakeAttendanceRepository()
+        repo.login("test_user", "test_pass")
+        val viewModel = AttendanceViewModel(repo)
+
+        // Switch to settings tab
+        viewModel.selectTab(1)
+        assertEquals(1, viewModel.selectedTab.value)
+
+        // When opened from widget, it switches back to Dashboard and triggers sync
+        viewModel.onOpenedFromWidget()
+        assertEquals(0, viewModel.selectedTab.value)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isChecking)
+    }
+
+    @Test
+    fun testOnOpenedFromWidgetWithoutCredentialsSelectsDashboardAndDoesNotCheck() = runTest {
+        val repo = FakeAttendanceRepository()
+        // No login, hasSavedCredentials() is false
+        val viewModel = AttendanceViewModel(repo)
+
+        viewModel.selectTab(1)
+        assertEquals(1, viewModel.selectedTab.value)
+
+        viewModel.onOpenedFromWidget()
+        assertEquals(0, viewModel.selectedTab.value)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isChecking)
+    }
 }

@@ -18,6 +18,7 @@ import id.codes.maganghub.data.model.ThemeMode
 import id.codes.maganghub.data.model.UpdateCheckState
 import id.codes.maganghub.data.repository.AttendanceRepository
 import id.codes.maganghub.widget.AttendanceWidgetHelper
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,6 +49,29 @@ class AttendanceViewModel(
         )
     )
     val uiState: StateFlow<AttendanceUiState> = _uiState.asStateFlow()
+
+    private val _selectedTab = MutableStateFlow(0)
+    val selectedTab: StateFlow<Int> = _selectedTab.asStateFlow()
+
+    fun selectTab(tab: Int) {
+        _selectedTab.value = tab
+    }
+
+    private var checkAttendanceJob: Job? = null
+
+    /**
+     * Handles app entry originating from the home screen widget.
+     * Selects Dashboard tab and triggers an immediate on-demand attendance sync
+     * so that both the in-app status and widget are refreshed to the factual state.
+     */
+    fun onOpenedFromWidget() {
+        selectTab(0)
+        if (repository.hasSavedCredentials()) {
+            checkAttendanceNow(silent = false)
+        } else {
+            triggerWidgetUpdate()
+        }
+    }
 
     private val wibZoneId = ZoneId.of("Asia/Jakarta")
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
@@ -110,7 +134,12 @@ class AttendanceViewModel(
         if (!silent) {
             refreshUserProfile()
         }
-        viewModelScope.launch {
+        // If an automated silent check is already in progress, avoid duplicate concurrent network calls
+        if (checkAttendanceJob?.isActive == true && silent) {
+            return
+        }
+        checkAttendanceJob?.cancel()
+        checkAttendanceJob = viewModelScope.launch {
             _uiState.update { it.copy(isChecking = true, errorMessage = null, successMessage = null) }
 
             val result = repository.checkAttendance(forceRefresh = !silent)
@@ -159,6 +188,8 @@ class AttendanceViewModel(
                             successMessage = "Login berhasil tersambung ke SSO Kemnaker!"
                         )
                     }
+                    // Event-driven instant widget update to drop SESI_BERAKHIR immediately
+                    triggerWidgetUpdate()
                     // Immediately check attendance
                     checkAttendanceNow(silent = false)
                 },
