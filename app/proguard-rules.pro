@@ -7,7 +7,15 @@
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
+-keepclasseswithmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+    <init>(...);
+}
 -keep class id.codes.maganghub.data.model.** { *; }
+-keep class id.codes.maganghub.data.api.AttendanceItem { *; }
+-keep class id.codes.maganghub.data.api.AttendancesResponse { *; }
+-keep class id.codes.maganghub.data.api.GithubRelease { *; }
+-keep class id.codes.maganghub.data.api.GithubAsset { *; }
 
 # WorkManager Worker instantiation via reflection
 -keep class * extends androidx.work.ListenableWorker {
@@ -16,6 +24,10 @@
 
 # Jetpack Glance AppWidget receiver protection
 -keep class * extends androidx.glance.appwidget.GlanceAppWidgetReceiver
+
+# Suppress compile-time annotations from Google Tink / security-crypto
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn javax.annotation.**
 
 # OkHttp & Okio warnings suppression
 -dontwarn okhttp3.**
