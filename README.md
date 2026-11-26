@@ -46,9 +46,9 @@ Aplikasi Android pengingat presensi dan logbook harian peserta MagangHub Kemnake
 
 ## Kenapa Aplikasi Ini Dibuat?
 
-Peserta magang bersertifikat Kemnaker di portal MagangHub Monev wajib mengisi presensi dan logbook harian sebelum pukul 23:59 WIB setiap hari kerja. Lewat semenit saja, sistem langsung mencatat alpa tanpa ada opsi susulan.
+Peserta magang bersertifikat Kemnaker di portal MagangHub Monev wajib mengisi presensi dan logbook harian sebelum pukul 23:59 WIB setiap hari kerja. Lewat semenit saja, sistem langsung mencatat alpa tanpa ada opsi susulan. Kalau sampai alpa, uang saku harian bakal langsung dipotong—dan ngeri juga kalau pas pencairan nanti uang saku berkurang cuma gara-gara kelupaan absen satu hari.
 
-MagangHub Logbook Companion dibuat supaya kamu tidak lupa absen. Aplikasi ini berjalan langsung di HP tanpa server perantara, hemat baterai, dan alarmnya tetap tembus tepat waktu meskipun ponsel sedang masuk mode tidur lelap (Doze mode).
+MagangHub Logbook Companion dibuat supaya kamu tidak lupa absen, biar tidak sedih di kemudian hari melihat pembagian uang saku hangus beberapa hari. Aplikasi ini berjalan langsung di HP tanpa server perantara, hemat baterai, dan alarmnya tetap tembus tepat waktu meskipun ponsel sedang masuk mode tidur lelap (Doze mode).
 
 ---
 
@@ -58,10 +58,12 @@ MagangHub Logbook Companion dibuat supaya kamu tidak lupa absen. Aplikasi ini be
 * **Pantau Cepat**: pasang widget di home screen biar bisa cek status presensi harian sekilas tanpa harus repot buka aplikasi.
 * **Ukuran Fleksibel**: otomatis menyesuaikan ruang layar, baik mode penuh (1x5) maupun ringkas (1x3).
 * **Indikator Warna Jelas**:
-  * 🟢 **Sudah Absen**: presensi dan logbook hari ini beres.
-  * 🟠 **Belum Absen**: pengingat buat segera submit sebelum malam.
-  * 🔴 **Presensi Terlewat**: jam kerja sudah selesai tapi laporan belum terkirim.
-  * ⚪ **Hari Libur**: akhir pekan atau tanggal merah, bebas tugas.
+  * 🟢 **Sudah Absen** (Hijau): presensi dan logbook hari ini beres.
+  * 🔵 **Sedang Bekerja** (Biru): fase jam kerja aktif sebelum masuk waktu pelaporan.
+  * 🟠 **Belum Absen** (Oranye): pengingat buat segera submit sebelum malam.
+  * 🔴 **Mendesak / Terlewat** (Merah): waktu pelaporan kritis atau jam kerja telah usai tapi belum absen.
+  * 🟣 **Hari Libur** (Ungu / Indigo): akhir pekan atau tanggal merah, bebas tugas presensi.
+  * ⚪ **Pra-Kerja / Selesai Sesi** (Abu-abu): menunggu jam kerja dimulai atau sesi telah berakhir.
 * **Keterangan Status di Bagian Bawah**: menampilkan jadwal alarm berikutnya kalau belum absen, atau tanda *"Tidak ada notifikasi lagi"* kalau sudah beres, lengkap dengan jam sinkronisasi terakhir.
 * **Pratinjau Instan Android 12+ (`previewLayout`)**: widget picker launcher langsung menampilkan preview asli widget tanpa jeda kompilasi berkat layout native XML (`widget_attendance_preview.xml`).
 * **Aksi Cepat**: tombol refresh langsung di widget kalau mau cek status terbaru saat itu juga, plus pintasan buka app sekali ketuk.
