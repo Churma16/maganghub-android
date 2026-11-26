@@ -250,8 +250,8 @@ private fun PrivacyPolicyContent(cardBg: Color) {
 @Composable
 private fun TermsOfServiceContent(cardBg: Color) {
     LegalSectionItem(
-        title = "1. Status Aplikasi (Bukan Aplikasi Resmi)",
-        body = "MagangHub Logbook Companion adalah alat bantu independen sumber terbuka (unofficial companion tool) dan TIDAK terafiliasi, tidak didukung secara resmi, dan tidak mewakili Kementerian Ketenagakerjaan Republik Indonesia (Kemnaker RI) maupun pengelola program MagangHub.",
+        title = "1. Status Aplikasi (Bukan Aplikasi Resmi & Versi Beta)",
+        body = "MagangHub Logbook Companion adalah alat bantu independen sumber terbuka (unofficial companion tool) yang saat ini berada pada tahap rilis awal / versi beta (v0.x). Aplikasi ini TIDAK terafiliasi, tidak didukung secara resmi, dan tidak mewakili Kementerian Ketenagakerjaan Republik Indonesia (Kemnaker RI) maupun pengelola program MagangHub.",
         cardBg = cardBg
     )
 
@@ -275,7 +275,7 @@ private fun TermsOfServiceContent(cardBg: Color) {
 
     LegalSectionItem(
         title = "5. Batasan Tanggung Jawab (Limitation of Liability)",
-        body = "Aplikasi disediakan 'apa adanya' (as-is) tanpa jaminan apa pun. Pengembang tidak bertanggung jawab atas sanksi magang/institusi, hilangnya hak uang saku, atau kerugian yang timbul akibat kelalaian pribadi, kegagalan alarm pada perangkat tertentu, atau gangguan teknis pada server Kemnaker RI.",
+        body = "Aplikasi disediakan 'apa adanya' (as-is) dalam tahap pengujian beta tanpa jaminan apa pun. Pengembang tidak bertanggung jawab atas sanksi magang/institusi, kendala pencatatan kehadiran, hilangnya hak uang saku, atau kerugian yang timbul akibat kelalaian pribadi, kegagalan alarm pada perangkat tertentu, atau gangguan teknis pada server Kemnaker RI.",
         cardBg = cardBg
     )
 

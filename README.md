@@ -7,9 +7,14 @@
 [![Glance](https://img.shields.io/badge/Jetpack%20Glance-1.1.0-darkgreen.svg)](https://developer.android.com/jetpack/androidx/releases/glance)
 [![Material 3](https://img.shields.io/badge/Design-Material%203-teal.svg)](https://m3.material.io)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Public%20Beta-orange.svg)](https://github.com/Churma16/maganghub-logbook-companion/releases)
 
 Aplikasi Android untuk membantu peserta MagangHub Kemnaker memantau presensi dan mengingatkan pengisian logbook harian.
 Cek status presensi langsung dari home screen, atur pengingat sore, dan pantau laporan yang masih menunggu persetujuan mentor. Semuanya bisa dilakukan dari satu aplikasi, tanpa perlu membuka dashboard Monev setiap kali ingin mengecek status.
+
+> [!IMPORTANT]
+> **Catatan Versi Beta (v0.x)**  
+> MagangHub Logbook Companion saat ini berada pada tahap **Public Beta**. Meskipun seluruh fitur pengingat, widget, dan pemantauan telah diuji dan berjalan stabil, aplikasi ini masih dalam pengembangan aktif. Kami tetap menyarankan peserta untuk sesekali memastikan status logbook dan kehadiran langsung di portal resmi SiapKerja / Monev Kemnaker.
 
 ---
 
