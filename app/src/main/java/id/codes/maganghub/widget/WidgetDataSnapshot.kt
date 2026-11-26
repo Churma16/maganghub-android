@@ -44,7 +44,7 @@ data class WidgetDataSnapshot(
     fun getTitle1x5(): String = when (status) {
         WidgetStatus.SUDAH_ABSEN -> "Lengkap"
         WidgetStatus.BELUM_ABSEN -> "Belum Lengkap"
-        WidgetStatus.MENDESAK -> "Mendesak"
+        WidgetStatus.MENDESAK -> "Segera Isi"
         WidgetStatus.HARI_LIBUR -> "Hari Libur"
         WidgetStatus.SESI_BERAKHIR -> "Sesi Berakhir"
         WidgetStatus.MENUNGGU_KERJA -> "Menunggu jam kerja"
@@ -54,7 +54,7 @@ data class WidgetDataSnapshot(
     fun getTitle1x3(): String = when (status) {
         WidgetStatus.SUDAH_ABSEN -> "Lengkap"
         WidgetStatus.BELUM_ABSEN -> "Belum Lengkap"
-        WidgetStatus.MENDESAK -> "Mendesak"
+        WidgetStatus.MENDESAK -> "Segera Isi"
         WidgetStatus.HARI_LIBUR -> "Hari Libur"
         WidgetStatus.SESI_BERAKHIR -> "Perlu Login"
         WidgetStatus.MENUNGGU_KERJA -> "Menunggu"

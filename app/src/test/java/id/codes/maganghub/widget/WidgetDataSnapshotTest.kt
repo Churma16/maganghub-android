@@ -112,8 +112,8 @@ class WidgetDataSnapshotTest {
             themeMode = ThemeMode.SYSTEM
         )
 
-        assertEquals("Mendesak", snapshot.getTitle1x5())
-        assertEquals("Mendesak", snapshot.getTitle1x3())
+        assertEquals("Segera Isi", snapshot.getTitle1x5())
+        assertEquals("Segera Isi", snapshot.getTitle1x3())
         assertEquals("Segera isi sebelum 23:59 WIB", snapshot.getSubtext1x5())
         assertEquals("Sisa 1j 58m", snapshot.getSubtext1x3())
         assertFalse(snapshot.isSubtextWarning())

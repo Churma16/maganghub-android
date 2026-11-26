@@ -435,7 +435,7 @@ private fun HeroStatusCard(
         DailyWorkPhase.BEFORE_WORK -> "Menunggu jam kerja"
         DailyWorkPhase.WORKING -> "Selamat bekerja"
         DailyWorkPhase.REPORTING_NORMAL -> "Belum lengkap"
-        DailyWorkPhase.REPORTING_URGENT -> "Mendesak"
+        DailyWorkPhase.REPORTING_URGENT -> "Segera lengkapi"
     }
 
     val statusDescription = when (phase) {
@@ -444,7 +444,7 @@ private fun HeroStatusCard(
         DailyWorkPhase.BEFORE_WORK -> "Jam kerja dimulai pukul $workStartTimeStr WIB. Pengingat logbook dimulai pukul $reportStartTimeStr WIB."
         DailyWorkPhase.WORKING -> "Selamat menjalani aktivitas magang hari ini. Pengingat logbook dimulai pukul $reportStartTimeStr WIB."
         DailyWorkPhase.REPORTING_NORMAL -> "Logbook hari ini belum tercatat. Selesaikan sebelum batas waktu."
-        DailyWorkPhase.REPORTING_URGENT -> "Sisa waktu pengisian logbook segera habis. Segera selesaikan sebelum 23:59 WIB."
+        DailyWorkPhase.REPORTING_URGENT -> "Batas waktu pengisian segera berakhir. Selesaikan sebelum 23:59 WIB."
     }
 
     val (metricLeftLabel, metricLeftValue) = when (phase) {
