@@ -53,7 +53,8 @@ android {
             manifestPlaceholders["appName"] = "MagangHub (Dev)"
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             if (!versionSuffix.isNullOrBlank()) {
                 versionNameSuffix = versionSuffix
             }
