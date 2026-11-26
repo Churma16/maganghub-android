@@ -102,87 +102,85 @@ class AttendanceCheckWorker(
 
         AttendanceAlarmScheduler.checkAndResetDailyRollover(appContext, todayDateString)
 
-        val cachedHomeData = try {
-            MagangHubApp.instance.encryptedPreferences.getLastHomeData()
-        } catch (_: Exception) {
-            null
-        }
-
-        // Early return to conserve battery if today's attendance has already been confirmed
-        if (shouldSkipAttendanceCheck(
-                todayDateString = todayDateString,
-                cachedDate = cachedHomeData?.date,
-                cachedHasAttendance = cachedHomeData?.hasAttendance == true
-            )
-        ) {
-            Log.i(TAG, "Today's attendance already confirmed ($todayDateString). Early return to conserve battery.")
-            if (!AttendanceAlarmScheduler.isCongratulationsSentToday(appContext)) {
-                NotificationHelper.showSuccessNotification(appContext)
-                AttendanceAlarmScheduler.markCongratulationsSent(appContext)
-            } else {
-                NotificationHelper.cancelReminder(appContext)
-            }
-            AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
-            AttendanceWidgetHelper.updateWidget(appContext)
-            return Result.success()
-        }
-
-        val repository = try {
-            MagangHubApp.instance.attendanceRepository
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to obtain AttendanceRepository instance", e)
-            return Result.retry()
-        }
-
         val settings = try {
             MagangHubApp.instance.encryptedPreferences.getReminderSettings()
         } catch (e: Exception) {
             ReminderSettings()
         }
 
-        val checkResult = repository.checkAttendance(forceRefresh = true)
-
-        if (checkResult.isFailure) {
-            val exception = checkResult.exceptionOrNull()
-            Log.e(TAG, "Attendance verification failed", exception)
-
-            if (exception is id.codes.maganghub.data.api.RateLimitedException) {
-                val backoffSec = exception.retryAfterSeconds.coerceAtLeast(60L)
-                val resumeEpochMillis = System.currentTimeMillis() + (backoffSec * 1000L)
-                Log.w(TAG, "MagangHub API rate limited (HTTP 429). Rescheduling next alarm in $backoffSec seconds.")
-                AttendanceAlarmScheduler.scheduleNextAlarm(appContext, overrideTriggerMillis = resumeEpochMillis)
-                return Result.success()
-            }
-
-            if (exception is UnauthorizedSessionException && !AttendanceAlarmScheduler.isAuthAlertSentToday(appContext)) {
-                NotificationHelper.showSessionExpiredNotification(appContext)
-                AttendanceAlarmScheduler.setAuthAlertSent(appContext, true)
-            }
-
-            // Reschedule next alarm attempt
-            AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
-            AttendanceWidgetHelper.updateWidget(appContext)
-            return if (runAttemptCount >= 3) {
-                Log.w(TAG, "Attendance check failed after $runAttemptCount attempts. Abandoning worker retry.")
-                Result.failure()
-            } else {
-                Result.retry()
-            }
+        val cachedHomeData = try {
+            MagangHubApp.instance.encryptedPreferences.getLastHomeData()
+        } catch (_: Exception) {
+            null
         }
 
-        val resultData = checkResult.getOrNull()
+        val isAttendanceAlreadyConfirmed = shouldSkipAttendanceCheck(
+            todayDateString = todayDateString,
+            cachedDate = cachedHomeData?.date,
+            cachedHasAttendance = cachedHomeData?.hasAttendance == true
+        )
+
+        val homeData: id.codes.maganghub.data.model.AttendanceHomeData?
+        var pendingMentorCount: Int? = null
+
+        if (isAttendanceAlreadyConfirmed) {
+            Log.i(TAG, "Today's attendance already confirmed ($todayDateString). Skipping network check to save battery.")
+            homeData = cachedHomeData
+            pendingMentorCount = try {
+                MagangHubApp.instance.encryptedPreferences.getPendingMentorReviewCount()
+            } catch (_: Exception) {
+                0
+            }
+        } else {
+            val repository = try {
+                MagangHubApp.instance.attendanceRepository
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to obtain AttendanceRepository instance", e)
+                return Result.retry()
+            }
+
+            val checkResult = repository.checkAttendance(forceRefresh = false)
+
+            if (checkResult.isFailure) {
+                val exception = checkResult.exceptionOrNull()
+                Log.e(TAG, "Attendance verification failed", exception)
+
+                if (exception is id.codes.maganghub.data.api.RateLimitedException) {
+                    val backoffSec = exception.retryAfterSeconds.coerceAtLeast(60L)
+                    val resumeEpochMillis = System.currentTimeMillis() + (backoffSec * 1000L)
+                    Log.w(TAG, "MagangHub API rate limited (HTTP 429). Rescheduling next alarm in $backoffSec seconds.")
+                    AttendanceAlarmScheduler.scheduleNextAlarm(appContext, overrideTriggerMillis = resumeEpochMillis)
+                    return Result.success()
+                }
+
+                if (exception is UnauthorizedSessionException && !AttendanceAlarmScheduler.isAuthAlertSentToday(appContext)) {
+                    NotificationHelper.showSessionExpiredNotification(appContext)
+                    AttendanceAlarmScheduler.setAuthAlertSent(appContext, true)
+                }
+
+                // Reschedule next alarm attempt
+                AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+                AttendanceWidgetHelper.updateWidget(appContext)
+                return if (runAttemptCount >= 3) {
+                    Log.w(TAG, "Attendance check failed after $runAttemptCount attempts. Abandoning worker retry.")
+                    Result.failure()
+                } else {
+                    Result.retry()
+                }
+            }
+
+            val resultData = checkResult.getOrNull()
+            homeData = resultData?.data
+            pendingMentorCount = resultData?.pendingMentorReviewCount
+        }
 
         // Mentor review reminder verification
         if (settings.mentorReminderEnabled) {
-            val pendingCount = resultData?.pendingMentorReviewCount?.takeIf { it > 0 }
+            val pendingCount = pendingMentorCount?.takeIf { it > 0 }
                 ?: try {
-                    repository.getCachedPendingMentorReviewCount()
-                } catch (e: Throwable) {
-                    try {
-                        MagangHubApp.instance.encryptedPreferences.getPendingMentorReviewCount()
-                    } catch (e2: Throwable) {
-                        0
-                    }
+                    MagangHubApp.instance.encryptedPreferences.getPendingMentorReviewCount()
+                } catch (e2: Throwable) {
+                    0
                 }
 
             val nowMillis = System.currentTimeMillis()
@@ -210,7 +208,6 @@ class AttendanceCheckWorker(
             }
         }
 
-        val homeData = resultData?.data
         AttendanceWidgetHelper.updateWidget(appContext)
 
         if (homeData == null) {

@@ -183,7 +183,8 @@ class AttendanceRepositoryImpl(
                 }
 
                 // Best-effort fetch attendances to calculate and cache pending mentor review count.
-                // Throttled to at most once every 3 hours to conserve battery and API bandwidth.
+                // Throttled to at most once every 3 hours to conserve battery and API bandwidth,
+                // but respects forceRefresh = true for explicit manual user refreshes.
                 var pendingCount = storage.getPendingMentorReviewCount()
                 val lastMentorCheck = storage.getLastMentorCheckTimestamp()
                 val isDue = isMentorCheckDue(
@@ -192,7 +193,7 @@ class AttendanceRepositoryImpl(
                     ttlMillis = MENTOR_CHECK_TTL_MILLIS
                 )
 
-                if (isDue) {
+                if (forceRefresh || isDue) {
                     try {
                         val validToken = storage.getAccessToken().orEmpty()
                         if (validToken.isNotBlank()) {

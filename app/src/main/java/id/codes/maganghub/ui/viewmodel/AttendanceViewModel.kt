@@ -113,7 +113,7 @@ class AttendanceViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isChecking = true, errorMessage = null, successMessage = null) }
 
-            val result = repository.checkAttendance(forceRefresh = true)
+            val result = repository.checkAttendance(forceRefresh = !silent)
             result.fold(
                 onSuccess = { checkResult ->
                     _uiState.update { current ->

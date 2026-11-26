@@ -22,14 +22,16 @@ class AttendanceRepositorySecurityTest {
     @Test
     fun testIsMentorCheckDue_3HourTtl() {
         val ttl = AttendanceRepositoryImpl.MENTOR_CHECK_TTL_MILLIS
-        val now = 10_000_000L
+        // Realistic epoch millis (1.7 trillion ms) so now - ttl is strictly positive
+        val now = 1_700_000_000_000L
 
         // Never checked before (0L) -> due immediately
         assertTrue(AttendanceRepositoryImpl.isMentorCheckDue(now, 0L))
 
-        // Less than 3 hours (e.g. 1 hour, 2.5 hours) -> not due
+        // Less than 3 hours (e.g. 1 hour, 2.5 hours, or 1 ms before ttl) -> not due
         assertFalse(AttendanceRepositoryImpl.isMentorCheckDue(now, now - (60 * 60 * 1000L)))
         assertFalse(AttendanceRepositoryImpl.isMentorCheckDue(now, now - (150 * 60 * 1000L)))
+        assertFalse(AttendanceRepositoryImpl.isMentorCheckDue(now, now - (ttl - 1L)))
 
         // Exactly 3 hours -> due
         assertTrue(AttendanceRepositoryImpl.isMentorCheckDue(now, now - ttl))
@@ -37,7 +39,7 @@ class AttendanceRepositorySecurityTest {
         // More than 3 hours (e.g. 4 hours) -> due
         assertTrue(AttendanceRepositoryImpl.isMentorCheckDue(now, now - (4 * 60 * 60 * 1000L)))
 
-        // Clock adjusted backwards -> due
+        // Clock adjusted backwards (lastCheck is in the future relative to now) -> due
         assertTrue(AttendanceRepositoryImpl.isMentorCheckDue(now, now + 1000L))
     }
 }
