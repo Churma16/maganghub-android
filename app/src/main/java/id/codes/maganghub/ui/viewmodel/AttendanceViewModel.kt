@@ -227,7 +227,7 @@ class AttendanceViewModel(
      * Opens or closes the login dialog.
      */
     fun setLoginDialogOpen(open: Boolean) {
-        _uiState.update { it.copy(isLoginDialogOpen = open, errorMessage = null) }
+        _uiState.update { it.copy(isLoginDialogOpen = open, resumeLoginOnLegalDismiss = false, errorMessage = null) }
     }
 
     /**
@@ -260,16 +260,33 @@ class AttendanceViewModel(
 
     /**
      * Shows the in-app legal document bottom sheet (Privacy Policy or Terms of Service).
+     * If the login dialog was currently open, it is temporarily hidden so the legal drawer
+     * renders cleanly on top, and automatically resumes when the sheet is dismissed.
      */
     fun showLegalDocument(type: LegalDocumentType) {
-        _uiState.update { it.copy(activeLegalDocument = type) }
+        val wasLoginOpen = _uiState.value.isLoginDialogOpen
+        _uiState.update {
+            it.copy(
+                activeLegalDocument = type,
+                isLoginDialogOpen = if (wasLoginOpen) false else it.isLoginDialogOpen,
+                resumeLoginOnLegalDismiss = wasLoginOpen
+            )
+        }
     }
 
     /**
      * Dismisses the active legal document bottom sheet.
+     * If opened from the login dialog, restores the login dialog back on screen.
      */
     fun dismissLegalDocument() {
-        _uiState.update { it.copy(activeLegalDocument = null) }
+        val shouldResumeLogin = _uiState.value.resumeLoginOnLegalDismiss
+        _uiState.update {
+            it.copy(
+                activeLegalDocument = null,
+                isLoginDialogOpen = if (shouldResumeLogin) true else it.isLoginDialogOpen,
+                resumeLoginOnLegalDismiss = false
+            )
+        }
     }
 
     /**
