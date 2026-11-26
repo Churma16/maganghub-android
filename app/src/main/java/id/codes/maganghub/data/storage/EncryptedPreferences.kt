@@ -58,6 +58,22 @@ class EncryptedPreferences(
         const val KEY_MENTOR_PENDING_COUNT = "pref_mentor_pending_count"
 
         private const val KEY_LAST_UPDATE_CHECK_TIMESTAMP = "pref_last_update_check_timestamp"
+
+        private fun logW(msg: String, throwable: Throwable? = null) {
+            try {
+                if (throwable != null) Log.w(TAG, msg, throwable) else Log.w(TAG, msg)
+            } catch (_: Throwable) {
+                // Ignore in unmocked JVM unit test environments
+            }
+        }
+
+        private fun logE(msg: String, throwable: Throwable? = null) {
+            try {
+                if (throwable != null) Log.e(TAG, msg, throwable) else Log.e(TAG, msg)
+            } catch (_: Throwable) {
+                // Ignore in unmocked JVM unit test environments
+            }
+        }
     }
 
     private val gson = Gson()
@@ -84,12 +100,12 @@ class EncryptedPreferences(
         try {
             initEncryptedPrefs()
         } catch (e: Exception) {
-            Log.w(TAG, "Failed initial EncryptedSharedPreferences init, attempting recovery by deleting corrupted prefs file", e)
+            logW("Failed initial EncryptedSharedPreferences init, attempting recovery by deleting corrupted prefs file", e)
             try {
                 appContext.deleteSharedPreferences(PREFS_FILE)
                 initEncryptedPrefs()
             } catch (retryException: Exception) {
-                Log.e(TAG, "Unrecoverable Keystore/EncryptedSharedPreferences error, falling back to private prefs", retryException)
+                logE("Unrecoverable Keystore/EncryptedSharedPreferences error, falling back to private prefs", retryException)
                 isFallback = true
                 appContext.getSharedPreferences(FALLBACK_PREFS_FILE, Context.MODE_PRIVATE)
             }
@@ -99,7 +115,7 @@ class EncryptedPreferences(
     // Credentials & Session
     fun saveCredentials(username: String, password: String) {
         if (isFallback) {
-            Log.w(TAG, "Refusing to persist credentials to unencrypted fallback storage (CWE-312 mitigation)")
+            logW("Refusing to persist credentials to unencrypted fallback storage (CWE-312 mitigation)")
             return
         }
         prefs.edit()
@@ -116,7 +132,7 @@ class EncryptedPreferences(
 
     fun saveAccessToken(token: String) {
         if (isFallback) {
-            Log.w(TAG, "Refusing to persist access token to unencrypted fallback storage (CWE-312 mitigation)")
+            logW("Refusing to persist access token to unencrypted fallback storage (CWE-312 mitigation)")
             return
         }
         prefs.edit()
