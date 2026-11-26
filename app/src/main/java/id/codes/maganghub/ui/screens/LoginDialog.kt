@@ -66,18 +66,23 @@ fun LoginDialog(
     onOpenTerms: () -> Unit = {},
     onLogin: (username: String, password: String) -> Unit
 ) {
-    if (!isOpen) return
-
     var username by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
+
+    if (!isOpen) return
 
     val focusManager = LocalFocusManager.current
     val ctaColor = Color(0xFF0369A1)
 
     AlertDialog(
         onDismissRequest = {
-            if (!isLoading) onDismiss()
+            if (!isLoading) {
+                username = ""
+                password = ""
+                passwordVisible = false
+                onDismiss()
+            }
         },
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier
@@ -253,7 +258,12 @@ fun LoginDialog(
         },
         dismissButton = {
             TextButton(
-                onClick = onDismiss,
+                onClick = {
+                    username = ""
+                    password = ""
+                    passwordVisible = false
+                    onDismiss()
+                },
                 enabled = !isLoading
             ) {
                 Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)

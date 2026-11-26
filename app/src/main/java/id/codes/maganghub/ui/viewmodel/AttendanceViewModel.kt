@@ -264,12 +264,11 @@ class AttendanceViewModel(
      * renders cleanly on top, and automatically resumes when the sheet is dismissed.
      */
     fun showLegalDocument(type: LegalDocumentType) {
-        val wasLoginOpen = _uiState.value.isLoginDialogOpen
-        _uiState.update {
-            it.copy(
+        _uiState.update { current ->
+            current.copy(
                 activeLegalDocument = type,
-                isLoginDialogOpen = if (wasLoginOpen) false else it.isLoginDialogOpen,
-                resumeLoginOnLegalDismiss = wasLoginOpen
+                isLoginDialogOpen = false,
+                resumeLoginOnLegalDismiss = current.resumeLoginOnLegalDismiss || current.isLoginDialogOpen
             )
         }
     }
@@ -279,11 +278,10 @@ class AttendanceViewModel(
      * If opened from the login dialog, restores the login dialog back on screen.
      */
     fun dismissLegalDocument() {
-        val shouldResumeLogin = _uiState.value.resumeLoginOnLegalDismiss
-        _uiState.update {
-            it.copy(
+        _uiState.update { current ->
+            current.copy(
                 activeLegalDocument = null,
-                isLoginDialogOpen = if (shouldResumeLogin) true else it.isLoginDialogOpen,
+                isLoginDialogOpen = current.resumeLoginOnLegalDismiss || current.isLoginDialogOpen,
                 resumeLoginOnLegalDismiss = false
             )
         }

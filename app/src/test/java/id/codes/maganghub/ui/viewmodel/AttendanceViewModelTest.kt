@@ -413,6 +413,8 @@ class AttendanceViewModelTest {
 
         viewModel.dismissLegalDocument()
         assertNull(viewModel.uiState.value.activeLegalDocument)
+        assertFalse(viewModel.uiState.value.isLoginDialogOpen)
+        assertFalse(viewModel.uiState.value.resumeLoginOnLegalDismiss)
     }
 
     @Test
