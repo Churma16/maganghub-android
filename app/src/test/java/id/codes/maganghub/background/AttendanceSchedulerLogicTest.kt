@@ -241,4 +241,23 @@ class AttendanceSchedulerLogicTest {
         )
         assertTrue(shouldTriggerAfter)
     }
+
+    @Test
+    fun testShouldSkipAttendanceCheck_EarlyReturnWhenAttendedToday() {
+        val today = "2026-11-26"
+        val yesterday = "2026-11-25"
+
+        // Today attended -> skip
+        assertTrue(AttendanceCheckWorker.shouldSkipAttendanceCheck(today, today, true))
+
+        // Today NOT attended yet -> do not skip (allows user daytime attendance sync)
+        assertFalse(AttendanceCheckWorker.shouldSkipAttendanceCheck(today, today, false))
+
+        // Yesterday attended, today not checked yet -> do not skip
+        assertFalse(AttendanceCheckWorker.shouldSkipAttendanceCheck(today, yesterday, true))
+
+        // Cached date null -> do not skip
+        assertFalse(AttendanceCheckWorker.shouldSkipAttendanceCheck(today, null, true))
+        assertFalse(AttendanceCheckWorker.shouldSkipAttendanceCheck(today, null, false))
+    }
 }

@@ -78,6 +78,19 @@ class AttendanceCheckWorker(
             )
             Log.i(TAG, "Enqueued immediate OneTimeWorkRequest for attendance check.")
         }
+
+        /**
+         * Pure function to determine whether network attendance check should be skipped.
+         * Skips network call only if today's attendance has ALREADY been confirmed.
+         * Does NOT skip outside reminder window if not attended yet, allowing daytime attendance sync.
+         */
+        fun shouldSkipAttendanceCheck(
+            todayDateString: String,
+            cachedDate: String?,
+            cachedHasAttendance: Boolean
+        ): Boolean {
+            return cachedDate == todayDateString && cachedHasAttendance
+        }
     }
 
     override suspend fun doWork(): Result {
@@ -88,6 +101,31 @@ class AttendanceCheckWorker(
         val currentTimeString = nowWib.format(DateTimeFormatter.ofPattern("HH:mm"))
 
         AttendanceAlarmScheduler.checkAndResetDailyRollover(appContext, todayDateString)
+
+        val cachedHomeData = try {
+            MagangHubApp.instance.encryptedPreferences.getLastHomeData()
+        } catch (_: Exception) {
+            null
+        }
+
+        // Early return to conserve battery if today's attendance has already been confirmed
+        if (shouldSkipAttendanceCheck(
+                todayDateString = todayDateString,
+                cachedDate = cachedHomeData?.date,
+                cachedHasAttendance = cachedHomeData?.hasAttendance == true
+            )
+        ) {
+            Log.i(TAG, "Today's attendance already confirmed ($todayDateString). Early return to conserve battery.")
+            if (!AttendanceAlarmScheduler.isCongratulationsSentToday(appContext)) {
+                NotificationHelper.showSuccessNotification(appContext)
+                AttendanceAlarmScheduler.markCongratulationsSent(appContext)
+            } else {
+                NotificationHelper.cancelReminder(appContext)
+            }
+            AttendanceAlarmScheduler.scheduleNextAlarm(appContext)
+            AttendanceWidgetHelper.updateWidget(appContext)
+            return Result.success()
+        }
 
         val repository = try {
             MagangHubApp.instance.attendanceRepository
