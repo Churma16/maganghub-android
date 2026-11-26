@@ -1,6 +1,7 @@
 package id.codes.maganghub.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -34,8 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -61,6 +60,10 @@ import id.codes.maganghub.ui.viewmodel.AttendanceViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        const val EXTRA_FROM_WIDGET = "FROM_WIDGET"
+    }
+
     private val viewModel: AttendanceViewModel by viewModels {
         AttendanceViewModelFactory(MagangHubApp.instance.attendanceRepository)
     }
@@ -84,6 +87,9 @@ class MainActivity : ComponentActivity() {
         // Ensure background alarm schedule is active
         AttendanceAlarmScheduler.scheduleNextAlarm(applicationContext)
 
+        // Handle entry point triggers (e.g. opened from home screen widget)
+        handleWidgetIntent(intent)
+
         setContent {
             val uiState by viewModel.uiState.collectAsState()
             val isSystemDark = isSystemInDarkTheme()
@@ -96,6 +102,18 @@ class MainActivity : ComponentActivity() {
             MagangHubTheme(darkTheme = darkTheme) {
                 MainContent(viewModel = viewModel)
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleWidgetIntent(intent)
+    }
+
+    private fun handleWidgetIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_FROM_WIDGET, false) == true) {
+            viewModel.onOpenedFromWidget()
         }
     }
 
@@ -117,7 +135,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainContent(viewModel: AttendanceViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    val selectedTab by viewModel.selectedTab.collectAsState()
 
     Scaffold(
         topBar = {
@@ -170,7 +188,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 ) {
                     NavigationBarItem(
                         selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
+                        onClick = { viewModel.selectTab(0) },
                         icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard") },
                         label = { Text("Dashboard") },
                         colors = NavigationBarItemDefaults.colors(
@@ -183,7 +201,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
                     )
                     NavigationBarItem(
                         selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
+                        onClick = { viewModel.selectTab(1) },
                         icon = { Icon(Icons.Default.Settings, contentDescription = "Pengaturan") },
                         label = { Text("Pengaturan") },
                         colors = NavigationBarItemDefaults.colors(
@@ -205,7 +223,7 @@ fun MainContent(viewModel: AttendanceViewModel) {
                 onOpenLoginDialog = { viewModel.setLoginDialogOpen(true) },
                 onOpenPrivacyPolicy = { viewModel.showLegalDocument(LegalDocumentType.PRIVACY_POLICY) },
                 onOpenTerms = { viewModel.showLegalDocument(LegalDocumentType.TERMS_OF_SERVICE) },
-                onNavigateToSettings = { selectedTab = 1 },
+                onNavigateToSettings = { viewModel.selectTab(1) },
                 onDismissMessage = { viewModel.clearMessages() },
                 onSnoozeMentorReminder = { viewModel.snoozeMentorReminderOneDay() },
                 formatLastSync = { viewModel.formatLastSync(it) },

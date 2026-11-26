@@ -11,6 +11,8 @@ import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
 import androidx.glance.action.Action
+import androidx.glance.action.ActionParameters
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -43,6 +45,7 @@ class MagangHubWidget : GlanceAppWidget() {
     companion object {
         private val SIZE_1X3 = DpSize(180.dp, 56.dp)
         private val SIZE_1X5 = DpSize(320.dp, 56.dp)
+        val KEY_FROM_WIDGET = ActionParameters.Key<Boolean>("FROM_WIDGET")
     }
 
     override val sizeMode: SizeMode = SizeMode.Responsive(setOf(SIZE_1X3, SIZE_1X5))
@@ -53,7 +56,9 @@ class MagangHubWidget : GlanceAppWidget() {
 
         // Use explicit Activity PendingIntents to comply with Android 14+ (API 34+) security rules
         val openMonevAction = actionStartActivity<MonevWebRedirectActivity>()
-        val openAppAction = actionStartActivity<MainActivity>()
+        val openAppAction = actionStartActivity<MainActivity>(
+            parameters = actionParametersOf(KEY_FROM_WIDGET to true)
+        )
 
         // When SESI_BERAKHIR, tapping quick action should open the app to login to SSO, not the web browser
         val actionButtonAction = if (snapshot.status == WidgetStatus.SESI_BERAKHIR) {
