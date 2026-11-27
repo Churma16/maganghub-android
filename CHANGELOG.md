@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.2.2] - 2026-11-27
+
+* fix(ui): restrict mentor sync debug telemetry row to preview and debug builds (#47)
+
 ## [0.2.1] - 2026-11-27
 
 * fix(mentor): persist participant metadata and pass query parameters to fetchAttendances (#45) (#46)
