@@ -792,8 +792,14 @@ private fun PengingatCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(2.dp))
+                val intervalMinutes = uiState.reminderSettings.intervalMinutes
+                val intervalText = when {
+                    intervalMinutes < 60 -> "$intervalMinutes menit"
+                    intervalMinutes % 60 == 0 -> "${intervalMinutes / 60} jam"
+                    else -> "${intervalMinutes / 60} jam ${intervalMinutes % 60} mnt"
+                }
                 Text(
-                    text = "Tiap ${uiState.reminderSettings.intervalMinutes} menit sampai 23:59. Berhenti otomatis jika sudah lengkap.",
+                    text = "Tiap $intervalText sampai 23:59. Berhenti otomatis jika sudah lengkap.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp
@@ -974,7 +980,7 @@ private fun MentorReviewCard(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val pendingCount = uiState.pendingMentorReviewCount
-    val threshold = uiState.reminderSettings.mentorReviewThresholdDays.coerceIn(1, 5)
+    val threshold = uiState.reminderSettings.mentorReviewThresholdDays.coerceIn(1, 6)
     val isWarning = pendingCount >= threshold
 
     // Design tokens matching Kemnaker Monev theme
@@ -1028,11 +1034,9 @@ private fun MentorReviewCard(
 
     val progressValue = if (isWarning) 1f else (pendingCount / threshold.toFloat()).coerceIn(0f, 1f)
 
-    val intervalText = when (uiState.reminderSettings.mentorRepeatIntervalMinutes) {
-        30 -> "30 mnt"
-        60 -> "1 jam"
-        180 -> "3 jam"
-        1440 -> "1 hari"
+    val intervalText = when {
+        uiState.reminderSettings.mentorRepeatIntervalMinutes == 1440 -> "1 hari"
+        uiState.reminderSettings.mentorRepeatIntervalMinutes % 60 == 0 -> "${uiState.reminderSettings.mentorRepeatIntervalMinutes / 60} jam"
         else -> "${uiState.reminderSettings.mentorRepeatIntervalMinutes} mnt"
     }
 

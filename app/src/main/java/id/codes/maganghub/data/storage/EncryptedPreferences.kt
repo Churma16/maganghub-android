@@ -289,7 +289,7 @@ class EncryptedPreferences(
             soundEnabled = prefs.getBoolean(KEY_REMINDER_SOUND, true),
             vibrationEnabled = prefs.getBoolean(KEY_REMINDER_VIBRATION, true),
             mentorReminderEnabled = prefs.getBoolean(KEY_MENTOR_REMINDER_ENABLED, true),
-            mentorReviewThresholdDays = prefs.getInt(KEY_MENTOR_THRESHOLD, 5).coerceIn(1, 5),
+            mentorReviewThresholdDays = prefs.getInt(KEY_MENTOR_THRESHOLD, 5).coerceIn(1, 6),
             mentorRepeatIntervalMinutes = prefs.getInt(KEY_MENTOR_INTERVAL, 180),
             mentorSnoozedUntil = prefs.getLong(KEY_MENTOR_SNOOZED_UNTIL, 0L)
         )
