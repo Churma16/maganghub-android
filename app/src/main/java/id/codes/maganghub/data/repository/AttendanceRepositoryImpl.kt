@@ -2,6 +2,7 @@ package id.codes.maganghub.data.repository
 
 import android.util.Log
 import id.codes.maganghub.BuildConfig
+import id.codes.maganghub.data.api.AttendanceItem
 import id.codes.maganghub.data.api.FeedbackApiClient
 import id.codes.maganghub.data.api.FeedbackApiClientImpl
 import id.codes.maganghub.data.api.MagangHubApiClient
