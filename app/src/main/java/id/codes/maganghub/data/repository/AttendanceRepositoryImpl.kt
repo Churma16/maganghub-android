@@ -20,6 +20,7 @@ import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import id.codes.maganghub.data.storage.EncryptedPreferences
 import id.codes.maganghub.util.VersionComparator
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+
+private data class AttendanceFetchTier(
+    val name: String,
+    val participantId: String?,
+    val startDate: String?,
+    val endDate: String?,
+    val limit: Int
+)
 
 /**
  * Concrete implementation of AttendanceRepository managing network sync,
@@ -75,6 +84,14 @@ class AttendanceRepositoryImpl(
                 cleanToday != null -> cleanToday
                 else -> cleanEnd
             }
+        }
+
+        fun isRecoverableWithFallback(e: Exception): Boolean {
+            if (e is CancellationException || e is UnauthorizedSessionException) return false
+            if (e is java.net.SocketTimeoutException || e is java.net.UnknownHostException || e is java.net.ConnectException) {
+                return false
+            }
+            return true
         }
 
         fun maskUsername(raw: String): String {
@@ -242,46 +259,35 @@ class AttendanceRepositoryImpl(
                                 todayDate = homeData.date,
                                 internshipEndDate = endDate
                             )
+                            val tiers = listOf(
+                                AttendanceFetchTier("full_500", participantId, startDate?.take(10), effectiveEndDate, 500),
+                                AttendanceFetchTier("full_100", participantId, startDate?.take(10), effectiveEndDate, 100),
+                                AttendanceFetchTier("pid_only", participantId, null, null, 100),
+                                AttendanceFetchTier("bare", null, null, null, 100)
+                            )
+                            var attendances = emptyList<AttendanceItem>()
                             var fetchError: String? = null
-                            val attendances = try {
-                                apiClient.fetchAttendances(
-                                    monevAccessToken = validToken,
-                                    participantId = participantId,
-                                    startDate = startDate?.take(10),
-                                    endDate = effectiveEndDate,
-                                    limit = 500
-                                )
-                            } catch (e1: Exception) {
-                                Log.w(TAG, "fetchAttendances with limit 500 failed (${e1.message}), falling back to limit 100")
+
+                            for ((index, tier) in tiers.withIndex()) {
                                 try {
-                                    apiClient.fetchAttendances(
+                                    attendances = apiClient.fetchAttendances(
                                         monevAccessToken = validToken,
-                                        participantId = participantId,
-                                        startDate = startDate?.take(10),
-                                        endDate = effectiveEndDate,
-                                        limit = 100
+                                        participantId = tier.participantId,
+                                        startDate = tier.startDate,
+                                        endDate = tier.endDate,
+                                        limit = tier.limit
                                     )
-                                } catch (e2: Exception) {
-                                    Log.w(TAG, "fetchAttendances with dates failed (${e2.message}), falling back without date bounds")
-                                    try {
-                                        apiClient.fetchAttendances(
-                                            monevAccessToken = validToken,
-                                            participantId = participantId,
-                                            limit = 100
-                                        )
-                                    } catch (e3: Exception) {
-                                        Log.w(TAG, "fetchAttendances with participantId failed (${e3.message}), falling back bare")
-                                        try {
-                                            apiClient.fetchAttendances(
-                                                monevAccessToken = validToken,
-                                                limit = 100
-                                            )
-                                        } catch (e4: Exception) {
-                                            fetchError = e4.message ?: e4.javaClass.simpleName
-                                            Log.e(TAG, "All fetchAttendances tiers failed: $fetchError", e4)
-                                            emptyList()
-                                        }
+                                    fetchError = null
+                                    break
+                                } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
+                                    if (e is UnauthorizedSessionException) throw e
+                                    fetchError = e.message ?: e.javaClass.simpleName
+                                    if (!isRecoverableWithFallback(e) || index == tiers.lastIndex) {
+                                        Log.w(TAG, "fetchAttendances aborted on tier ${tier.name}: $fetchError")
+                                        break
                                     }
+                                    Log.w(TAG, "fetchAttendances tier ${tier.name} failed ($fetchError), attempting next tier...")
                                 }
                             }
 
@@ -300,6 +306,8 @@ class AttendanceRepositoryImpl(
                             }
                         }
                     } catch (ae: Exception) {
+                        if (ae is CancellationException) throw ae
+                        if (ae is UnauthorizedSessionException) throw ae
                         Log.w(TAG, "Best-effort attendances fetch for mentor review count failed: ${ae.message}")
                     }
                 } else {
@@ -318,6 +326,7 @@ class AttendanceRepositoryImpl(
                 )
                 Result.success(result)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Attendance check failed", e)
                 val cachedStatus = storage.getLastAttendanceStatus()
                 val cachedData = storage.getLastHomeData()

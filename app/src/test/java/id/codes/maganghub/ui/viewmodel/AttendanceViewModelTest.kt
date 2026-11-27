@@ -588,4 +588,36 @@ class AttendanceViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
         assertFalse(viewModel.uiState.value.isChecking)
     }
+
+    @Test
+    fun testUpdateReminderSettingsUpdatesStateAndFlow() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        val newSettings = ReminderSettings(
+            workStartHour = 10,
+            workStartMinute = 30,
+            startHour = 17,
+            intervalMinutes = 15
+        )
+
+        viewModel.updateReminderSettings(newSettings)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(10, viewModel.uiState.value.reminderSettings.workStartHour)
+        assertEquals(30, viewModel.uiState.value.reminderSettings.workStartMinute)
+        assertEquals(17, viewModel.uiState.value.reminderSettings.startHour)
+        assertEquals(15, viewModel.uiState.value.reminderSettings.intervalMinutes)
+    }
+
+    @Test
+    fun testSnoozeMentorReminderOneDaySetsSuccessMessage() = runTest {
+        val repo = FakeAttendanceRepository()
+        val viewModel = AttendanceViewModel(repo)
+
+        viewModel.snoozeMentorReminderOneDay()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Pengingat mentor ditunda 1 hari", viewModel.uiState.value.successMessage)
+    }
 }

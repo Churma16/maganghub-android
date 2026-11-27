@@ -141,13 +141,6 @@ class AttendanceViewModel(
         checkAttendanceJob = viewModelScope.launch {
             _uiState.update { it.copy(isChecking = true, errorMessage = null, successMessage = null) }
             triggerWidgetUpdate()
-            if (!silent) {
-                try {
-                    repository.refreshUserProfile()
-                } catch (pe: Exception) {
-                    Log.w("AttendanceViewModel", "Manual user profile refresh before check failed: ${pe.message}")
-                }
-            }
 
             val result = repository.checkAttendance(forceRefresh = !silent)
             result.fold(

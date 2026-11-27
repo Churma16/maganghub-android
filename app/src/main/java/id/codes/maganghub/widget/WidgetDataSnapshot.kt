@@ -221,7 +221,8 @@ data class WidgetDataSnapshot(
             context: Context,
             nowMillis: Long = System.currentTimeMillis()
         ): WidgetDataSnapshot {
-            val prefs = EncryptedPreferences(context)
+            val prefs = (context.applicationContext as? id.codes.maganghub.MagangHubApp)?.encryptedPreferences
+                ?: EncryptedPreferences(context)
             val settings = prefs.getReminderSettings()
             return fromComponents(
                 hasCredentials = prefs.hasCredentials(),
