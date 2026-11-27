@@ -131,9 +131,6 @@ class AttendanceViewModel(
      * Triggers manual or automated attendance check.
      */
     fun checkAttendanceNow(silent: Boolean = false) {
-        if (!silent) {
-            refreshUserProfile()
-        }
         // If an automated silent check is already in progress, avoid duplicate concurrent network calls
         if (checkAttendanceJob?.isActive == true && silent) {
             return
@@ -141,6 +138,13 @@ class AttendanceViewModel(
         checkAttendanceJob?.cancel()
         checkAttendanceJob = viewModelScope.launch {
             _uiState.update { it.copy(isChecking = true, errorMessage = null, successMessage = null) }
+            if (!silent) {
+                try {
+                    repository.refreshUserProfile()
+                } catch (pe: Exception) {
+                    Log.w("AttendanceViewModel", "Manual user profile refresh before check failed: ${pe.message}")
+                }
+            }
 
             val result = repository.checkAttendance(forceRefresh = !silent)
             result.fold(

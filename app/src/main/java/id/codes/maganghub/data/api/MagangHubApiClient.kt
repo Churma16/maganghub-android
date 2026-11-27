@@ -89,17 +89,20 @@ class MagangHubApiClient(
         /**
          * Calculates pending mentor review count matching Kemnaker Monev Nuxt frontend logic:
          * Filters attendances that are SUBMITTED and not ABSENT or DAYOFF, then counts distinct dates.
+         * Uses null-safe equals to safely handle any raw JSON null values deserialized by Gson.
          */
         fun calculatePendingMentorReviewCount(attendances: List<AttendanceItem>): Int {
             return attendances
-                .filter {
-                    it.approvalStatus.equals("SUBMITTED", ignoreCase = true) &&
-                        !it.status.equals("ABSENT", ignoreCase = true) &&
-                        !it.status.equals("DAYOFF", ignoreCase = true)
+                .asSequence()
+                .filter { item ->
+                    "SUBMITTED".equals(item.approvalStatus, ignoreCase = true) &&
+                        !"ABSENT".equals(item.status, ignoreCase = true) &&
+                        !"DAYOFF".equals(item.status, ignoreCase = true)
                 }
-                .map { it.date }
+                .mapNotNull { it.date?.trim()?.take(10) }
+                .filter { it.isNotBlank() }
                 .distinct()
-                .size
+                .count()
         }
     }
 
@@ -674,18 +677,18 @@ class MagangHubApiClient(
  */
 data class AttendanceItem(
     @SerializedName("id")
-    val id: String = "",
+    val id: String? = null,
 
-    @SerializedName("date")
-    val date: String = "",
+    @SerializedName("date", alternate = ["attendance_date", "attendanceDate"])
+    val date: String? = null,
 
     @SerializedName("status")
-    val status: String = "",
+    val status: String? = null,
 
     @SerializedName("approval_status", alternate = ["approvalStatus"])
-    val approvalStatus: String = ""
+    val approvalStatus: String? = null
 ) {
-    val approval_status: String
+    val approval_status: String?
         get() = approvalStatus
 }
 

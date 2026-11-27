@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName
  * User profile details returned by GET /api/v1/users/me on MagangHub Monev API.
  */
 data class UserProfileData(
-    @SerializedName("id")
+    @SerializedName("id", alternate = ["participant_id", "participantId", "user_id", "userId"])
     val id: String = "",
 
     @SerializedName("name")
@@ -21,10 +21,10 @@ data class UserProfileData(
     @SerializedName("internship_company")
     val internshipCompany: String? = null,
 
-    @SerializedName("internship_start_date")
+    @SerializedName("internship_start_date", alternate = ["internshipStartDate", "start_date", "startDate"])
     val internshipStartDate: String? = null,
 
-    @SerializedName("internship_end_date")
+    @SerializedName("internship_end_date", alternate = ["internshipEndDate", "end_date", "endDate"])
     val internshipEndDate: String? = null
 ) {
     val internship_start_date: String?

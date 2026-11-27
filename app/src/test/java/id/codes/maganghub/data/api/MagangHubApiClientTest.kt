@@ -329,10 +329,41 @@ class MagangHubApiClientTest {
             AttendanceItem(id = "3", date = "2026-11-21", status = "ABSENT", approvalStatus = "SUBMITTED"),
             AttendanceItem(id = "4", date = "2026-11-22", status = "DAYOFF", approvalStatus = "SUBMITTED"),
             AttendanceItem(id = "5", date = "2026-11-23", status = "PRESENT", approvalStatus = "APPROVED"),
-            AttendanceItem(id = "6", date = "2026-11-24", status = "PRESENT", approvalStatus = "SUBMITTED")
+            AttendanceItem(id = "6", date = "2026-11-24", status = "PRESENT", approvalStatus = "SUBMITTED"),
+            // Null fields simulation (matches raw Gson deserialization of incomplete records)
+            AttendanceItem(id = "7", date = null, status = null, approvalStatus = null),
+            AttendanceItem(id = "8", date = "2026-11-25", status = null, approvalStatus = "SUBMITTED")
         )
         val count = MagangHubApiClient.calculatePendingMentorReviewCount(items)
-        assertEquals(2, count)
+        assertEquals(3, count)
+    }
+
+    @Test
+    fun testUserProfileDataAlternateFields() = runBlocking {
+        val responseBody = """
+            {
+                "data": {
+                    "participant_id": "part-9999",
+                    "name": "Fathan Alternate",
+                    "start_date": "2026-08-10",
+                    "end_date": "2027-02-09"
+                }
+            }
+        """.trimIndent()
+
+        mockServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(responseBody)
+        )
+
+        val profile = client.fetchUserProfile("valid_mock_token")
+        assertNotNull(profile)
+        assertEquals("part-9999", profile.id)
+        assertEquals("Fathan Alternate", profile.name)
+        assertEquals("2026-08-10", profile.internshipStartDate)
+        assertEquals("2027-02-09", profile.internshipEndDate)
     }
 
     @Test

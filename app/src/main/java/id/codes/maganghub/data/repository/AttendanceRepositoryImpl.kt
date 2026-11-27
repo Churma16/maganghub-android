@@ -200,7 +200,7 @@ class AttendanceRepositoryImpl(
                 var startDate = storage.getInternshipStartDate()
                 var endDate = storage.getInternshipEndDate()
 
-                if (participantId.isNullOrBlank() || storage.getFullName().isNullOrBlank()) {
+                if (participantId.isNullOrBlank() || startDate.isNullOrBlank() || endDate.isNullOrBlank() || storage.getFullName().isNullOrBlank()) {
                     try {
                         val validToken = storage.getAccessToken().orEmpty()
                         if (validToken.isNotBlank()) {
@@ -240,17 +240,37 @@ class AttendanceRepositoryImpl(
                                 todayDate = homeData.date,
                                 internshipEndDate = endDate
                             )
-                            val attendances = apiClient.fetchAttendances(
-                                monevAccessToken = validToken,
-                                participantId = participantId,
-                                startDate = startDate?.take(10),
-                                endDate = effectiveEndDate,
-                                limit = 500
-                            )
+                            val attendances = try {
+                                apiClient.fetchAttendances(
+                                    monevAccessToken = validToken,
+                                    participantId = participantId,
+                                    startDate = startDate?.take(10),
+                                    endDate = effectiveEndDate,
+                                    limit = 500
+                                )
+                            } catch (e1: Exception) {
+                                Log.w(TAG, "fetchAttendances with limit 500 failed (${e1.message}), falling back to limit 100")
+                                try {
+                                    apiClient.fetchAttendances(
+                                        monevAccessToken = validToken,
+                                        participantId = participantId,
+                                        startDate = startDate?.take(10),
+                                        endDate = effectiveEndDate,
+                                        limit = 100
+                                    )
+                                } catch (e2: Exception) {
+                                    Log.w(TAG, "fetchAttendances with dates failed (${e2.message}), falling back without date bounds")
+                                    apiClient.fetchAttendances(
+                                        monevAccessToken = validToken,
+                                        participantId = participantId,
+                                        limit = 100
+                                    )
+                                }
+                            }
                             pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
                             storage.savePendingMentorReviewCount(pendingCount)
                             storage.saveLastMentorCheckTimestamp(now)
-                            Log.i(TAG, "Refreshed pending mentor review count: $pendingCount (next check in 3h)")
+                            Log.i(TAG, "Refreshed pending mentor review count: $pendingCount (fetched ${attendances.size} records)")
                         }
                     } catch (ae: Exception) {
                         Log.w(TAG, "Best-effort attendances fetch for mentor review count failed: ${ae.message}")
