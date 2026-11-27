@@ -457,12 +457,14 @@ class AttendanceViewModel(
             }
             now.hour >= settings.startHour && now.hour < settings.endHour -> {
                 val interval = if (settings.intervalMinutes > 0) settings.intervalMinutes else 30
-                val nextMinute = ((now.minute / interval) + 1) * interval
-                val nextTime = now.plusMinutes((nextMinute - now.minute).toLong()).withSecond(0)
+                val nextTime = now.plusMinutes(interval.toLong()).withSecond(0)
                 if (nextTime.toLocalDate() != now.toLocalDate() || nextTime.hour >= settings.endHour) {
                     "Batas akhir logbook 23:59 WIB"
                 } else {
-                    "Aktif pukul ${nextTime.format(timeFormatter)} WIB (setiap $interval m)"
+                    val intervalStr = if (interval >= 60) {
+                        if (interval % 60 == 0) "${interval / 60} jam" else "${interval / 60} jam ${interval % 60} m"
+                    } else "$interval m"
+                    "Aktif pukul ${nextTime.format(timeFormatter)} WIB (setiap $intervalStr)"
                 }
             }
             else -> "Batas logbook 23:59 WIB telah lewat"

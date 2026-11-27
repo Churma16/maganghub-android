@@ -53,6 +53,9 @@ import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import java.util.Locale
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -585,17 +588,17 @@ fun SettingsScreen(
                 }
                 SettingsSliderRow(
                     title = "Jam mulai pengingat logbook (WIB)",
-                    valueLabel = String.format("%02d:00 WIB", sliderStartHour.roundToInt()),
+                    valueLabel = String.format(Locale.getDefault(), "%02d:00 WIB", sliderStartHour.roundToInt()),
                     value = sliderStartHour,
                     onValueChange = { sliderStartHour = it.roundToInt().toFloat() },
                     onValueChangeFinished = {
                         val targetHour = sliderStartHour.roundToInt()
                         if (targetHour <= settings.workStartHour) {
-                            showFeedbackToast("Jam pengingat harus sesudah jam mulai kerja (${String.format("%02d:%02d", settings.workStartHour, settings.workStartMinute)} WIB)")
-                            sliderStartHour = maxOf(13, settings.workStartHour + 1).toFloat()
+                            showFeedbackToast("Jam pengingat harus sesudah jam mulai kerja (${String.format(Locale.getDefault(), "%02d:%02d", settings.workStartHour, settings.workStartMinute)} WIB)")
+                            sliderStartHour = settings.startHour.toFloat()
                         } else if (targetHour != settings.startHour) {
                             onUpdateReminderSettings(settings.copy(startHour = targetHour))
-                            showFeedbackToast(String.format("Pengingat dimulai pukul %02d:00 WIB", targetHour))
+                            showFeedbackToast(String.format(Locale.getDefault(), "Pengingat dimulai pukul %02d:00 WIB", targetHour))
                         }
                     },
                     valueRange = 13f..20f,
@@ -1434,7 +1437,11 @@ private fun SettingsSliderRow(
                 activeTrackColor = primaryColor,
                 inactiveTrackColor = if (isDark) Color(0xFF263450) else Color(0xFFE2E8F0)
             ),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = "$title: $valueLabel"
+                }
         )
 
         Row(
