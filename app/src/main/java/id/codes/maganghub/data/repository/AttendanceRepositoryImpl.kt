@@ -2,6 +2,7 @@ package id.codes.maganghub.data.repository
 
 import android.util.Log
 import id.codes.maganghub.BuildConfig
+import id.codes.maganghub.data.api.AttendanceItem
 import id.codes.maganghub.data.api.FeedbackApiClient
 import id.codes.maganghub.data.api.FeedbackApiClientImpl
 import id.codes.maganghub.data.api.MagangHubApiClient
@@ -20,6 +21,7 @@ import id.codes.maganghub.data.model.UserProfileData
 import id.codes.maganghub.data.model.UserSession
 import id.codes.maganghub.data.storage.EncryptedPreferences
 import id.codes.maganghub.util.VersionComparator
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +30,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+
+private data class AttendanceFetchTier(
+    val name: String,
+    val participantId: String?,
+    val startDate: String?,
+    val endDate: String?,
+    val limit: Int
+)
 
 /**
  * Concrete implementation of AttendanceRepository managing network sync,
@@ -58,6 +68,31 @@ class AttendanceRepositoryImpl(
             val elapsed = currentTimeMillis - lastCheckMillis
             if (elapsed < 0L) return true // Clock drifted or reset
             return elapsed >= ttlMillis
+        }
+
+        /**
+         * Resolves effective end date for fetching attendances:
+         * Uses earlier of todayDate or internshipEndDate (matching Nuxt frontend logic: min(today, end_date)).
+         */
+        fun resolveEffectiveEndDate(
+            todayDate: String?,
+            internshipEndDate: String?
+        ): String? {
+            val cleanToday = todayDate?.trim()?.take(10)?.takeIf { it.isNotBlank() }
+            val cleanEnd = internshipEndDate?.trim()?.take(10)?.takeIf { it.isNotBlank() }
+            return when {
+                cleanToday != null && cleanEnd != null -> minOf(cleanToday, cleanEnd)
+                cleanToday != null -> cleanToday
+                else -> cleanEnd
+            }
+        }
+
+        fun isRecoverableWithFallback(e: Exception): Boolean {
+            if (e is CancellationException || e is UnauthorizedSessionException) return false
+            if (e is java.net.SocketTimeoutException || e is java.net.UnknownHostException || e is java.net.ConnectException) {
+                return false
+            }
+            return true
         }
 
         fun maskUsername(raw: String): String {
@@ -92,7 +127,13 @@ class AttendanceRepositoryImpl(
                     storage.resetLoginFailureCount()
                     try {
                         val profile = apiClient.fetchUserProfile(token)
-                        storage.saveUserProfile(profile.name, profile.photoUrl)
+                        storage.saveUserProfile(
+                            fullName = profile.name,
+                            photoUrl = profile.photoUrl,
+                            participantId = profile.id.takeIf { it.isNotBlank() },
+                            internshipStartDate = profile.internshipStartDate?.takeIf { it.isNotBlank() },
+                            internshipEndDate = profile.internshipEndDate?.takeIf { it.isNotBlank() }
+                        )
                     } catch (pe: Exception) {
                         Log.w(TAG, "Best-effort profile fetch after login failed: ${pe.message}")
                     }
@@ -172,11 +213,28 @@ class AttendanceRepositoryImpl(
                 val status = homeData.toAttendanceStatus()
                 val now = System.currentTimeMillis()
                 storage.saveAttendanceCache(homeData, status, now)
-                if (storage.getFullName().isNullOrBlank()) {
+
+                var participantId = storage.getParticipantId()
+                var startDate = storage.getInternshipStartDate()
+                var endDate = storage.getInternshipEndDate()
+
+                if (forceRefresh || participantId.isNullOrBlank() || startDate.isNullOrBlank() || endDate.isNullOrBlank() || storage.getFullName().isNullOrBlank()) {
                     try {
                         val validToken = storage.getAccessToken().orEmpty()
-                        val profile = apiClient.fetchUserProfile(validToken)
-                        storage.saveUserProfile(profile.name, profile.photoUrl)
+                        if (validToken.isNotBlank()) {
+                            val profile = apiClient.fetchUserProfile(validToken)
+                            storage.saveUserProfile(
+                                fullName = profile.name,
+                                photoUrl = profile.photoUrl,
+                                participantId = profile.id.takeIf { it.isNotBlank() },
+                                internshipStartDate = profile.internshipStartDate?.takeIf { it.isNotBlank() },
+                                internshipEndDate = profile.internshipEndDate?.takeIf { it.isNotBlank() }
+                            )
+                            if (profile.id.isNotBlank()) participantId = profile.id
+                            if (!profile.internshipStartDate.isNullOrBlank()) startDate = profile.internshipStartDate
+                            if (!profile.internshipEndDate.isNullOrBlank()) endDate = profile.internshipEndDate
+                            Log.i(TAG, "Profile refreshed: pId=$participantId, start=$startDate, end=$endDate")
+                        }
                     } catch (pe: Exception) {
                         Log.w(TAG, "Best-effort profile fetch during check failed: ${pe.message}")
                     }
@@ -193,17 +251,64 @@ class AttendanceRepositoryImpl(
                     ttlMillis = MENTOR_CHECK_TTL_MILLIS
                 )
 
+                var debugMsg = storage.getLastMentorSyncDebug()
                 if (forceRefresh || isDue) {
                     try {
                         val validToken = storage.getAccessToken().orEmpty()
                         if (validToken.isNotBlank()) {
-                            val attendances = apiClient.fetchAttendances(validToken)
-                            pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
-                            storage.savePendingMentorReviewCount(pendingCount)
-                            storage.saveLastMentorCheckTimestamp(now)
-                            Log.i(TAG, "Refreshed pending mentor review count: $pendingCount (next check in 3h)")
+                            val effectiveEndDate = resolveEffectiveEndDate(
+                                todayDate = homeData.date,
+                                internshipEndDate = endDate
+                            )
+                            val tiers = listOf(
+                                AttendanceFetchTier("full_500", participantId, startDate?.take(10), effectiveEndDate, 500),
+                                AttendanceFetchTier("full_100", participantId, startDate?.take(10), effectiveEndDate, 100),
+                                AttendanceFetchTier("pid_only", participantId, null, null, 100),
+                                AttendanceFetchTier("bare", null, null, null, 100)
+                            )
+                            var attendances = emptyList<AttendanceItem>()
+                            var fetchError: String? = null
+
+                            for ((index, tier) in tiers.withIndex()) {
+                                try {
+                                    attendances = apiClient.fetchAttendances(
+                                        monevAccessToken = validToken,
+                                        participantId = tier.participantId,
+                                        startDate = tier.startDate,
+                                        endDate = tier.endDate,
+                                        limit = tier.limit
+                                    )
+                                    fetchError = null
+                                    break
+                                } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
+                                    if (e is UnauthorizedSessionException) throw e
+                                    fetchError = e.message ?: e.javaClass.simpleName
+                                    if (!isRecoverableWithFallback(e) || index == tiers.lastIndex) {
+                                        Log.w(TAG, "fetchAttendances aborted on tier ${tier.name}: $fetchError")
+                                        break
+                                    }
+                                    Log.w(TAG, "fetchAttendances tier ${tier.name} failed ($fetchError), attempting next tier...")
+                                }
+                            }
+
+                            if (fetchError == null) {
+                                pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
+                                storage.savePendingMentorReviewCount(pendingCount)
+                                storage.saveLastMentorCheckTimestamp(now)
+                                val pIdMask = if (!participantId.isNullOrBlank()) "${participantId.take(8)}.." else "null"
+                                debugMsg = "pId=$pIdMask, ${startDate?.take(10)}..$effectiveEndDate, fetched=${attendances.size}, pending=$pendingCount"
+                                storage.saveLastMentorSyncDebug(debugMsg)
+                                Log.i(TAG, "Refreshed pending mentor review count: $pendingCount ($debugMsg)")
+                            } else {
+                                val pIdMask = if (!participantId.isNullOrBlank()) "${participantId.take(8)}.." else "null"
+                                debugMsg = "pId=$pIdMask, err=$fetchError"
+                                storage.saveLastMentorSyncDebug(debugMsg)
+                            }
                         }
                     } catch (ae: Exception) {
+                        if (ae is CancellationException) throw ae
+                        if (ae is UnauthorizedSessionException) throw ae
                         Log.w(TAG, "Best-effort attendances fetch for mentor review count failed: ${ae.message}")
                     }
                 } else {
@@ -217,15 +322,18 @@ class AttendanceRepositoryImpl(
                     data = homeData,
                     checkedAt = now,
                     isSuccess = true,
-                    pendingMentorReviewCount = pendingCount
+                    pendingMentorReviewCount = pendingCount,
+                    mentorSyncDebug = debugMsg
                 )
                 Result.success(result)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Attendance check failed", e)
                 val cachedStatus = storage.getLastAttendanceStatus()
                 val cachedData = storage.getLastHomeData()
                 val cachedTime = storage.getLastCheckTimestamp()
                 val cachedPendingCount = storage.getPendingMentorReviewCount()
+                val cachedDebug = storage.getLastMentorSyncDebug()
 
                 val fallbackResult = AttendanceCheckResult(
                     status = cachedStatus,
@@ -233,7 +341,8 @@ class AttendanceRepositoryImpl(
                     checkedAt = if (cachedTime > 0) cachedTime else System.currentTimeMillis(),
                     isSuccess = false,
                     errorMessage = e.message ?: "Gagal mengambil data kehadiran",
-                    pendingMentorReviewCount = cachedPendingCount
+                    pendingMentorReviewCount = cachedPendingCount,
+                    mentorSyncDebug = cachedDebug
                 )
                 Result.failure(e)
             }
@@ -269,7 +378,13 @@ class AttendanceRepositoryImpl(
                     return@withContext Result.failure(UnauthorizedSessionException("Belum login"))
                 }
                 val profile = apiClient.fetchUserProfile(token)
-                storage.saveUserProfile(profile.name, profile.photoUrl)
+                storage.saveUserProfile(
+                    fullName = profile.name,
+                    photoUrl = profile.photoUrl,
+                    participantId = profile.id.takeIf { it.isNotBlank() },
+                    internshipStartDate = profile.internshipStartDate?.takeIf { it.isNotBlank() },
+                    internshipEndDate = profile.internshipEndDate?.takeIf { it.isNotBlank() }
+                )
                 _sessionFlow.value = storage.getUserSession()
                 Result.success(profile)
             } catch (e: Exception) {
@@ -303,6 +418,8 @@ class AttendanceRepositoryImpl(
     }
 
     override fun getCachedPendingMentorReviewCount(): Int = storage.getPendingMentorReviewCount()
+
+    override fun getLastMentorSyncDebug(): String? = storage.getLastMentorSyncDebug()
 
     override suspend fun checkForUpdates(): Result<UpdateCheckState> = withContext(ioDispatcher) {
         val releaseResult = updateApiClient.getLatestRelease()

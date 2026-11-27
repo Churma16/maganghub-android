@@ -21,7 +21,8 @@ data class AttendanceCheckResult(
     val checkedAt: Long = System.currentTimeMillis(),
     val isSuccess: Boolean = true,
     val errorMessage: String? = null,
-    val pendingMentorReviewCount: Int = 0
+    val pendingMentorReviewCount: Int = 0,
+    val mentorSyncDebug: String? = null
 )
 
 /**

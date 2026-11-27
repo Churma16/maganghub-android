@@ -1,6 +1,7 @@
 package id.codes.maganghub.ui.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -42,6 +43,7 @@ class AttendanceViewModel(
             attendanceStatus = repository.getCachedStatus(),
             attendanceData = repository.getCachedHomeData(),
             pendingMentorReviewCount = repository.getCachedPendingMentorReviewCount(),
+            mentorSyncDebug = repository.getLastMentorSyncDebug(),
             lastSyncTimestamp = repository.getLastCheckTimestamp(),
             reminderSettings = repository.reminderSettingsFlow.value,
             themeMode = repository.themeModeFlow.value,
@@ -131,9 +133,6 @@ class AttendanceViewModel(
      * Triggers manual or automated attendance check.
      */
     fun checkAttendanceNow(silent: Boolean = false) {
-        if (!silent) {
-            refreshUserProfile()
-        }
         // If an automated silent check is already in progress, avoid duplicate concurrent network calls
         if (checkAttendanceJob?.isActive == true && silent) {
             return
@@ -141,6 +140,7 @@ class AttendanceViewModel(
         checkAttendanceJob?.cancel()
         checkAttendanceJob = viewModelScope.launch {
             _uiState.update { it.copy(isChecking = true, errorMessage = null, successMessage = null) }
+            triggerWidgetUpdate()
 
             val result = repository.checkAttendance(forceRefresh = !silent)
             result.fold(
@@ -151,6 +151,7 @@ class AttendanceViewModel(
                             attendanceStatus = checkResult.status,
                             attendanceData = checkResult.data,
                             pendingMentorReviewCount = checkResult.pendingMentorReviewCount,
+                            mentorSyncDebug = checkResult.mentorSyncDebug ?: repository.getLastMentorSyncDebug(),
                             lastSyncTimestamp = checkResult.checkedAt,
                             successMessage = if (!silent) "Logbook berhasil dicek!" else null,
                             errorMessage = null
@@ -161,6 +162,7 @@ class AttendanceViewModel(
                     _uiState.update { current ->
                         current.copy(
                             isChecking = false,
+                            mentorSyncDebug = repository.getLastMentorSyncDebug(),
                             errorMessage = error.message ?: "Gagal memeriksa status logbook"
                         )
                     }

@@ -89,17 +89,20 @@ class MagangHubApiClient(
         /**
          * Calculates pending mentor review count matching Kemnaker Monev Nuxt frontend logic:
          * Filters attendances that are SUBMITTED and not ABSENT or DAYOFF, then counts distinct dates.
+         * Uses null-safe equals to safely handle any raw JSON null values deserialized by Gson.
          */
         fun calculatePendingMentorReviewCount(attendances: List<AttendanceItem>): Int {
             return attendances
-                .filter {
-                    it.approvalStatus.equals("SUBMITTED", ignoreCase = true) &&
-                        !it.status.equals("ABSENT", ignoreCase = true) &&
-                        !it.status.equals("DAYOFF", ignoreCase = true)
+                .asSequence()
+                .filter { item ->
+                    "SUBMITTED".equals(item.approvalStatus, ignoreCase = true) &&
+                        !"ABSENT".equals(item.status, ignoreCase = true) &&
+                        !"DAYOFF".equals(item.status, ignoreCase = true)
                 }
-                .map { it.date }
+                .mapNotNull { it.date?.trim()?.take(10) }
+                .filter { it.isNotBlank() }
                 .distinct()
-                .size
+                .count()
         }
     }
 
@@ -196,11 +199,7 @@ class MagangHubApiClient(
             val responseBody = response.body?.string().orEmpty()
 
             when (response.code) {
-                200 -> {
-                    val envelope = gson.fromJson(responseBody, UserProfileResponse::class.java)
-                        ?: throw IOException("Empty response received from user profile endpoint")
-                    envelope.data
-                }
+                200 -> parseUserProfileResponseBody(responseBody)
                 401 -> {
                     val errorEnvelope = try {
                         gson.fromJson(responseBody, ApiErrorResponse::class.java)
@@ -220,6 +219,61 @@ class MagangHubApiClient(
                 else -> throw MagangHubApiException(response.code, responseBody)
             }
         }
+
+    fun parseUserProfileResponseBody(responseBody: String): UserProfileData {
+        return try {
+            val root = JsonParser.parseString(responseBody)
+            val dataObj = when {
+                root.isJsonObject && root.asJsonObject.has("data") && root.asJsonObject.get("data").isJsonObject -> {
+                    root.asJsonObject.getAsJsonObject("data")
+                }
+                root.isJsonObject -> root.asJsonObject
+                else -> return UserProfileData()
+            }
+
+            fun extractString(obj: JsonObject, vararg keys: String): String? {
+                for (key in keys) {
+                    val elem = obj.get(key)
+                    if (elem != null && !elem.isJsonNull) {
+                        if (elem.isJsonPrimitive) {
+                            val str = elem.asString.trim()
+                            if (str.isNotEmpty()) return str
+                        }
+                    }
+                }
+                return null
+            }
+
+            val id = extractString(dataObj, "id", "participant_id", "participantId", "user_id", "userId").orEmpty()
+            val name = extractString(dataObj, "name", "full_name", "fullName").orEmpty()
+            val photoUrl = extractString(dataObj, "photo_url", "photoUrl", "avatar", "avatar_url")
+            val startDate = extractString(dataObj, "internship_start_date", "internshipStartDate", "start_date", "startDate")
+            val endDate = extractString(dataObj, "internship_end_date", "internshipEndDate", "end_date", "endDate")
+
+            val internshipCompany = extractString(dataObj, "internship_company", "internshipCompany")
+                ?: run {
+                    val compElem = dataObj.get("company")
+                    when {
+                        compElem != null && compElem.isJsonPrimitive -> compElem.asString.trim()
+                        compElem != null && compElem.isJsonObject -> {
+                            extractString(compElem.asJsonObject, "name", "company_name")
+                        }
+                        else -> null
+                    }
+                }
+
+            UserProfileData(
+                id = id,
+                name = name,
+                photoUrl = photoUrl,
+                internshipCompany = internshipCompany,
+                internshipStartDate = startDate,
+                internshipEndDate = endDate
+            )
+        } catch (e: Exception) {
+            UserProfileData()
+        }
+    }
 
     /**
      * Executes the 4-step OAuth2 SSO login flow against Kemnaker and MagangHub:
@@ -634,32 +688,70 @@ class MagangHubApiClient(
 
     fun parseAttendancesResponseBody(responseBody: String): List<AttendanceItem> {
         return try {
-            val element = JsonParser.parseString(responseBody)
-            when {
-                element.isJsonArray -> {
-                    val listType = object : TypeToken<List<AttendanceItem>>() {}.type
-                    gson.fromJson(element, listType) ?: emptyList()
-                }
-                element.isJsonObject -> {
-                    val obj = element.asJsonObject
-                    if (obj.has("data")) {
-                        val dataElement = obj.get("data")
-                        if (dataElement.isJsonArray) {
-                            val listType = object : TypeToken<List<AttendanceItem>>() {}.type
-                            gson.fromJson(dataElement, listType) ?: emptyList()
-                        } else if (dataElement.isJsonObject && dataElement.asJsonObject.has("data")) {
-                            val innerData = dataElement.asJsonObject.get("data")
-                            val listType = object : TypeToken<List<AttendanceItem>>() {}.type
-                            gson.fromJson(innerData, listType) ?: emptyList()
-                        } else {
-                            emptyList()
+            val root = JsonParser.parseString(responseBody)
+            val jsonArray = when {
+                root.isJsonArray -> root.asJsonArray
+                root.isJsonObject -> {
+                    val obj = root.asJsonObject
+                    val data = obj.get("data")
+                    when {
+                        data != null && data.isJsonArray -> data.asJsonArray
+                        data != null && data.isJsonObject -> {
+                            val inner = data.asJsonObject
+                            when {
+                                inner.has("data") && inner.get("data").isJsonArray -> inner.getAsJsonArray("data")
+                                inner.has("attendances") && inner.get("attendances").isJsonArray -> inner.getAsJsonArray("attendances")
+                                inner.has("items") && inner.get("items").isJsonArray -> inner.getAsJsonArray("items")
+                                else -> null
+                            }
                         }
-                    } else {
-                        emptyList()
+                        obj.has("attendances") && obj.get("attendances").isJsonArray -> obj.getAsJsonArray("attendances")
+                        obj.has("items") && obj.get("items").isJsonArray -> obj.getAsJsonArray("items")
+                        else -> null
                     }
                 }
-                else -> emptyList()
+                else -> null
+            } ?: return emptyList()
+
+            val result = mutableListOf<AttendanceItem>()
+            for (element in jsonArray) {
+                if (!element.isJsonObject) continue
+                val itemObj = element.asJsonObject
+
+                fun extractStr(obj: JsonObject, vararg keys: String): String? {
+                    for (k in keys) {
+                        val elem = obj.get(k)
+                        if (elem != null && !elem.isJsonNull && elem.isJsonPrimitive) {
+                            val s = elem.asString.trim()
+                            if (s.isNotEmpty()) return s
+                        }
+                    }
+                    return null
+                }
+
+                val targetObj = if (itemObj.has("attendance") && itemObj.get("attendance").isJsonObject) {
+                    itemObj.getAsJsonObject("attendance")
+                } else {
+                    itemObj
+                }
+
+                val id = extractStr(targetObj, "id", "attendance_id")
+                val date = extractStr(targetObj, "date", "attendance_date", "attendanceDate", "day")
+                val status = extractStr(targetObj, "status", "attendance_status")
+                val approvalStatus = extractStr(targetObj, "approval_status", "approvalStatus")
+
+                if (date != null || status != null || approvalStatus != null) {
+                    result.add(
+                        AttendanceItem(
+                            id = id,
+                            date = date,
+                            status = status,
+                            approvalStatus = approvalStatus
+                        )
+                    )
+                }
             }
+            result
         } catch (e: Exception) {
             emptyList()
         }
@@ -674,18 +766,18 @@ class MagangHubApiClient(
  */
 data class AttendanceItem(
     @SerializedName("id")
-    val id: String = "",
+    val id: String? = null,
 
-    @SerializedName("date")
-    val date: String = "",
+    @SerializedName("date", alternate = ["attendance_date", "attendanceDate"])
+    val date: String? = null,
 
     @SerializedName("status")
-    val status: String = "",
+    val status: String? = null,
 
     @SerializedName("approval_status", alternate = ["approvalStatus"])
-    val approvalStatus: String = ""
+    val approvalStatus: String? = null
 ) {
-    val approval_status: String
+    val approval_status: String?
         get() = approvalStatus
 }
 

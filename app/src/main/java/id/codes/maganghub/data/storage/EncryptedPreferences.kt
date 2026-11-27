@@ -49,6 +49,9 @@ class EncryptedPreferences(
         private const val KEY_DEVICE_JITTER_SEED = "pref_device_jitter_seed_minutes"
         private const val KEY_FULL_NAME = "pref_user_full_name"
         private const val KEY_PHOTO_URL = "pref_user_photo_url"
+        private const val KEY_PARTICIPANT_ID = "pref_participant_id"
+        private const val KEY_INTERNSHIP_START_DATE = "pref_internship_start_date"
+        private const val KEY_INTERNSHIP_END_DATE = "pref_internship_end_date"
         private const val KEY_THEME_MODE = "pref_theme_mode"
 
         const val KEY_MENTOR_REMINDER_ENABLED = "pref_mentor_reminder_enabled"
@@ -57,6 +60,7 @@ class EncryptedPreferences(
         const val KEY_MENTOR_SNOOZED_UNTIL = "pref_mentor_snoozed_until"
         const val KEY_MENTOR_PENDING_COUNT = "pref_mentor_pending_count"
         const val KEY_MENTOR_LAST_CHECK_TIME = "pref_mentor_last_check_timestamp"
+        const val KEY_LAST_MENTOR_SYNC_DEBUG = "pref_last_mentor_sync_debug"
 
         private const val KEY_LAST_UPDATE_CHECK_TIMESTAMP = "pref_last_update_check_timestamp"
 
@@ -167,20 +171,43 @@ class EncryptedPreferences(
         return newSeed
     }
 
-    // User Profile Cache (Name & Avatar Photo)
-    fun saveUserProfile(fullName: String, photoUrl: String?) {
+    // User Profile Cache (Name, Avatar Photo, Participant ID & Internship Dates)
+    fun saveUserProfile(
+        fullName: String,
+        photoUrl: String?,
+        participantId: String? = null,
+        internshipStartDate: String? = null,
+        internshipEndDate: String? = null
+    ) {
         val editor = prefs.edit().putString(KEY_FULL_NAME, fullName.trim())
         if (!photoUrl.isNullOrBlank()) {
             editor.putString(KEY_PHOTO_URL, photoUrl.trim())
         } else {
             editor.remove(KEY_PHOTO_URL)
         }
+        editor.updateOptionalString(KEY_PARTICIPANT_ID, participantId)
+        editor.updateOptionalString(KEY_INTERNSHIP_START_DATE, internshipStartDate)
+        editor.updateOptionalString(KEY_INTERNSHIP_END_DATE, internshipEndDate)
         editor.apply()
+    }
+
+    private fun SharedPreferences.Editor.updateOptionalString(key: String, value: String?): SharedPreferences.Editor {
+        return if (!value.isNullOrBlank()) {
+            putString(key, value.trim())
+        } else {
+            this
+        }
     }
 
     fun getFullName(): String? = prefs.getString(KEY_FULL_NAME, null)?.takeIf { it.isNotBlank() }
 
     fun getPhotoUrl(): String? = prefs.getString(KEY_PHOTO_URL, null)?.takeIf { it.isNotBlank() }
+
+    fun getParticipantId(): String? = prefs.getString(KEY_PARTICIPANT_ID, null)?.takeIf { it.isNotBlank() }
+
+    fun getInternshipStartDate(): String? = prefs.getString(KEY_INTERNSHIP_START_DATE, null)?.takeIf { it.isNotBlank() }
+
+    fun getInternshipEndDate(): String? = prefs.getString(KEY_INTERNSHIP_END_DATE, null)?.takeIf { it.isNotBlank() }
 
     fun getUserSession(): UserSession {
         val username = getUsername().orEmpty()
@@ -206,7 +233,7 @@ class EncryptedPreferences(
             .putString(KEY_LAST_STATUS, status.name)
             .putString(KEY_LAST_HOME_DATA, dataJson)
             .putLong(KEY_LAST_CHECK_TIME, timestamp)
-            .apply()
+            .commit()
     }
 
     fun getLastAttendanceStatus(): AttendanceStatus {
@@ -270,13 +297,13 @@ class EncryptedPreferences(
 
     // Mentor Review Reminder Cache
     fun savePendingMentorReviewCount(count: Int) {
-        prefs.edit().putInt(KEY_MENTOR_PENDING_COUNT, count).apply()
+        prefs.edit().putInt(KEY_MENTOR_PENDING_COUNT, count).commit()
     }
 
     fun getPendingMentorReviewCount(): Int = prefs.getInt(KEY_MENTOR_PENDING_COUNT, 0)
 
     fun saveLastMentorCheckTimestamp(timestamp: Long = System.currentTimeMillis()) {
-        prefs.edit().putLong(KEY_MENTOR_LAST_CHECK_TIME, timestamp).apply()
+        prefs.edit().putLong(KEY_MENTOR_LAST_CHECK_TIME, timestamp).commit()
     }
 
     fun getLastMentorCheckTimestamp(): Long = prefs.getLong(KEY_MENTOR_LAST_CHECK_TIME, 0L)
@@ -288,6 +315,12 @@ class EncryptedPreferences(
     fun setMentorSnoozedUntil(timestampMillis: Long) = saveMentorSnoozedUntil(timestampMillis)
 
     fun getMentorSnoozedUntil(): Long = prefs.getLong(KEY_MENTOR_SNOOZED_UNTIL, 0L)
+
+    fun saveLastMentorSyncDebug(debug: String) {
+        prefs.edit().putString(KEY_LAST_MENTOR_SYNC_DEBUG, debug).apply()
+    }
+
+    fun getLastMentorSyncDebug(): String? = prefs.getString(KEY_LAST_MENTOR_SYNC_DEBUG, null)
 
     // Last update check timestamp
     fun saveLastUpdateCheckTimestamp(timestamp: Long) {
@@ -314,6 +347,12 @@ class EncryptedPreferences(
             .remove(KEY_ACCESS_TOKEN)
             .remove(KEY_FULL_NAME)
             .remove(KEY_PHOTO_URL)
+            .remove(KEY_PARTICIPANT_ID)
+            .remove(KEY_INTERNSHIP_START_DATE)
+            .remove(KEY_INTERNSHIP_END_DATE)
+            .remove(KEY_MENTOR_PENDING_COUNT)
+            .remove(KEY_MENTOR_LAST_CHECK_TIME)
+            .remove(KEY_LAST_MENTOR_SYNC_DEBUG)
             .apply()
     }
 
