@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.AudioAttributes
 import android.media.RingtoneManager
@@ -39,16 +40,56 @@ object NotificationHelper {
     const val URL_TERMS = "https://github.com/Churma16/maganghub-logbook-companion/blob/main/TERMS.md"
 
     /**
-     * Safely opens an external web URL, handling ActivityNotFoundException if no browser is installed.
+     * Safely opens an external web URL directly in the device's default web browser application,
+     * explicitly bypassing in-app Custom Tabs / WebViews to ensure unhindered downloads and browsing.
      */
     fun openWebUrl(context: Context, url: String) {
         try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+            val uri = Uri.parse(url)
+            val defaultBrowserPackage = resolveDefaultBrowserPackage(context)
+
+            val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                addCategory(Intent.CATEGORY_BROWSABLE)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                if (defaultBrowserPackage != null) {
+                    setPackage(defaultBrowserPackage)
+                }
             }
             context.startActivity(intent)
         } catch (_: Exception) {
-            Toast.makeText(context, "Tidak dapat membuka tautan web", Toast.LENGTH_SHORT).show()
+            // Fallback: clear package lock and retry with standard implicit chooser
+            try {
+                val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                    addCategory(Intent.CATEGORY_BROWSABLE)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(fallbackIntent)
+            } catch (_: Exception) {
+                Toast.makeText(context, "Tidak dapat membuka tautan web", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * Queries PackageManager for the designated default web browser package name.
+     */
+    fun resolveDefaultBrowserPackage(context: Context): String? {
+        return try {
+            val browserProbeIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://maganghub.kemnaker.go.id")).apply {
+                addCategory(Intent.CATEGORY_BROWSABLE)
+            }
+            val resolveInfo = context.packageManager.resolveActivity(
+                browserProbeIntent,
+                PackageManager.MATCH_DEFAULT_ONLY
+            )
+            val packageName = resolveInfo?.activityInfo?.packageName
+            if (packageName != null && packageName != "android" && packageName.isNotBlank()) {
+                packageName
+            } else {
+                null
+            }
+        } catch (_: Throwable) {
+            null
         }
     }
 
