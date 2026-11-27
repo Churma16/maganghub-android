@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.1] - 2026-11-27
+
+* fix(mentor): persist participant metadata and pass query parameters to fetchAttendances (#45) (#46)
+* fix(widget): ensure synchronous settings persistence and singleton cache for instant widget sync (#44)
+
 ## [0.2.0] - 2026-11-26
 
 * docs: add public beta release disclaimers to README and Terms of Service (#43)
