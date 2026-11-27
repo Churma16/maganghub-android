@@ -537,7 +537,7 @@ private fun HeroStatusCard(
 
                 Column {
                     Text(
-                        text = formatHeroDate(uiState.attendanceData?.date),
+                        text = formatHeroDate(),
                         style = MaterialTheme.typography.labelMedium,
                         color = animatedDateColor
                     )
@@ -1204,7 +1204,7 @@ private fun MentorReviewCard(
 private val ZONE_WIB = WorkPhaseResolver.ZONE_WIB
 private val INDONESIAN_HERO_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, d MMM yyyy", Locale("id", "ID"))
 
-private fun formatHeroDate(dateStr: String? = null): String {
+private fun formatHeroDate(): String {
     return LocalDate.now(ZONE_WIB).format(INDONESIAN_HERO_DATE_FORMATTER)
 }
 
