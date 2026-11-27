@@ -1210,12 +1210,7 @@ fun SettingsScreen(
                         }
                         Button(
                             onClick = {
-                                try {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.downloadUrl))
-                                        .apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
-                                    context.startActivity(intent)
-                                } catch (_: Exception) {
-                                }
+                                NotificationHelper.openWebUrl(context, updateInfo.downloadUrl)
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
