@@ -875,7 +875,7 @@ fun SettingsScreen(
                     }
                 }
 
-                if (!uiState.mentorSyncDebug.isNullOrBlank()) {
+                if (isPreviewBuild && !uiState.mentorSyncDebug.isNullOrBlank()) {
                     HorizontalDivider(color = cardBorderColor)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -891,7 +891,8 @@ fun SettingsScreen(
                         Text(
                             text = uiState.mentorSyncDebug,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
