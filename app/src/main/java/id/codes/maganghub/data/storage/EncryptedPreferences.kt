@@ -233,7 +233,7 @@ class EncryptedPreferences(
             .putString(KEY_LAST_STATUS, status.name)
             .putString(KEY_LAST_HOME_DATA, dataJson)
             .putLong(KEY_LAST_CHECK_TIME, timestamp)
-            .apply()
+            .commit()
     }
 
     fun getLastAttendanceStatus(): AttendanceStatus {
@@ -297,13 +297,13 @@ class EncryptedPreferences(
 
     // Mentor Review Reminder Cache
     fun savePendingMentorReviewCount(count: Int) {
-        prefs.edit().putInt(KEY_MENTOR_PENDING_COUNT, count).apply()
+        prefs.edit().putInt(KEY_MENTOR_PENDING_COUNT, count).commit()
     }
 
     fun getPendingMentorReviewCount(): Int = prefs.getInt(KEY_MENTOR_PENDING_COUNT, 0)
 
     fun saveLastMentorCheckTimestamp(timestamp: Long = System.currentTimeMillis()) {
-        prefs.edit().putLong(KEY_MENTOR_LAST_CHECK_TIME, timestamp).apply()
+        prefs.edit().putLong(KEY_MENTOR_LAST_CHECK_TIME, timestamp).commit()
     }
 
     fun getLastMentorCheckTimestamp(): Long = prefs.getLong(KEY_MENTOR_LAST_CHECK_TIME, 0L)

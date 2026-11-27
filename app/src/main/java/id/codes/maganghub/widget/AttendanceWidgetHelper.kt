@@ -1,6 +1,9 @@
 package id.codes.maganghub.widget
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.glance.appwidget.updateAll
 import kotlinx.coroutines.CoroutineScope
@@ -18,11 +21,29 @@ object AttendanceWidgetHelper {
     }
 
     suspend fun updateWidget(context: Context) {
+        // 1. Direct Glance updateAll to recompose widget content
         try {
             MagangHubWidget().updateAll(context)
-            Log.d(TAG, "MagangHub widget successfully updated")
+            Log.d(TAG, "MagangHub widget successfully updated via Glance")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to update MagangHub widget", e)
+            Log.e(TAG, "Failed to update MagangHub widget via Glance", e)
+        }
+
+        // 2. Explicit AppWidgetManager broadcast to force home screen launcher host redraw
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val componentName = ComponentName(context, AttendanceWidgetReceiver::class.java)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            if (appWidgetIds != null && appWidgetIds.isNotEmpty()) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).apply {
+                    component = componentName
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+                }
+                context.sendBroadcast(intent)
+                Log.d(TAG, "Dispatched ACTION_APPWIDGET_UPDATE broadcast to ${appWidgetIds.size} widgets")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to dispatch explicit update broadcast", e)
         }
     }
 }

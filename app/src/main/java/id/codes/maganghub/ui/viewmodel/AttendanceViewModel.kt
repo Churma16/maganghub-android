@@ -140,6 +140,7 @@ class AttendanceViewModel(
         checkAttendanceJob?.cancel()
         checkAttendanceJob = viewModelScope.launch {
             _uiState.update { it.copy(isChecking = true, errorMessage = null, successMessage = null) }
+            triggerWidgetUpdate()
             if (!silent) {
                 try {
                     repository.refreshUserProfile()
@@ -494,6 +495,7 @@ class AttendanceViewModel(
         viewModelScope.launch {
             repository.snoozeMentorReminderOneDay()
             _uiState.update { it.copy(successMessage = "Pengingat mentor ditunda 1 hari") }
+            triggerWidgetUpdate()
         }
     }
 
