@@ -60,6 +60,23 @@ class AttendanceRepositoryImpl(
             return elapsed >= ttlMillis
         }
 
+        /**
+         * Resolves effective end date for fetching attendances:
+         * Uses earlier of todayDate or internshipEndDate (matching Nuxt frontend logic: min(today, end_date)).
+         */
+        fun resolveEffectiveEndDate(
+            todayDate: String?,
+            internshipEndDate: String?
+        ): String? {
+            val cleanToday = todayDate?.trim()?.take(10)?.takeIf { it.isNotBlank() }
+            val cleanEnd = internshipEndDate?.trim()?.take(10)?.takeIf { it.isNotBlank() }
+            return when {
+                cleanToday != null && cleanEnd != null -> if (cleanToday < cleanEnd) cleanToday else cleanEnd
+                cleanToday != null -> cleanToday
+                else -> cleanEnd
+            }
+        }
+
         fun maskUsername(raw: String): String {
             val trimmed = raw.trim()
             if (trimmed.isEmpty()) return "***"
@@ -92,7 +109,13 @@ class AttendanceRepositoryImpl(
                     storage.resetLoginFailureCount()
                     try {
                         val profile = apiClient.fetchUserProfile(token)
-                        storage.saveUserProfile(profile.name, profile.photoUrl)
+                        storage.saveUserProfile(
+                            fullName = profile.name,
+                            photoUrl = profile.photoUrl,
+                            participantId = profile.id,
+                            internshipStartDate = profile.internshipStartDate,
+                            internshipEndDate = profile.internshipEndDate
+                        )
                     } catch (pe: Exception) {
                         Log.w(TAG, "Best-effort profile fetch after login failed: ${pe.message}")
                     }
@@ -172,11 +195,27 @@ class AttendanceRepositoryImpl(
                 val status = homeData.toAttendanceStatus()
                 val now = System.currentTimeMillis()
                 storage.saveAttendanceCache(homeData, status, now)
-                if (storage.getFullName().isNullOrBlank()) {
+
+                var participantId = storage.getParticipantId()
+                var startDate = storage.getInternshipStartDate()
+                var endDate = storage.getInternshipEndDate()
+
+                if (participantId.isNullOrBlank() || storage.getFullName().isNullOrBlank()) {
                     try {
                         val validToken = storage.getAccessToken().orEmpty()
-                        val profile = apiClient.fetchUserProfile(validToken)
-                        storage.saveUserProfile(profile.name, profile.photoUrl)
+                        if (validToken.isNotBlank()) {
+                            val profile = apiClient.fetchUserProfile(validToken)
+                            storage.saveUserProfile(
+                                fullName = profile.name,
+                                photoUrl = profile.photoUrl,
+                                participantId = profile.id,
+                                internshipStartDate = profile.internshipStartDate,
+                                internshipEndDate = profile.internshipEndDate
+                            )
+                            participantId = profile.id.takeIf { it.isNotBlank() }
+                            startDate = profile.internshipStartDate
+                            endDate = profile.internshipEndDate
+                        }
                     } catch (pe: Exception) {
                         Log.w(TAG, "Best-effort profile fetch during check failed: ${pe.message}")
                     }
@@ -197,7 +236,17 @@ class AttendanceRepositoryImpl(
                     try {
                         val validToken = storage.getAccessToken().orEmpty()
                         if (validToken.isNotBlank()) {
-                            val attendances = apiClient.fetchAttendances(validToken)
+                            val effectiveEndDate = resolveEffectiveEndDate(
+                                todayDate = homeData.date,
+                                internshipEndDate = endDate
+                            )
+                            val attendances = apiClient.fetchAttendances(
+                                monevAccessToken = validToken,
+                                participantId = participantId,
+                                startDate = startDate?.take(10),
+                                endDate = effectiveEndDate,
+                                limit = 500
+                            )
                             pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
                             storage.savePendingMentorReviewCount(pendingCount)
                             storage.saveLastMentorCheckTimestamp(now)
@@ -269,7 +318,13 @@ class AttendanceRepositoryImpl(
                     return@withContext Result.failure(UnauthorizedSessionException("Belum login"))
                 }
                 val profile = apiClient.fetchUserProfile(token)
-                storage.saveUserProfile(profile.name, profile.photoUrl)
+                storage.saveUserProfile(
+                    fullName = profile.name,
+                    photoUrl = profile.photoUrl,
+                    participantId = profile.id,
+                    internshipStartDate = profile.internshipStartDate,
+                    internshipEndDate = profile.internshipEndDate
+                )
                 _sessionFlow.value = storage.getUserSession()
                 Result.success(profile)
             } catch (e: Exception) {

@@ -42,4 +42,52 @@ class AttendanceRepositorySecurityTest {
         // Clock adjusted backwards (lastCheck is in the future relative to now) -> due
         assertTrue(AttendanceRepositoryImpl.isMentorCheckDue(now, now + 1000L))
     }
+
+    @Test
+    fun testResolveEffectiveEndDate() {
+        // Today earlier than internship end date -> uses today
+        assertEquals(
+            "2026-11-27",
+            AttendanceRepositoryImpl.resolveEffectiveEndDate(
+                todayDate = "2026-11-27",
+                internshipEndDate = "2027-02-09"
+            )
+        )
+
+        // Today later than internship end date -> caps at internship end date
+        assertEquals(
+            "2027-02-09",
+            AttendanceRepositoryImpl.resolveEffectiveEndDate(
+                todayDate = "2027-03-01",
+                internshipEndDate = "2027-02-09"
+            )
+        )
+
+        // Today missing -> fallback to internship end date
+        assertEquals(
+            "2027-02-09",
+            AttendanceRepositoryImpl.resolveEffectiveEndDate(
+                todayDate = null,
+                internshipEndDate = "2027-02-09"
+            )
+        )
+
+        // Internship end date missing -> fallback to today
+        assertEquals(
+            "2026-11-27",
+            AttendanceRepositoryImpl.resolveEffectiveEndDate(
+                todayDate = "2026-11-27",
+                internshipEndDate = null
+            )
+        )
+
+        // Both missing -> null
+        assertEquals(
+            null,
+            AttendanceRepositoryImpl.resolveEffectiveEndDate(
+                todayDate = null,
+                internshipEndDate = null
+            )
+        )
+    }
 }

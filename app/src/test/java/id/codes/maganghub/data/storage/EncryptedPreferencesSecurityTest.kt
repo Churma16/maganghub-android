@@ -109,4 +109,63 @@ class EncryptedPreferencesSecurityTest {
         assertEquals("monev_bearer_token_xyz", prefs.getAccessToken())
         assertTrue(prefs.hasCredentials())
     }
+
+    @Test
+    fun testUserProfileMetadataPersistence() {
+        val fakePrefs = FakeSharedPreferences()
+        val prefs = EncryptedPreferences(
+            context = null,
+            prefsOverride = fakePrefs,
+            isFallbackOverride = false
+        )
+
+        prefs.saveUserProfile(
+            fullName = "Fathan Faqih",
+            photoUrl = "https://example.com/photo.jpg",
+            participantId = "user-uuid-12345",
+            internshipStartDate = "2026-08-10",
+            internshipEndDate = "2027-02-09"
+        )
+
+        assertEquals("Fathan Faqih", prefs.getFullName())
+        assertEquals("https://example.com/photo.jpg", prefs.getPhotoUrl())
+        assertEquals("user-uuid-12345", prefs.getParticipantId())
+        assertEquals("2026-08-10", prefs.getInternshipStartDate())
+        assertEquals("2027-02-09", prefs.getInternshipEndDate())
+    }
+
+    @Test
+    fun testClearCredentialsRemovesUserProfileMetadata() {
+        val fakePrefs = FakeSharedPreferences()
+        val prefs = EncryptedPreferences(
+            context = null,
+            prefsOverride = fakePrefs,
+            isFallbackOverride = false
+        )
+
+        prefs.saveCredentials("admin_user", "password123")
+        prefs.saveAccessToken("token_xyz")
+        prefs.saveUserProfile(
+            fullName = "Fathan Faqih",
+            photoUrl = "https://example.com/photo.jpg",
+            participantId = "user-uuid-12345",
+            internshipStartDate = "2026-08-10",
+            internshipEndDate = "2027-02-09"
+        )
+        prefs.savePendingMentorReviewCount(5)
+        prefs.saveLastMentorCheckTimestamp(123456789L)
+
+        prefs.clearCredentials()
+
+        assertNull(prefs.getUsername())
+        assertNull(prefs.getPassword())
+        assertNull(prefs.getAccessToken())
+        assertNull(prefs.getFullName())
+        assertNull(prefs.getPhotoUrl())
+        assertNull(prefs.getParticipantId())
+        assertNull(prefs.getInternshipStartDate())
+        assertNull(prefs.getInternshipEndDate())
+        assertEquals(0, prefs.getPendingMentorReviewCount())
+        assertEquals(0L, prefs.getLastMentorCheckTimestamp())
+    }
 }

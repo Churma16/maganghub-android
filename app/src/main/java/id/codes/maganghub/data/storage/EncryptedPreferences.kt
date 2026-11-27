@@ -49,6 +49,9 @@ class EncryptedPreferences(
         private const val KEY_DEVICE_JITTER_SEED = "pref_device_jitter_seed_minutes"
         private const val KEY_FULL_NAME = "pref_user_full_name"
         private const val KEY_PHOTO_URL = "pref_user_photo_url"
+        private const val KEY_PARTICIPANT_ID = "pref_participant_id"
+        private const val KEY_INTERNSHIP_START_DATE = "pref_internship_start_date"
+        private const val KEY_INTERNSHIP_END_DATE = "pref_internship_end_date"
         private const val KEY_THEME_MODE = "pref_theme_mode"
 
         const val KEY_MENTOR_REMINDER_ENABLED = "pref_mentor_reminder_enabled"
@@ -167,13 +170,34 @@ class EncryptedPreferences(
         return newSeed
     }
 
-    // User Profile Cache (Name & Avatar Photo)
-    fun saveUserProfile(fullName: String, photoUrl: String?) {
+    // User Profile Cache (Name, Avatar Photo, Participant ID & Internship Dates)
+    fun saveUserProfile(
+        fullName: String,
+        photoUrl: String?,
+        participantId: String? = null,
+        internshipStartDate: String? = null,
+        internshipEndDate: String? = null
+    ) {
         val editor = prefs.edit().putString(KEY_FULL_NAME, fullName.trim())
         if (!photoUrl.isNullOrBlank()) {
             editor.putString(KEY_PHOTO_URL, photoUrl.trim())
         } else {
             editor.remove(KEY_PHOTO_URL)
+        }
+        if (!participantId.isNullOrBlank()) {
+            editor.putString(KEY_PARTICIPANT_ID, participantId.trim())
+        } else if (participantId != null) {
+            editor.remove(KEY_PARTICIPANT_ID)
+        }
+        if (!internshipStartDate.isNullOrBlank()) {
+            editor.putString(KEY_INTERNSHIP_START_DATE, internshipStartDate.trim())
+        } else if (internshipStartDate != null) {
+            editor.remove(KEY_INTERNSHIP_START_DATE)
+        }
+        if (!internshipEndDate.isNullOrBlank()) {
+            editor.putString(KEY_INTERNSHIP_END_DATE, internshipEndDate.trim())
+        } else if (internshipEndDate != null) {
+            editor.remove(KEY_INTERNSHIP_END_DATE)
         }
         editor.apply()
     }
@@ -181,6 +205,12 @@ class EncryptedPreferences(
     fun getFullName(): String? = prefs.getString(KEY_FULL_NAME, null)?.takeIf { it.isNotBlank() }
 
     fun getPhotoUrl(): String? = prefs.getString(KEY_PHOTO_URL, null)?.takeIf { it.isNotBlank() }
+
+    fun getParticipantId(): String? = prefs.getString(KEY_PARTICIPANT_ID, null)?.takeIf { it.isNotBlank() }
+
+    fun getInternshipStartDate(): String? = prefs.getString(KEY_INTERNSHIP_START_DATE, null)?.takeIf { it.isNotBlank() }
+
+    fun getInternshipEndDate(): String? = prefs.getString(KEY_INTERNSHIP_END_DATE, null)?.takeIf { it.isNotBlank() }
 
     fun getUserSession(): UserSession {
         val username = getUsername().orEmpty()
@@ -314,6 +344,11 @@ class EncryptedPreferences(
             .remove(KEY_ACCESS_TOKEN)
             .remove(KEY_FULL_NAME)
             .remove(KEY_PHOTO_URL)
+            .remove(KEY_PARTICIPANT_ID)
+            .remove(KEY_INTERNSHIP_START_DATE)
+            .remove(KEY_INTERNSHIP_END_DATE)
+            .remove(KEY_MENTOR_PENDING_COUNT)
+            .remove(KEY_MENTOR_LAST_CHECK_TIME)
             .apply()
     }
 

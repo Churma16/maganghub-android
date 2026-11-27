@@ -375,4 +375,42 @@ class MagangHubApiClientTest {
         assertEquals("/api/v1/attendances?limit=100", recorded.path)
         assertEquals("Bearer valid_token", recorded.getHeader("Authorization"))
     }
+
+    @Test
+    fun testFetchAttendancesWithQueryParams() = runBlocking {
+        val responseBody = """
+            {
+                "data": [
+                    {
+                        "id": "att-3",
+                        "date": "2026-11-26",
+                        "status": "PRESENT",
+                        "approval_status": "SUBMITTED"
+                    }
+                ]
+            }
+        """.trimIndent()
+
+        mockServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(responseBody)
+        )
+
+        val attendances = client.fetchAttendances(
+            monevAccessToken = "valid_token",
+            participantId = "user-12345",
+            startDate = "2026-08-10",
+            endDate = "2026-11-27",
+            limit = 500
+        )
+        assertEquals(1, attendances.size)
+        assertEquals("att-3", attendances[0].id)
+        assertEquals("2026-11-26", attendances[0].date)
+
+        val recorded = mockServer.takeRequest()
+        assertEquals("/api/v1/attendances?participant_id=user-12345&start_date=2026-08-10&end_date=2026-11-27&limit=500", recorded.path)
+        assertEquals("Bearer valid_token", recorded.getHeader("Authorization"))
+    }
 }
