@@ -9,16 +9,13 @@ data class UserProfileData(
     @SerializedName("id", alternate = ["participant_id", "participantId", "user_id", "userId"])
     val id: String = "",
 
-    @SerializedName("name")
+    @SerializedName("name", alternate = ["full_name", "fullName"])
     val name: String = "",
 
-    @SerializedName("photo_url")
+    @SerializedName("photo_url", alternate = ["photoUrl", "avatar", "avatar_url"])
     val photoUrl: String? = null,
 
-    @SerializedName("company")
-    val company: String? = null,
-
-    @SerializedName("internship_company")
+    @SerializedName("internship_company", alternate = ["internshipCompany"])
     val internshipCompany: String? = null,
 
     @SerializedName("internship_start_date", alternate = ["internshipStartDate", "start_date", "startDate"])

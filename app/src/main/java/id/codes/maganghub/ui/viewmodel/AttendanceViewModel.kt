@@ -43,6 +43,7 @@ class AttendanceViewModel(
             attendanceStatus = repository.getCachedStatus(),
             attendanceData = repository.getCachedHomeData(),
             pendingMentorReviewCount = repository.getCachedPendingMentorReviewCount(),
+            mentorSyncDebug = repository.getLastMentorSyncDebug(),
             lastSyncTimestamp = repository.getLastCheckTimestamp(),
             reminderSettings = repository.reminderSettingsFlow.value,
             themeMode = repository.themeModeFlow.value,
@@ -156,6 +157,7 @@ class AttendanceViewModel(
                             attendanceStatus = checkResult.status,
                             attendanceData = checkResult.data,
                             pendingMentorReviewCount = checkResult.pendingMentorReviewCount,
+                            mentorSyncDebug = checkResult.mentorSyncDebug ?: repository.getLastMentorSyncDebug(),
                             lastSyncTimestamp = checkResult.checkedAt,
                             successMessage = if (!silent) "Logbook berhasil dicek!" else null,
                             errorMessage = null
@@ -166,6 +168,7 @@ class AttendanceViewModel(
                     _uiState.update { current ->
                         current.copy(
                             isChecking = false,
+                            mentorSyncDebug = repository.getLastMentorSyncDebug(),
                             errorMessage = error.message ?: "Gagal memeriksa status logbook"
                         )
                     }

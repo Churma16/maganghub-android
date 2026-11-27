@@ -99,6 +99,11 @@ interface AttendanceRepository {
     fun getCachedPendingMentorReviewCount(): Int
 
     /**
+     * Returns diagnostic sync info from the last mentor attendance check.
+     */
+    fun getLastMentorSyncDebug(): String?
+
+    /**
      * Checks GitHub releases for a newer app version.
      */
     suspend fun checkForUpdates(): Result<UpdateCheckState>

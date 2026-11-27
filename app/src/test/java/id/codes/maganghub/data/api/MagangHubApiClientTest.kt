@@ -444,4 +444,75 @@ class MagangHubApiClientTest {
         assertEquals("/api/v1/attendances?participant_id=user-12345&start_date=2026-08-10&end_date=2026-11-27&limit=500", recorded.path)
         assertEquals("Bearer valid_token", recorded.getHeader("Authorization"))
     }
+
+    @Test
+    fun testFetchUserProfileWithCompanyObject() = runBlocking {
+        val responseBody = """
+            {
+                "data": {
+                    "id": "14d68c26-eb45-4863-bb44-356073d2f643",
+                    "name": "Fathan",
+                    "photo_url": "https://profile-assets.kemnaker.go.id/14d68c26/profiles/photo.jpg",
+                    "company": {
+                        "id": "comp-123",
+                        "name": "Global Digital Niaga"
+                    },
+                    "internship_start_date": "2026-08-10",
+                    "internship_end_date": "2027-02-09"
+                }
+            }
+        """.trimIndent()
+
+        mockServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(responseBody)
+        )
+
+        val profile = client.fetchUserProfile("valid_mock_token")
+        assertNotNull(profile)
+        assertEquals("14d68c26-eb45-4863-bb44-356073d2f643", profile.id)
+        assertEquals("Fathan", profile.name)
+        assertEquals("Global Digital Niaga", profile.internshipCompany)
+        assertEquals("2026-08-10", profile.internshipStartDate)
+        assertEquals("2027-02-09", profile.internshipEndDate)
+    }
+
+    @Test
+    fun testParseAttendancesResponseBodyFlexibleFormats() {
+        // Format 1: { "data": { "attendances": [ ... ] } }
+        val nestedAttendancesJson = """
+            {
+                "data": {
+                    "attendances": [
+                        { "id": "101", "date": "2026-11-20", "status": "PRESENT", "approval_status": "SUBMITTED" }
+                    ]
+                }
+            }
+        """.trimIndent()
+        val list1 = client.parseAttendancesResponseBody(nestedAttendancesJson)
+        assertEquals(1, list1.size)
+        assertEquals("101", list1[0].id)
+        assertEquals("2026-11-20", list1[0].date)
+
+        // Format 2: Direct array with nested attendance object
+        val nestedObjectJson = """
+            [
+                {
+                    "attendance": {
+                        "id": "102",
+                        "attendance_date": "2026-11-21",
+                        "attendance_status": "PRESENT",
+                        "approvalStatus": "SUBMITTED"
+                    }
+                }
+            ]
+        """.trimIndent()
+        val list2 = client.parseAttendancesResponseBody(nestedObjectJson)
+        assertEquals(1, list2.size)
+        assertEquals("102", list2[0].id)
+        assertEquals("2026-11-21", list2[0].date)
+        assertEquals("SUBMITTED", list2[0].approvalStatus)
+    }
 }

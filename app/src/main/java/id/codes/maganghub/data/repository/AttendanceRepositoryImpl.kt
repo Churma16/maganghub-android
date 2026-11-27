@@ -112,9 +112,9 @@ class AttendanceRepositoryImpl(
                         storage.saveUserProfile(
                             fullName = profile.name,
                             photoUrl = profile.photoUrl,
-                            participantId = profile.id,
-                            internshipStartDate = profile.internshipStartDate,
-                            internshipEndDate = profile.internshipEndDate
+                            participantId = profile.id.takeIf { it.isNotBlank() },
+                            internshipStartDate = profile.internshipStartDate?.takeIf { it.isNotBlank() },
+                            internshipEndDate = profile.internshipEndDate?.takeIf { it.isNotBlank() }
                         )
                     } catch (pe: Exception) {
                         Log.w(TAG, "Best-effort profile fetch after login failed: ${pe.message}")
@@ -200,7 +200,7 @@ class AttendanceRepositoryImpl(
                 var startDate = storage.getInternshipStartDate()
                 var endDate = storage.getInternshipEndDate()
 
-                if (participantId.isNullOrBlank() || startDate.isNullOrBlank() || endDate.isNullOrBlank() || storage.getFullName().isNullOrBlank()) {
+                if (forceRefresh || participantId.isNullOrBlank() || startDate.isNullOrBlank() || endDate.isNullOrBlank() || storage.getFullName().isNullOrBlank()) {
                     try {
                         val validToken = storage.getAccessToken().orEmpty()
                         if (validToken.isNotBlank()) {
@@ -208,13 +208,14 @@ class AttendanceRepositoryImpl(
                             storage.saveUserProfile(
                                 fullName = profile.name,
                                 photoUrl = profile.photoUrl,
-                                participantId = profile.id,
-                                internshipStartDate = profile.internshipStartDate,
-                                internshipEndDate = profile.internshipEndDate
+                                participantId = profile.id.takeIf { it.isNotBlank() },
+                                internshipStartDate = profile.internshipStartDate?.takeIf { it.isNotBlank() },
+                                internshipEndDate = profile.internshipEndDate?.takeIf { it.isNotBlank() }
                             )
-                            participantId = profile.id.takeIf { it.isNotBlank() }
-                            startDate = profile.internshipStartDate
-                            endDate = profile.internshipEndDate
+                            if (profile.id.isNotBlank()) participantId = profile.id
+                            if (!profile.internshipStartDate.isNullOrBlank()) startDate = profile.internshipStartDate
+                            if (!profile.internshipEndDate.isNullOrBlank()) endDate = profile.internshipEndDate
+                            Log.i(TAG, "Profile refreshed: pId=$participantId, start=$startDate, end=$endDate")
                         }
                     } catch (pe: Exception) {
                         Log.w(TAG, "Best-effort profile fetch during check failed: ${pe.message}")
@@ -232,6 +233,7 @@ class AttendanceRepositoryImpl(
                     ttlMillis = MENTOR_CHECK_TTL_MILLIS
                 )
 
+                var debugMsg = storage.getLastMentorSyncDebug()
                 if (forceRefresh || isDue) {
                     try {
                         val validToken = storage.getAccessToken().orEmpty()
@@ -240,6 +242,7 @@ class AttendanceRepositoryImpl(
                                 todayDate = homeData.date,
                                 internshipEndDate = endDate
                             )
+                            var fetchError: String? = null
                             val attendances = try {
                                 apiClient.fetchAttendances(
                                     monevAccessToken = validToken,
@@ -260,17 +263,41 @@ class AttendanceRepositoryImpl(
                                     )
                                 } catch (e2: Exception) {
                                     Log.w(TAG, "fetchAttendances with dates failed (${e2.message}), falling back without date bounds")
-                                    apiClient.fetchAttendances(
-                                        monevAccessToken = validToken,
-                                        participantId = participantId,
-                                        limit = 100
-                                    )
+                                    try {
+                                        apiClient.fetchAttendances(
+                                            monevAccessToken = validToken,
+                                            participantId = participantId,
+                                            limit = 100
+                                        )
+                                    } catch (e3: Exception) {
+                                        Log.w(TAG, "fetchAttendances with participantId failed (${e3.message}), falling back bare")
+                                        try {
+                                            apiClient.fetchAttendances(
+                                                monevAccessToken = validToken,
+                                                limit = 100
+                                            )
+                                        } catch (e4: Exception) {
+                                            fetchError = e4.message ?: e4.javaClass.simpleName
+                                            Log.e(TAG, "All fetchAttendances tiers failed: $fetchError", e4)
+                                            emptyList()
+                                        }
+                                    }
                                 }
                             }
-                            pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
-                            storage.savePendingMentorReviewCount(pendingCount)
-                            storage.saveLastMentorCheckTimestamp(now)
-                            Log.i(TAG, "Refreshed pending mentor review count: $pendingCount (fetched ${attendances.size} records)")
+
+                            if (fetchError == null) {
+                                pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
+                                storage.savePendingMentorReviewCount(pendingCount)
+                                storage.saveLastMentorCheckTimestamp(now)
+                                val pIdMask = if (!participantId.isNullOrBlank()) "${participantId.take(8)}.." else "null"
+                                debugMsg = "pId=$pIdMask, ${startDate?.take(10)}..$effectiveEndDate, fetched=${attendances.size}, pending=$pendingCount"
+                                storage.saveLastMentorSyncDebug(debugMsg)
+                                Log.i(TAG, "Refreshed pending mentor review count: $pendingCount ($debugMsg)")
+                            } else {
+                                val pIdMask = if (!participantId.isNullOrBlank()) "${participantId.take(8)}.." else "null"
+                                debugMsg = "pId=$pIdMask, err=$fetchError"
+                                storage.saveLastMentorSyncDebug(debugMsg)
+                            }
                         }
                     } catch (ae: Exception) {
                         Log.w(TAG, "Best-effort attendances fetch for mentor review count failed: ${ae.message}")
@@ -286,7 +313,8 @@ class AttendanceRepositoryImpl(
                     data = homeData,
                     checkedAt = now,
                     isSuccess = true,
-                    pendingMentorReviewCount = pendingCount
+                    pendingMentorReviewCount = pendingCount,
+                    mentorSyncDebug = debugMsg
                 )
                 Result.success(result)
             } catch (e: Exception) {
@@ -295,6 +323,7 @@ class AttendanceRepositoryImpl(
                 val cachedData = storage.getLastHomeData()
                 val cachedTime = storage.getLastCheckTimestamp()
                 val cachedPendingCount = storage.getPendingMentorReviewCount()
+                val cachedDebug = storage.getLastMentorSyncDebug()
 
                 val fallbackResult = AttendanceCheckResult(
                     status = cachedStatus,
@@ -302,7 +331,8 @@ class AttendanceRepositoryImpl(
                     checkedAt = if (cachedTime > 0) cachedTime else System.currentTimeMillis(),
                     isSuccess = false,
                     errorMessage = e.message ?: "Gagal mengambil data kehadiran",
-                    pendingMentorReviewCount = cachedPendingCount
+                    pendingMentorReviewCount = cachedPendingCount,
+                    mentorSyncDebug = cachedDebug
                 )
                 Result.failure(e)
             }
@@ -341,9 +371,9 @@ class AttendanceRepositoryImpl(
                 storage.saveUserProfile(
                     fullName = profile.name,
                     photoUrl = profile.photoUrl,
-                    participantId = profile.id,
-                    internshipStartDate = profile.internshipStartDate,
-                    internshipEndDate = profile.internshipEndDate
+                    participantId = profile.id.takeIf { it.isNotBlank() },
+                    internshipStartDate = profile.internshipStartDate?.takeIf { it.isNotBlank() },
+                    internshipEndDate = profile.internshipEndDate?.takeIf { it.isNotBlank() }
                 )
                 _sessionFlow.value = storage.getUserSession()
                 Result.success(profile)
@@ -378,6 +408,8 @@ class AttendanceRepositoryImpl(
     }
 
     override fun getCachedPendingMentorReviewCount(): Int = storage.getPendingMentorReviewCount()
+
+    override fun getLastMentorSyncDebug(): String? = storage.getLastMentorSyncDebug()
 
     override suspend fun checkForUpdates(): Result<UpdateCheckState> = withContext(ioDispatcher) {
         val releaseResult = updateApiClient.getLatestRelease()

@@ -119,6 +119,14 @@ class AttendanceViewModelTest {
             cachedPendingMentorCount = count
         }
 
+        private var cachedMentorSyncDebug: String? = null
+
+        override fun getLastMentorSyncDebug(): String? = cachedMentorSyncDebug
+
+        fun setCachedMentorSyncDebug(debug: String?) {
+            cachedMentorSyncDebug = debug
+        }
+
         var checkForUpdatesResult: Result<UpdateCheckState> = Result.success(UpdateCheckState.UpToDate)
         private var cachedLastUpdateCheckTimestamp: Long = 0L
 

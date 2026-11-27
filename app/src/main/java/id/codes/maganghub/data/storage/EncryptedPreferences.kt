@@ -60,6 +60,7 @@ class EncryptedPreferences(
         const val KEY_MENTOR_SNOOZED_UNTIL = "pref_mentor_snoozed_until"
         const val KEY_MENTOR_PENDING_COUNT = "pref_mentor_pending_count"
         const val KEY_MENTOR_LAST_CHECK_TIME = "pref_mentor_last_check_timestamp"
+        const val KEY_LAST_MENTOR_SYNC_DEBUG = "pref_last_mentor_sync_debug"
 
         private const val KEY_LAST_UPDATE_CHECK_TIMESTAMP = "pref_last_update_check_timestamp"
 
@@ -191,10 +192,10 @@ class EncryptedPreferences(
     }
 
     private fun SharedPreferences.Editor.updateOptionalString(key: String, value: String?): SharedPreferences.Editor {
-        return when {
-            !value.isNullOrBlank() -> putString(key, value.trim())
-            value != null -> remove(key)
-            else -> this
+        return if (!value.isNullOrBlank()) {
+            putString(key, value.trim())
+        } else {
+            this
         }
     }
 
@@ -315,6 +316,12 @@ class EncryptedPreferences(
 
     fun getMentorSnoozedUntil(): Long = prefs.getLong(KEY_MENTOR_SNOOZED_UNTIL, 0L)
 
+    fun saveLastMentorSyncDebug(debug: String) {
+        prefs.edit().putString(KEY_LAST_MENTOR_SYNC_DEBUG, debug).apply()
+    }
+
+    fun getLastMentorSyncDebug(): String? = prefs.getString(KEY_LAST_MENTOR_SYNC_DEBUG, null)
+
     // Last update check timestamp
     fun saveLastUpdateCheckTimestamp(timestamp: Long) {
         prefs.edit().putLong(KEY_LAST_UPDATE_CHECK_TIMESTAMP, timestamp).apply()
@@ -345,6 +352,7 @@ class EncryptedPreferences(
             .remove(KEY_INTERNSHIP_END_DATE)
             .remove(KEY_MENTOR_PENDING_COUNT)
             .remove(KEY_MENTOR_LAST_CHECK_TIME)
+            .remove(KEY_LAST_MENTOR_SYNC_DEBUG)
             .apply()
     }
 
