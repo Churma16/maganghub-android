@@ -1426,6 +1426,8 @@ private fun SettingsSliderRow(
         }
 
         val primaryColor = if (isDark) AccentSkyDark else AccentSkyLight
+        val trackColor = if (isDark) Color(0xFF263450) else Color(0xFFE2E8F0)
+        val tickColor = if (isDark) Color(0xFF475569) else Color(0xFFCBD5E1)
         Slider(
             value = value,
             onValueChange = onValueChange,
@@ -1434,8 +1436,10 @@ private fun SettingsSliderRow(
             steps = steps,
             colors = SliderDefaults.colors(
                 thumbColor = primaryColor,
-                activeTrackColor = primaryColor,
-                inactiveTrackColor = if (isDark) Color(0xFF263450) else Color(0xFFE2E8F0)
+                activeTrackColor = trackColor,
+                inactiveTrackColor = trackColor,
+                activeTickColor = tickColor,
+                inactiveTickColor = tickColor
             ),
             modifier = Modifier
                 .fillMaxWidth()
