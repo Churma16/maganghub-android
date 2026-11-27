@@ -71,7 +71,7 @@ class AttendanceRepositoryImpl(
             val cleanToday = todayDate?.trim()?.take(10)?.takeIf { it.isNotBlank() }
             val cleanEnd = internshipEndDate?.trim()?.take(10)?.takeIf { it.isNotBlank() }
             return when {
-                cleanToday != null && cleanEnd != null -> if (cleanToday < cleanEnd) cleanToday else cleanEnd
+                cleanToday != null && cleanEnd != null -> minOf(cleanToday, cleanEnd)
                 cleanToday != null -> cleanToday
                 else -> cleanEnd
             }

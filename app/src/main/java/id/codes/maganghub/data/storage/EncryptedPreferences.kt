@@ -184,22 +184,18 @@ class EncryptedPreferences(
         } else {
             editor.remove(KEY_PHOTO_URL)
         }
-        if (!participantId.isNullOrBlank()) {
-            editor.putString(KEY_PARTICIPANT_ID, participantId.trim())
-        } else if (participantId != null) {
-            editor.remove(KEY_PARTICIPANT_ID)
-        }
-        if (!internshipStartDate.isNullOrBlank()) {
-            editor.putString(KEY_INTERNSHIP_START_DATE, internshipStartDate.trim())
-        } else if (internshipStartDate != null) {
-            editor.remove(KEY_INTERNSHIP_START_DATE)
-        }
-        if (!internshipEndDate.isNullOrBlank()) {
-            editor.putString(KEY_INTERNSHIP_END_DATE, internshipEndDate.trim())
-        } else if (internshipEndDate != null) {
-            editor.remove(KEY_INTERNSHIP_END_DATE)
-        }
+        editor.updateOptionalString(KEY_PARTICIPANT_ID, participantId)
+        editor.updateOptionalString(KEY_INTERNSHIP_START_DATE, internshipStartDate)
+        editor.updateOptionalString(KEY_INTERNSHIP_END_DATE, internshipEndDate)
         editor.apply()
+    }
+
+    private fun SharedPreferences.Editor.updateOptionalString(key: String, value: String?): SharedPreferences.Editor {
+        return when {
+            !value.isNullOrBlank() -> putString(key, value.trim())
+            value != null -> remove(key)
+            else -> this
+        }
     }
 
     fun getFullName(): String? = prefs.getString(KEY_FULL_NAME, null)?.takeIf { it.isNotBlank() }
