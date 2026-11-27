@@ -1028,11 +1028,9 @@ private fun MentorReviewCard(
 
     val progressValue = if (isWarning) 1f else (pendingCount / threshold.toFloat()).coerceIn(0f, 1f)
 
-    val intervalText = when (uiState.reminderSettings.mentorRepeatIntervalMinutes) {
-        30 -> "30 mnt"
-        60 -> "1 jam"
-        180 -> "3 jam"
-        1440 -> "1 hari"
+    val intervalText = when {
+        uiState.reminderSettings.mentorRepeatIntervalMinutes == 1440 -> "1 hari"
+        uiState.reminderSettings.mentorRepeatIntervalMinutes % 60 == 0 -> "${uiState.reminderSettings.mentorRepeatIntervalMinutes / 60} jam"
         else -> "${uiState.reminderSettings.mentorRepeatIntervalMinutes} mnt"
     }
 

@@ -62,6 +62,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -88,6 +90,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import androidx.lifecycle.Lifecycle
+import id.codes.maganghub.ui.theme.AccentSkyDark
+import id.codes.maganghub.ui.theme.AccentSkyLight
+import kotlin.math.roundToInt
 import androidx.lifecycle.LifecycleEventObserver
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.ReminderSettings
@@ -574,100 +579,74 @@ fun SettingsScreen(
 
                 HorizontalDivider(color = cardBorderColor)
 
-                // Jam Mulai Notifikasi Presensi (WIB)
-                // Chips: Unselected text #E2E8F0 / #1E293B, border #3B4B6B / #94A3B8. Selected: bg #DBEAFE, text #1E3A8A
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "Jam mulai pengingat logbook (WIB)",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf(15, 16, 17, 18).forEach { hour ->
-                            val selected = settings.startHour == hour
-                            val chipBg = if (selected) Color(0xFFDBEAFE) else (if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7))
-                            val chipText = if (selected) Color(0xFF1E3A8A) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B))
-                            val chipBorder = if (selected) null else BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
-
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(40.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                color = chipBg,
-                                border = chipBorder,
-                                onClick = {
-                                    if (!selected) {
-                                        if (hour <= settings.workStartHour) {
-                                            showFeedbackToast("Jam notifikasi harus sesudah jam mulai kerja (${String.format("%02d:%02d", settings.workStartHour, settings.workStartMinute)} WIB)")
-                                        } else {
-                                            onUpdateReminderSettings(settings.copy(startHour = hour))
-                                            showFeedbackToast("Notifikasi dimulai pukul $hour:00 WIB")
-                                        }
-                                    }
-                                }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "$hour:00",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                        color = chipText
-                                    )
-                                }
-                            }
-                        }
-                    }
+                // Jam Mulai Pengingat Logbook (WIB) - Slider 13:00 - 20:00 WIB
+                var sliderStartHour by remember(settings.startHour) {
+                    mutableStateOf(settings.startHour.coerceIn(13, 20).toFloat())
                 }
-
-                // Interval (menit)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "Interval (menit)",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf(15, 30, 45, 60).forEach { interval ->
-                            val selected = settings.intervalMinutes == interval
-                            val chipBg = if (selected) Color(0xFFDBEAFE) else (if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7))
-                            val chipText = if (selected) Color(0xFF1E3A8A) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B))
-                            val chipBorder = if (selected) null else BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
-
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(40.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                color = chipBg,
-                                border = chipBorder,
-                                onClick = {
-                                    if (!selected) {
-                                        onUpdateReminderSettings(settings.copy(intervalMinutes = interval))
-                                        showFeedbackToast("Interval notifikasi diatur tiap $interval menit")
-                                    }
-                                }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "$interval",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                        color = chipText
-                                    )
-                                }
-                            }
+                SettingsSliderRow(
+                    title = "Jam mulai pengingat logbook (WIB)",
+                    valueLabel = String.format("%02d:00 WIB", sliderStartHour.roundToInt()),
+                    value = sliderStartHour,
+                    onValueChange = { sliderStartHour = it.roundToInt().toFloat() },
+                    onValueChangeFinished = {
+                        val targetHour = sliderStartHour.roundToInt()
+                        if (targetHour <= settings.workStartHour) {
+                            showFeedbackToast("Jam pengingat harus sesudah jam mulai kerja (${String.format("%02d:%02d", settings.workStartHour, settings.workStartMinute)} WIB)")
+                            sliderStartHour = maxOf(13, settings.workStartHour + 1).toFloat()
+                        } else if (targetHour != settings.startHour) {
+                            onUpdateReminderSettings(settings.copy(startHour = targetHour))
+                            showFeedbackToast(String.format("Pengingat dimulai pukul %02d:00 WIB", targetHour))
                         }
-                    }
+                    },
+                    valueRange = 13f..20f,
+                    steps = 6,
+                    minLabel = "13:00 (1 Siang)",
+                    maxLabel = "20:00 (8 Malam)",
+                    isDark = isDark,
+                    subtitle = "Pengingat harian aktif mulai jam ini sampai 23:59 WIB"
+                )
+
+                HorizontalDivider(color = cardBorderColor)
+
+                // Interval Pengingat Logbook - Slider 15 - 120 menit (step 15 menit)
+                var sliderInterval by remember(settings.intervalMinutes) {
+                    val clamped = settings.intervalMinutes.coerceIn(15, 120)
+                    val stepped = (kotlin.math.round(clamped / 15f) * 15).toInt()
+                    mutableStateOf(stepped.toFloat())
                 }
+                val currentInterval = sliderInterval.roundToInt()
+                val intervalLabel = when {
+                    currentInterval < 60 -> "$currentInterval menit"
+                    currentInterval % 60 == 0 -> "${currentInterval / 60} jam"
+                    else -> "${currentInterval / 60} jam ${currentInterval % 60} mnt"
+                }
+                SettingsSliderRow(
+                    title = "Interval pengingat",
+                    valueLabel = intervalLabel,
+                    value = sliderInterval,
+                    onValueChange = {
+                        val snapped = (kotlin.math.round(it / 15f) * 15).coerceIn(15f, 120f)
+                        sliderInterval = snapped
+                    },
+                    onValueChangeFinished = {
+                        val targetInterval = sliderInterval.roundToInt()
+                        if (targetInterval != settings.intervalMinutes) {
+                            onUpdateReminderSettings(settings.copy(intervalMinutes = targetInterval))
+                            val label = when {
+                                targetInterval < 60 -> "$targetInterval menit"
+                                targetInterval % 60 == 0 -> "${targetInterval / 60} jam"
+                                else -> "${targetInterval / 60} jam ${targetInterval % 60} mnt"
+                            }
+                            showFeedbackToast("Interval notifikasi diatur tiap $label")
+                        }
+                    },
+                    valueRange = 15f..120f,
+                    steps = 6,
+                    minLabel = "15 menit",
+                    maxLabel = "2 jam",
+                    isDark = isDark,
+                    subtitle = "Jarak waktu pengulangan notifikasi jika belum mengisi logbook"
+                )
 
                 HorizontalDivider(color = cardBorderColor)
 
@@ -775,104 +754,60 @@ fun SettingsScreen(
                 if (settings.mentorReminderEnabled) {
                     HorizontalDivider(color = cardBorderColor)
 
-                    // Row 1: Batas hari belum di-approve
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Batas hari belum di-approve",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            listOf(
-                                "1 hari" to 1,
-                                "3 hari" to 3,
-                                "5 hari" to 5
-                            ).forEach { (label, days) ->
-                                val selected = settings.mentorReviewThresholdDays == days
-                                val chipBg = if (selected) Color(0xFFDBEAFE) else (if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7))
-                                val chipText = if (selected) Color(0xFF1E3A8A) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B))
-                                val chipBorder = if (selected) null else BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
-
-                                Surface(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(40.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = chipBg,
-                                    border = chipBorder,
-                                    onClick = {
-                                        if (!selected) {
-                                            onUpdateReminderSettings(settings.copy(mentorReviewThresholdDays = days))
-                                            showFeedbackToast("Batas review mentor diatur $label")
-                                        }
-                                    }
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            text = label,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                            color = chipText
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    // Batas hari belum di-approve - Slider 1..6 hari
+                    var sliderThreshold by remember(settings.mentorReviewThresholdDays) {
+                        mutableStateOf(settings.mentorReviewThresholdDays.coerceIn(1, 6).toFloat())
                     }
-
-                    // Row 2: Ulangi pengingat setiap
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Ulangi pengingat setiap",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            listOf(
-                                "30 mnt" to 30,
-                                "1 jam" to 60,
-                                "3 jam" to 180,
-                                "1 hari" to 1440
-                            ).forEach { (label, minutes) ->
-                                val selected = settings.mentorRepeatIntervalMinutes == minutes
-                                val chipBg = if (selected) Color(0xFFDBEAFE) else (if (isDark) Color(0xFF0B1220) else Color(0xFFEEF2F7))
-                                val chipText = if (selected) Color(0xFF1E3A8A) else (if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B))
-                                val chipBorder = if (selected) null else BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF94A3B8))
-
-                                Surface(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(40.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = chipBg,
-                                    border = chipBorder,
-                                    onClick = {
-                                        if (!selected) {
-                                            onUpdateReminderSettings(settings.copy(mentorRepeatIntervalMinutes = minutes))
-                                            showFeedbackToast("Notifikasi mentor diulang tiap $label")
-                                        }
-                                    }
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(
-                                            text = label,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                            color = chipText
-                                        )
-                                    }
-                                }
+                    SettingsSliderRow(
+                        title = "Batas hari belum di-approve",
+                        valueLabel = "${sliderThreshold.roundToInt()} hari",
+                        value = sliderThreshold,
+                        onValueChange = { sliderThreshold = it.roundToInt().toFloat() },
+                        onValueChangeFinished = {
+                            val targetDays = sliderThreshold.roundToInt()
+                            if (targetDays != settings.mentorReviewThresholdDays) {
+                                onUpdateReminderSettings(settings.copy(mentorReviewThresholdDays = targetDays))
+                                showFeedbackToast("Batas review mentor diatur $targetDays hari")
                             }
-                        }
+                        },
+                        valueRange = 1f..6f,
+                        steps = 4,
+                        minLabel = "1 hari",
+                        maxLabel = "6 hari",
+                        isDark = isDark,
+                        subtitle = "Kirim peringatan jika logbook belum diverifikasi setelah sekian hari"
+                    )
+
+                    HorizontalDivider(color = cardBorderColor)
+
+                    // Ulangi pengingat setiap - Slider 1..24 jam
+                    var sliderMentorHours by remember(settings.mentorRepeatIntervalMinutes) {
+                        val hours = (settings.mentorRepeatIntervalMinutes / 60).coerceIn(1, 24)
+                        mutableStateOf(hours.toFloat())
                     }
+                    val currentMentorHours = sliderMentorHours.roundToInt()
+                    val mentorHoursLabel = if (currentMentorHours == 24) "24 jam (1 hari)" else "$currentMentorHours jam"
+                    SettingsSliderRow(
+                        title = "Ulangi pengingat setiap",
+                        valueLabel = mentorHoursLabel,
+                        value = sliderMentorHours,
+                        onValueChange = { sliderMentorHours = it.roundToInt().toFloat() },
+                        onValueChangeFinished = {
+                            val targetHours = sliderMentorHours.roundToInt()
+                            val targetMinutes = targetHours * 60
+                            if (targetMinutes != settings.mentorRepeatIntervalMinutes) {
+                                onUpdateReminderSettings(settings.copy(mentorRepeatIntervalMinutes = targetMinutes))
+                                val label = if (targetHours == 24) "24 jam (1 hari)" else "$targetHours jam"
+                                showFeedbackToast("Notifikasi mentor diulang tiap $label")
+                            }
+                        },
+                        valueRange = 1f..24f,
+                        steps = 22,
+                        minLabel = "1 jam",
+                        maxLabel = "24 jam (1 hari)",
+                        isDark = isDark,
+                        subtitle = "Jeda waktu antar notifikasi pengingat review mentor"
+                    )
                 }
 
                 if (isPreviewBuild && !uiState.mentorSyncDebug.isNullOrBlank()) {
@@ -1427,6 +1362,95 @@ private fun ThemeSegmentedSlider(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Modern tactile slider row for timing and threshold configurations.
+ */
+@Composable
+private fun SettingsSliderRow(
+    title: String,
+    valueLabel: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    minLabel: String,
+    maxLabel: String,
+    isDark: Boolean,
+    subtitle: String? = null,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = if (isDark) Color(0xFF162033) else Color(0xFFDBEAFE),
+                border = BorderStroke(1.dp, if (isDark) Color(0xFF3B4B6B) else Color(0xFF93C5FD))
+            ) {
+                Text(
+                    text = valueLabel,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) Color(0xFF93C5FD) else Color(0xFF1E3A8A)
+                )
+            }
+        }
+
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        val primaryColor = if (isDark) AccentSkyDark else AccentSkyLight
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+            valueRange = valueRange,
+            steps = steps,
+            colors = SliderDefaults.colors(
+                thumbColor = primaryColor,
+                activeTrackColor = primaryColor,
+                inactiveTrackColor = if (isDark) Color(0xFF263450) else Color(0xFFE2E8F0)
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = minLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+            Text(
+                text = maxLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
         }
     }
 }
