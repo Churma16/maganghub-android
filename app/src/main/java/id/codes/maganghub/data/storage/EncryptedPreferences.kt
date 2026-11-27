@@ -246,7 +246,7 @@ class EncryptedPreferences(
             .putInt(KEY_MENTOR_THRESHOLD, settings.mentorReviewThresholdDays)
             .putInt(KEY_MENTOR_INTERVAL, settings.mentorRepeatIntervalMinutes)
             .putLong(KEY_MENTOR_SNOOZED_UNTIL, settings.mentorSnoozedUntil)
-            .apply()
+            .commit()
     }
 
     fun getReminderSettings(): ReminderSettings {
@@ -282,7 +282,7 @@ class EncryptedPreferences(
     fun getLastMentorCheckTimestamp(): Long = prefs.getLong(KEY_MENTOR_LAST_CHECK_TIME, 0L)
 
     fun saveMentorSnoozedUntil(snoozedUntil: Long) {
-        prefs.edit().putLong(KEY_MENTOR_SNOOZED_UNTIL, snoozedUntil).apply()
+        prefs.edit().putLong(KEY_MENTOR_SNOOZED_UNTIL, snoozedUntil).commit()
     }
 
     fun setMentorSnoozedUntil(timestampMillis: Long) = saveMentorSnoozedUntil(timestampMillis)
@@ -303,7 +303,7 @@ class EncryptedPreferences(
     }
 
     fun saveThemeMode(mode: ThemeMode) {
-        prefs.edit().putString(KEY_THEME_MODE, mode.value).apply()
+        prefs.edit().putString(KEY_THEME_MODE, mode.value).commit()
     }
 
     // Reset / Logout

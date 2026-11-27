@@ -19,7 +19,8 @@ object AttendanceWidgetHelper {
 
     suspend fun updateWidget(context: Context) {
         try {
-            MagangHubWidget().updateAll(context)
+            val appContext = context.applicationContext ?: context
+            MagangHubWidget().updateAll(appContext)
             Log.d(TAG, "MagangHub widget successfully updated")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update MagangHub widget", e)
