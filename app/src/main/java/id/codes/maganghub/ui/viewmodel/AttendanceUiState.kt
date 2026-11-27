@@ -66,7 +66,7 @@ data class AttendanceUiState(
 
         val holiday = if (isDataStale) {
             val dayOfWeek = nowWib.dayOfWeek
-            dayOfWeek == java.time.DayOfWeek.SATURDAY || dayOfWeek == java.time.DayOfWeek.SUNDAY || isHoliday
+            dayOfWeek == java.time.DayOfWeek.SATURDAY || dayOfWeek == java.time.DayOfWeek.SUNDAY
         } else {
             attendanceData?.isHoliday == true || attendanceData?.isScheduledOffDay == true || isHoliday
         }

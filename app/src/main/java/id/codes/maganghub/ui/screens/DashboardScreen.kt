@@ -1204,19 +1204,8 @@ private fun MentorReviewCard(
 private val ZONE_WIB = WorkPhaseResolver.ZONE_WIB
 private val INDONESIAN_HERO_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, d MMM yyyy", Locale("id", "ID"))
 
-private fun formatHeroDate(dateStr: String?): String {
-    val today = LocalDate.now(ZONE_WIB)
-    if (!dateStr.isNullOrBlank()) {
-        try {
-            val date = LocalDate.parse(dateStr)
-            if (date == today) {
-                return date.format(INDONESIAN_HERO_DATE_FORMATTER)
-            }
-        } catch (_: Exception) {
-            // fallback below
-        }
-    }
-    return today.format(INDONESIAN_HERO_DATE_FORMATTER)
+private fun formatHeroDate(dateStr: String? = null): String {
+    return LocalDate.now(ZONE_WIB).format(INDONESIAN_HERO_DATE_FORMATTER)
 }
 
 private fun calculateRemainingTime(): Pair<String, Long> {
