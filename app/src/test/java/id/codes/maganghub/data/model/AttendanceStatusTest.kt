@@ -88,4 +88,36 @@ class AttendanceStatusTest {
         val timeReportingUrgent = ZonedDateTime.of(today, LocalTime.of(20, 30), wib)
         assertEquals(DailyWorkPhase.REPORTING_URGENT, statePending.getDailyWorkPhase(timeReportingUrgent))
     }
+
+    @Test
+    fun testMidnightRolloverToWeekendHoliday() {
+        val wib = ZoneId.of("Asia/Jakarta")
+        // Friday data with completed attendance
+        val fridayDate = "2026-11-27"
+        val stateFridayCompleted = AttendanceUiState(
+            attendanceStatus = AttendanceStatus.HADIR,
+            attendanceData = AttendanceHomeData(date = fridayDate, activeInternship = true, hasAttendance = true),
+            reminderSettings = ReminderSettings(workStartHour = 8, startHour = 16)
+        )
+
+        // At 01:11 WIB on Saturday (2026-11-28) -> should automatically roll over to HOLIDAY
+        val saturdayMidnight = ZonedDateTime.of(LocalDate.of(2026, 11, 28), LocalTime.of(1, 11), wib)
+        assertEquals(DailyWorkPhase.HOLIDAY, stateFridayCompleted.getDailyWorkPhase(saturdayMidnight))
+    }
+
+    @Test
+    fun testMidnightRolloverToWeekdayBeforeWork() {
+        val wib = ZoneId.of("Asia/Jakarta")
+        // Sunday data marked as off-day
+        val sundayDate = "2026-11-29"
+        val stateSundayOff = AttendanceUiState(
+            attendanceStatus = AttendanceStatus.LIBUR,
+            attendanceData = AttendanceHomeData(date = sundayDate, activeInternship = true, isScheduledOffDay = true),
+            reminderSettings = ReminderSettings(workStartHour = 8, startHour = 16)
+        )
+
+        // At 01:11 WIB on Monday (2026-11-30) -> should automatically roll over to BEFORE_WORK
+        val mondayMidnight = ZonedDateTime.of(LocalDate.of(2026, 11, 30), LocalTime.of(1, 11), wib)
+        assertEquals(DailyWorkPhase.BEFORE_WORK, stateSundayOff.getDailyWorkPhase(mondayMidnight))
+    }
 }

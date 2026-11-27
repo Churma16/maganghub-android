@@ -86,6 +86,23 @@ val HeroCompleteDescLight = Color(0xFF166534)
 val HeroCompleteTitleLight = Color(0xFF14532D)
 
 // ==========================================
+// 3b. Kartu status "Hari Libur / Off" (Ungu / Indigo)
+// ==========================================
+val HeroHolidayBgDark = Color(0xFF131B2E)
+val HeroHolidayBorderDark = Color(0xFF3730A3)
+val HeroHolidayDateDark = Color(0xFFA5B4FC)
+val HeroHolidayIconDark = Color(0xFF6366F1)
+val HeroHolidayDescDark = Color(0xFFCBD5E1)
+val HeroHolidayTitleDark = Color(0xFFFFFFFF)
+
+val HeroHolidayBgLight = Color(0xFFEEF2FF)
+val HeroHolidayBorderLight = Color(0xFFC7D2FE)
+val HeroHolidayDateLight = Color(0xFF4F46E5)
+val HeroHolidayIconLight = Color(0xFF6366F1)
+val HeroHolidayDescLight = Color(0xFF475569)
+val HeroHolidayTitleLight = Color(0xFF312E81)
+
+// ==========================================
 // 4. Panel sisa waktu (di dalam kartu status)
 // ==========================================
 val MetricPanelDark = Color(0x47000000)      // rgba(0,0,0,0.28)
@@ -113,11 +130,11 @@ val StatusInfoBgLight = Color(0xFFE0F2FE)
 val StatusInfoTextLight = Color(0xFF075985)
 val StatusInfoIconLight = Color(0xFF075985)
 
-val StatusHolidayBorderDark = Color(0xFF52627F)
-val StatusHolidayIconDark = Color(0xFFA8B3C7)
+val StatusHolidayBorderDark = Color(0xFF3730A3)
+val StatusHolidayIconDark = Color(0xFFA5B4FC)
 
-val StatusHolidayBorderLight = Color(0xFF94A3B8)
-val StatusHolidayIconLight = Color(0xFF64748B)
+val StatusHolidayBorderLight = Color(0xFFC7D2FE)
+val StatusHolidayIconLight = Color(0xFF6366F1)
 
 // ==========================================
 // 6. Chip, toggle, dan bahaya

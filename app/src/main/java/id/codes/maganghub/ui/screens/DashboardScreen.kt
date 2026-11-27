@@ -66,9 +66,11 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.codes.maganghub.R
 import id.codes.maganghub.background.NotificationHelper
 import id.codes.maganghub.data.model.AttendanceStatus
 import id.codes.maganghub.data.model.ThemeMode
@@ -88,6 +90,18 @@ import id.codes.maganghub.ui.theme.HeroCompleteIconDark
 import id.codes.maganghub.ui.theme.HeroCompleteIconLight
 import id.codes.maganghub.ui.theme.HeroCompleteTitleDark
 import id.codes.maganghub.ui.theme.HeroCompleteTitleLight
+import id.codes.maganghub.ui.theme.HeroHolidayBgDark
+import id.codes.maganghub.ui.theme.HeroHolidayBgLight
+import id.codes.maganghub.ui.theme.HeroHolidayBorderDark
+import id.codes.maganghub.ui.theme.HeroHolidayBorderLight
+import id.codes.maganghub.ui.theme.HeroHolidayDateDark
+import id.codes.maganghub.ui.theme.HeroHolidayDateLight
+import id.codes.maganghub.ui.theme.HeroHolidayDescDark
+import id.codes.maganghub.ui.theme.HeroHolidayDescLight
+import id.codes.maganghub.ui.theme.HeroHolidayIconDark
+import id.codes.maganghub.ui.theme.HeroHolidayIconLight
+import id.codes.maganghub.ui.theme.HeroHolidayTitleDark
+import id.codes.maganghub.ui.theme.HeroHolidayTitleLight
 import id.codes.maganghub.ui.theme.HeroIncompleteBgDark
 import id.codes.maganghub.ui.theme.HeroIncompleteBgLight
 import id.codes.maganghub.ui.theme.HeroIncompleteBorderDark
@@ -347,7 +361,7 @@ private fun HeroStatusCard(
 
     val containerColor = when (phase) {
         DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteBgDark else HeroCompleteBgLight
-        DailyWorkPhase.HOLIDAY -> if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+        DailyWorkPhase.HOLIDAY -> if (isDark) HeroHolidayBgDark else HeroHolidayBgLight
         DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
         DailyWorkPhase.WORKING -> if (isDark) Color(0xFF0C243B) else Color(0xFFE0F2FE)
         DailyWorkPhase.REPORTING_NORMAL -> if (isDark) HeroNormalBgDark else HeroNormalBgLight
@@ -356,7 +370,7 @@ private fun HeroStatusCard(
 
     val borderColor = when (phase) {
         DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteBorderDark else HeroCompleteBorderLight
-        DailyWorkPhase.HOLIDAY -> if (isDark) StatusHolidayBorderDark else StatusHolidayBorderLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) HeroHolidayBorderDark else HeroHolidayBorderLight
         DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1)
         DailyWorkPhase.WORKING -> if (isDark) Color(0xFF1E4268) else Color(0xFFBAE6FD)
         DailyWorkPhase.REPORTING_NORMAL -> if (isDark) HeroNormalBorderDark else HeroNormalBorderLight
@@ -365,7 +379,7 @@ private fun HeroStatusCard(
 
     val badgeColor = when (phase) {
         DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteIconDark else HeroCompleteIconLight
-        DailyWorkPhase.HOLIDAY -> if (isDark) StatusHolidayIconDark else StatusHolidayIconLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) HeroHolidayIconDark else HeroHolidayIconLight
         DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8)
         DailyWorkPhase.WORKING -> if (isDark) Color(0xFF0284C7) else Color(0xFF0284C7)
         DailyWorkPhase.REPORTING_NORMAL -> if (isDark) HeroNormalIconDark else HeroNormalIconLight
@@ -374,7 +388,7 @@ private fun HeroStatusCard(
 
     val titleColor = when (phase) {
         DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteTitleDark else HeroCompleteTitleLight
-        DailyWorkPhase.HOLIDAY -> if (isDark) TextPrimaryDark else Color(0xFF1E293B)
+        DailyWorkPhase.HOLIDAY -> if (isDark) HeroHolidayTitleDark else HeroHolidayTitleLight
         DailyWorkPhase.BEFORE_WORK -> if (isDark) TextPrimaryDark else Color(0xFF1E293B)
         DailyWorkPhase.WORKING -> if (isDark) Color.White else Color(0xFF0369A1)
         DailyWorkPhase.REPORTING_NORMAL -> if (isDark) HeroNormalTitleDark else HeroNormalTitleLight
@@ -383,7 +397,7 @@ private fun HeroStatusCard(
 
     val dateColor = when (phase) {
         DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteDateDark else HeroCompleteDateLight
-        DailyWorkPhase.HOLIDAY -> if (isDark) StatusHolidayIconDark else StatusHolidayIconLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) HeroHolidayDateDark else HeroHolidayDateLight
         DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
         DailyWorkPhase.WORKING -> if (isDark) Color(0xFF7DD3FC) else Color(0xFF0284C7)
         DailyWorkPhase.REPORTING_NORMAL -> if (isDark) HeroNormalDateDark else HeroNormalDateLight
@@ -392,7 +406,7 @@ private fun HeroStatusCard(
 
     val descColor = when (phase) {
         DailyWorkPhase.COMPLETED -> if (isDark) HeroCompleteDescDark else HeroCompleteDescLight
-        DailyWorkPhase.HOLIDAY -> if (isDark) TextSecondaryDark else TextSecondaryLight
+        DailyWorkPhase.HOLIDAY -> if (isDark) HeroHolidayDescDark else HeroHolidayDescLight
         DailyWorkPhase.BEFORE_WORK -> if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)
         DailyWorkPhase.WORKING -> if (isDark) Color(0xFFE2E8F0) else Color(0xFF0C4A6E)
         DailyWorkPhase.REPORTING_NORMAL -> if (isDark) HeroNormalDescDark else HeroNormalDescLight
@@ -403,6 +417,7 @@ private fun HeroStatusCard(
     val metricBorder = when {
         isDark -> BorderStroke(1.dp, Color.Transparent)
         phase == DailyWorkPhase.COMPLETED -> BorderStroke(1.dp, HeroCompleteBorderLight)
+        phase == DailyWorkPhase.HOLIDAY -> BorderStroke(1.dp, HeroHolidayBorderLight)
         phase == DailyWorkPhase.WORKING -> BorderStroke(1.dp, Color(0xFFBAE6FD))
         phase == DailyWorkPhase.REPORTING_NORMAL -> BorderStroke(1.dp, HeroNormalBorderLight)
         phase == DailyWorkPhase.REPORTING_URGENT -> BorderStroke(1.dp, HeroIncompleteBorderLight)
@@ -412,6 +427,7 @@ private fun HeroStatusCard(
     val metricValueColor = when {
         isDark -> Color.White
         phase == DailyWorkPhase.COMPLETED -> HeroCompleteTitleLight
+        phase == DailyWorkPhase.HOLIDAY -> HeroHolidayTitleLight
         phase == DailyWorkPhase.WORKING -> Color(0xFF0369A1)
         phase == DailyWorkPhase.REPORTING_NORMAL -> HeroNormalTitleLight
         phase == DailyWorkPhase.REPORTING_URGENT -> HeroIncompleteTitleLight
@@ -502,12 +518,21 @@ private fun HeroStatusCard(
                         .background(animatedBadgeColor),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = badgeIcon,
-                        contentDescription = statusTitle,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    if (phase == DailyWorkPhase.HOLIDAY) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_widget_moon),
+                            contentDescription = statusTitle,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = badgeIcon,
+                            contentDescription = statusTitle,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
 
                 Column {
@@ -586,8 +611,13 @@ private fun HeroStatusCard(
 @Composable
 private fun MiniStatusCards(uiState: AttendanceUiState, isDark: Boolean) {
     val isActive = uiState.attendanceData?.activeInternship != false
-    val isHoliday = uiState.attendanceData?.isHoliday == true
-    val isOffDay = uiState.attendanceData?.isScheduledOffDay == true
+    val nowWib = java.time.ZonedDateTime.now(WorkPhaseResolver.ZONE_WIB)
+    val todayStr = nowWib.toLocalDate().toString()
+    val isDataCurrent = uiState.attendanceData?.date == todayStr
+    val isWeekend = nowWib.dayOfWeek == java.time.DayOfWeek.SATURDAY || nowWib.dayOfWeek == java.time.DayOfWeek.SUNDAY
+
+    val isHoliday = if (isDataCurrent) uiState.attendanceData?.isHoliday == true else false
+    val isOffDay = if (isDataCurrent) uiState.attendanceData?.isScheduledOffDay == true else isWeekend
     val isLibur = isHoliday || isOffDay
 
     Card(
@@ -677,23 +707,28 @@ private fun MiniStatusCards(uiState: AttendanceUiState, isDark: Boolean) {
                         .clip(RoundedCornerShape(10.dp))
                         .background(
                             if (isLibur) {
-                                if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+                                if (isDark) HeroHolidayBgDark else HeroHolidayBgLight
                             } else {
                                 if (isDark) StatusInfoBgDark else StatusInfoBgLight
                             }
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = null,
-                        tint = if (isLibur) {
-                            if (isDark) StatusHolidayIconDark else StatusHolidayIconLight
-                        } else {
-                            if (isDark) StatusInfoIconDark else StatusInfoIconLight
-                        },
-                        modifier = Modifier.size(20.dp)
-                    )
+                    if (isLibur) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_widget_moon),
+                            contentDescription = null,
+                            tint = if (isDark) HeroHolidayIconDark else HeroHolidayIconLight,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = null,
+                            tint = if (isDark) StatusInfoIconDark else StatusInfoIconLight,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
@@ -717,12 +752,12 @@ private fun MiniStatusCards(uiState: AttendanceUiState, isDark: Boolean) {
                 Surface(
                     shape = RoundedCornerShape(50),
                     color = if (isLibur) {
-                        if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+                        if (isDark) HeroHolidayBgDark else HeroHolidayBgLight
                     } else {
                         if (isDark) StatusInfoBgDark else StatusInfoBgLight
                     },
                     border = if (isLibur) {
-                        BorderStroke(1.dp, if (isDark) StatusHolidayBorderDark else StatusHolidayBorderLight)
+                        BorderStroke(1.dp, if (isDark) HeroHolidayBorderDark else HeroHolidayBorderLight)
                     } else null
                 ) {
                     Text(
@@ -731,7 +766,7 @@ private fun MiniStatusCards(uiState: AttendanceUiState, isDark: Boolean) {
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (isLibur) {
-                            if (isDark) StatusHolidayIconDark else StatusHolidayIconLight
+                            if (isDark) HeroHolidayIconDark else HeroHolidayIconLight
                         } else {
                             if (isDark) StatusInfoTextDark else StatusInfoTextLight
                         }
@@ -1170,15 +1205,18 @@ private val ZONE_WIB = WorkPhaseResolver.ZONE_WIB
 private val INDONESIAN_HERO_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEEE, d MMM yyyy", Locale("id", "ID"))
 
 private fun formatHeroDate(dateStr: String?): String {
+    val today = LocalDate.now(ZONE_WIB)
     if (!dateStr.isNullOrBlank()) {
         try {
             val date = LocalDate.parse(dateStr)
-            return date.format(INDONESIAN_HERO_DATE_FORMATTER)
+            if (date == today) {
+                return date.format(INDONESIAN_HERO_DATE_FORMATTER)
+            }
         } catch (_: Exception) {
-            return dateStr
+            // fallback below
         }
     }
-    return LocalDate.now(ZONE_WIB).format(INDONESIAN_HERO_DATE_FORMATTER)
+    return today.format(INDONESIAN_HERO_DATE_FORMATTER)
 }
 
 private fun calculateRemainingTime(): Pair<String, Long> {
