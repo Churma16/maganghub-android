@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.0] - 2026-11-28
+
+* fix(ui,widget): align holiday purple theme, fix moon icon vector, and handle midnight rollover (#50)
+* feat(settings): use interactive sliders for reminder timing, intervals, and mentor thresholds (#49)
+* fix(update): force launch update and external links in standalone browser instead of in-app custom tabs (#48)
+
 ## [0.2.2] - 2026-11-27
 
 * fix(ui): restrict mentor sync debug telemetry row to preview and debug builds (#47)
