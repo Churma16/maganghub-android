@@ -244,6 +244,7 @@ class AttendanceRepositoryImpl(
                 // Throttled to at most once every 3 hours to conserve battery and API bandwidth,
                 // but respects forceRefresh = true for explicit manual user refreshes.
                 var pendingCount = storage.getPendingMentorReviewCount()
+                var approvedCount = 0
                 val lastMentorCheck = storage.getLastMentorCheckTimestamp()
                 val isDue = isMentorCheckDue(
                     currentTimeMillis = now,
@@ -293,7 +294,12 @@ class AttendanceRepositoryImpl(
                             }
 
                             if (fetchError == null) {
+                                val previousPending = storage.getPendingMentorReviewCount()
                                 pendingCount = apiClient.calculatePendingMentorReviewCount(attendances)
+                                if (previousPending > 0 && pendingCount < previousPending) {
+                                    approvedCount = previousPending - pendingCount
+                                    Log.i(TAG, "Detected mentor approval: previous=$previousPending, current=$pendingCount, approved=$approvedCount")
+                                }
                                 storage.savePendingMentorReviewCount(pendingCount)
                                 storage.saveLastMentorCheckTimestamp(now)
                                 val pIdMask = if (!participantId.isNullOrBlank()) "${participantId.take(8)}.." else "null"
@@ -323,6 +329,7 @@ class AttendanceRepositoryImpl(
                     checkedAt = now,
                     isSuccess = true,
                     pendingMentorReviewCount = pendingCount,
+                    approvedMentorReviewCount = approvedCount,
                     mentorSyncDebug = debugMsg
                 )
                 Result.success(result)

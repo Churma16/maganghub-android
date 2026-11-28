@@ -13,9 +13,13 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import id.churma.maganghubcompanion.MagangHubApp
+import id.churma.maganghubcompanion.data.api.RateLimitedException
 import id.churma.maganghubcompanion.data.api.UnauthorizedSessionException
+import id.churma.maganghubcompanion.data.model.AttendanceCheckResult
+import id.churma.maganghubcompanion.data.model.AttendanceHomeData
 import id.churma.maganghubcompanion.data.model.AttendanceStatus
 import id.churma.maganghubcompanion.data.model.ReminderSettings
+import id.churma.maganghubcompanion.data.repository.AttendanceRepositoryImpl
 import id.churma.maganghubcompanion.widget.AttendanceWidgetHelper
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -91,6 +95,18 @@ class AttendanceCheckWorker(
         ): Boolean {
             return cachedDate == todayDateString && cachedHasAttendance
         }
+
+        /**
+         * Pure function to determine whether network check should be skipped.
+         * Returns true only when today's attendance has been confirmed AND mentor check is not due.
+         */
+        fun shouldSkipNetworkCheck(
+            isAttendanceAlreadyConfirmed: Boolean,
+            isMentorReminderEnabled: Boolean,
+            isMentorCheckDue: Boolean
+        ): Boolean {
+            return isAttendanceAlreadyConfirmed && !(isMentorReminderEnabled && isMentorCheckDue)
+        }
     }
 
     override suspend fun doWork(): Result {
@@ -120,17 +136,29 @@ class AttendanceCheckWorker(
             cachedHasAttendance = cachedHomeData?.hasAttendance == true
         )
 
-        val homeData: id.churma.maganghubcompanion.data.model.AttendanceHomeData?
-        var pendingMentorCount: Int? = null
+        val lastMentorCheck = try {
+            MagangHubApp.instance.encryptedPreferences.getLastMentorCheckTimestamp()
+        } catch (_: Exception) {
+            0L
+        }
+        val isMentorDue = AttendanceRepositoryImpl.isMentorCheckDue(
+            currentTimeMillis = System.currentTimeMillis(),
+            lastCheckMillis = lastMentorCheck
+        )
 
-        if (isAttendanceAlreadyConfirmed) {
-            Log.i(TAG, "Today's attendance already confirmed ($todayDateString). Skipping network check to save battery.")
+        val shouldSkip = shouldSkipNetworkCheck(
+            isAttendanceAlreadyConfirmed = isAttendanceAlreadyConfirmed,
+            isMentorReminderEnabled = settings.mentorReminderEnabled,
+            isMentorCheckDue = isMentorDue
+        )
+
+        val homeData: AttendanceHomeData?
+        var pendingMentorCount: Int? = null
+        var resultData: AttendanceCheckResult? = null
+
+        if (shouldSkip) {
+            Log.i(TAG, "Today's attendance confirmed ($todayDateString) and mentor check not due. Skipping network check to save battery.")
             homeData = cachedHomeData
-            pendingMentorCount = try {
-                MagangHubApp.instance.encryptedPreferences.getPendingMentorReviewCount()
-            } catch (_: Exception) {
-                0
-            }
         } else {
             val repository = try {
                 MagangHubApp.instance.attendanceRepository
@@ -145,7 +173,7 @@ class AttendanceCheckWorker(
                 val exception = checkResult.exceptionOrNull()
                 Log.e(TAG, "Attendance verification failed", exception)
 
-                if (exception is id.churma.maganghubcompanion.data.api.RateLimitedException) {
+                if (exception is RateLimitedException) {
                     val backoffSec = exception.retryAfterSeconds.coerceAtLeast(60L)
                     val resumeEpochMillis = System.currentTimeMillis() + (backoffSec * 1000L)
                     Log.w(TAG, "MagangHub API rate limited (HTTP 429). Rescheduling next alarm in $backoffSec seconds.")
@@ -169,42 +197,58 @@ class AttendanceCheckWorker(
                 }
             }
 
-            val resultData = checkResult.getOrNull()
+            resultData = checkResult.getOrNull()
             homeData = resultData?.data
             pendingMentorCount = resultData?.pendingMentorReviewCount
         }
 
-        // Mentor review reminder verification
+        // Mentor review reminder & approval verification
         if (settings.mentorReminderEnabled) {
-            val pendingCount = pendingMentorCount?.takeIf { it > 0 }
+            val pendingCount = pendingMentorCount?.takeIf { it >= 0 }
                 ?: try {
                     MagangHubApp.instance.encryptedPreferences.getPendingMentorReviewCount()
                 } catch (e2: Throwable) {
                     0
                 }
 
-            val nowMillis = System.currentTimeMillis()
-            val lastMentorNotificationTime = AttendanceAlarmScheduler.getLastMentorReminderTimeMillis(appContext)
-
-            if (AttendanceAlarmScheduler.shouldTriggerMentorReminder(
-                    mentorReminderEnabled = settings.mentorReminderEnabled,
-                    pendingCount = pendingCount,
-                    thresholdDays = settings.mentorReviewThresholdDays,
-                    snoozedUntil = settings.mentorSnoozedUntil,
-                    lastMentorReminderTime = lastMentorNotificationTime,
-                    repeatIntervalMinutes = settings.mentorRepeatIntervalMinutes,
-                    currentTimeMillis = nowMillis
-                )
-            ) {
-                Log.i(TAG, "Dispatching mentor review reminder (pendingCount=$pendingCount, threshold=${settings.mentorReviewThresholdDays})")
-                NotificationHelper.showMentorReviewReminderNotification(
+            val approvedCount = resultData?.approvedMentorReviewCount ?: 0
+            if (approvedCount > 0) {
+                Log.i(TAG, "Mentor approved $approvedCount logbook(s). Remaining: $pendingCount")
+                NotificationHelper.showMentorApprovalNotification(
                     context = appContext,
-                    pendingCount = pendingCount,
-                    thresholdDays = settings.mentorReviewThresholdDays,
+                    approvedCount = approvedCount,
+                    remainingPendingCount = pendingCount,
                     soundEnabled = settings.soundEnabled,
                     vibrationEnabled = settings.vibrationEnabled
                 )
-                AttendanceAlarmScheduler.updateLastMentorReminderTimeMillis(appContext, nowMillis)
+            }
+
+            if (pendingCount < settings.mentorReviewThresholdDays) {
+                NotificationHelper.cancelMentorReminder(appContext)
+            } else {
+                val nowMillis = System.currentTimeMillis()
+                val lastMentorNotificationTime = AttendanceAlarmScheduler.getLastMentorReminderTimeMillis(appContext)
+
+                if (AttendanceAlarmScheduler.shouldTriggerMentorReminder(
+                        mentorReminderEnabled = settings.mentorReminderEnabled,
+                        pendingCount = pendingCount,
+                        thresholdDays = settings.mentorReviewThresholdDays,
+                        snoozedUntil = settings.mentorSnoozedUntil,
+                        lastMentorReminderTime = lastMentorNotificationTime,
+                        repeatIntervalMinutes = settings.mentorRepeatIntervalMinutes,
+                        currentTimeMillis = nowMillis
+                    )
+                ) {
+                    Log.i(TAG, "Dispatching mentor review reminder (pendingCount=$pendingCount, threshold=${settings.mentorReviewThresholdDays})")
+                    NotificationHelper.showMentorReviewReminderNotification(
+                        context = appContext,
+                        pendingCount = pendingCount,
+                        thresholdDays = settings.mentorReviewThresholdDays,
+                        soundEnabled = settings.soundEnabled,
+                        vibrationEnabled = settings.vibrationEnabled
+                    )
+                    AttendanceAlarmScheduler.updateLastMentorReminderTimeMillis(appContext, nowMillis)
+                }
             }
         }
 

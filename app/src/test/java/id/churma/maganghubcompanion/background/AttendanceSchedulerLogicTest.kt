@@ -260,4 +260,50 @@ class AttendanceSchedulerLogicTest {
         assertFalse(AttendanceCheckWorker.shouldSkipAttendanceCheck(today, null, true))
         assertFalse(AttendanceCheckWorker.shouldSkipAttendanceCheck(today, null, false))
     }
+
+    @Test
+    fun testShouldSkipNetworkCheck_ConsidersMentorDueState() {
+        // Attendance confirmed, mentor reminder disabled -> skip network
+        assertTrue(
+            AttendanceCheckWorker.shouldSkipNetworkCheck(
+                isAttendanceAlreadyConfirmed = true,
+                isMentorReminderEnabled = false,
+                isMentorCheckDue = true
+            )
+        )
+
+        // Attendance confirmed, mentor reminder enabled but not due yet -> skip network
+        assertTrue(
+            AttendanceCheckWorker.shouldSkipNetworkCheck(
+                isAttendanceAlreadyConfirmed = true,
+                isMentorReminderEnabled = true,
+                isMentorCheckDue = false
+            )
+        )
+
+        // Attendance confirmed, mentor reminder enabled and check IS due -> DO NOT skip network (runs mentor sync)
+        assertFalse(
+            AttendanceCheckWorker.shouldSkipNetworkCheck(
+                isAttendanceAlreadyConfirmed = true,
+                isMentorReminderEnabled = true,
+                isMentorCheckDue = true
+            )
+        )
+
+        // Attendance NOT confirmed yet -> never skip network
+        assertFalse(
+            AttendanceCheckWorker.shouldSkipNetworkCheck(
+                isAttendanceAlreadyConfirmed = false,
+                isMentorReminderEnabled = true,
+                isMentorCheckDue = false
+            )
+        )
+        assertFalse(
+            AttendanceCheckWorker.shouldSkipNetworkCheck(
+                isAttendanceAlreadyConfirmed = false,
+                isMentorReminderEnabled = false,
+                isMentorCheckDue = false
+            )
+        )
+    }
 }
