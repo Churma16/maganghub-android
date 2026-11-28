@@ -73,7 +73,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Segera isi sebelum 23:59 WIB"
         WidgetStatus.HARI_LIBUR -> {
             when {
-                pendingMentorCount == 0 -> "Tidak wajib isi logbook"
+                pendingMentorCount == 0 -> "Selamat beristirahat"
                 isMentorOverdue -> "$pendingMentorCount laporan belum di-approve"
                 else -> "$pendingMentorCount laporan menunggu approval"
             }
@@ -100,7 +100,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Sisa $remainingTimeText"
         WidgetStatus.HARI_LIBUR -> {
             when {
-                pendingMentorCount == 0 -> "Tidak wajib logbook"
+                pendingMentorCount == 0 -> "Selamat beristirahat"
                 isMentorOverdue -> "$pendingMentorCount menunggu >$thresholdDays hr"
                 else -> "$pendingMentorCount menunggu approval"
             }

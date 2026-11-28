@@ -457,7 +457,7 @@ private fun HeroStatusCard(
 
     val statusDescription = when (phase) {
         DailyWorkPhase.COMPLETED -> "Logbook hari ini sudah tercatat lengkap."
-        DailyWorkPhase.HOLIDAY -> "Hari ini hari libur atau off day terjadwal. Tidak ada kewajiban mengisi logbook."
+        DailyWorkPhase.HOLIDAY -> "Selamat beristirahat! Hari ini hari libur atau off day terjadwal."
         DailyWorkPhase.BEFORE_WORK -> "Jam kerja dimulai pukul $workStartTimeStr WIB. Pengingat logbook dimulai pukul $reportStartTimeStr WIB."
         DailyWorkPhase.WORKING -> "Selamat menjalani aktivitas magang hari ini. Pengingat logbook dimulai pukul $reportStartTimeStr WIB."
         DailyWorkPhase.REPORTING_NORMAL -> "Logbook hari ini belum tercatat. Selesaikan sebelum batas waktu."

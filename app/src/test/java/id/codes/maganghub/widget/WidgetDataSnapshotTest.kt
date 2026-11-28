@@ -136,8 +136,8 @@ class WidgetDataSnapshotTest {
 
         assertEquals("Hari Libur", base.getTitle1x5())
         assertEquals("Hari Libur", base.getTitle1x3())
-        assertEquals("Tidak wajib isi logbook", base.getSubtext1x5())
-        assertEquals("Tidak wajib logbook", base.getSubtext1x3())
+        assertEquals("Selamat beristirahat", base.getSubtext1x5())
+        assertEquals("Selamat beristirahat", base.getSubtext1x3())
         assertFalse(base.showBadge1x5())
         assertEquals(R.drawable.ic_widget_moon, base.getInlineIconResId())
 
