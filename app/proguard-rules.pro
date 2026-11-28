@@ -11,11 +11,11 @@
     @com.google.gson.annotations.SerializedName <fields>;
     <init>(...);
 }
--keep class id.codes.maganghub.data.model.** { *; }
--keep class id.codes.maganghub.data.api.AttendanceItem { *; }
--keep class id.codes.maganghub.data.api.AttendancesResponse { *; }
--keep class id.codes.maganghub.data.api.GithubRelease { *; }
--keep class id.codes.maganghub.data.api.GithubAsset { *; }
+-keep class id.churma.maganghubcompanion.data.model.** { *; }
+-keep class id.churma.maganghubcompanion.data.api.AttendanceItem { *; }
+-keep class id.churma.maganghubcompanion.data.api.AttendancesResponse { *; }
+-keep class id.churma.maganghubcompanion.data.api.GithubRelease { *; }
+-keep class id.churma.maganghubcompanion.data.api.GithubAsset { *; }
 
 # WorkManager Worker instantiation via reflection
 -keep class * extends androidx.work.ListenableWorker {

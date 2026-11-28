@@ -6,14 +6,14 @@ plugins {
 val versionSuffix = project.findProperty("versionSuffix") as? String
 val appIdSuffix = project.findProperty("applicationIdSuffix") as? String
     ?: (project.findProperty("appIdSuffix") as? String)
-val appName = project.findProperty("appName") as? String ?: "MagangHub"
+val appName = project.findProperty("appName") as? String ?: "MagangHub Companion"
 
 android {
-    namespace = "id.codes.maganghub"
+    namespace = "id.churma.maganghubcompanion"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "id.codes.maganghub"
+        applicationId = "id.churma.maganghubcompanion"
         minSdk = 26
         targetSdk = 34
         versionCode = 5
@@ -50,7 +50,7 @@ android {
             applicationIdSuffix = ".debug"
             isDebuggable = true
             versionNameSuffix = versionSuffix?.takeIf { it.isNotBlank() } ?: "-dev"
-            manifestPlaceholders["appName"] = "MagangHub (Dev)"
+            manifestPlaceholders["appName"] = "MagangHub Companion (Dev)"
         }
         release {
             isMinifyEnabled = true
@@ -61,7 +61,7 @@ android {
             if (!appIdSuffix.isNullOrBlank()) {
                 applicationIdSuffix = appIdSuffix
             }
-            if (!appName.isNullOrBlank() && appName != "MagangHub") {
+            if (!appName.isNullOrBlank() && appName != "MagangHub Companion") {
                 manifestPlaceholders["appName"] = appName
             }
             signingConfig = signingConfigs.getByName("release")
@@ -75,7 +75,7 @@ android {
     applicationVariants.all {
         outputs.all {
             val outputImpl = this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            outputImpl?.outputFileName = "maganghub-v${versionName}.apk"
+            outputImpl?.outputFileName = "maganghub-companion-v${versionName}.apk"
         }
     }
 

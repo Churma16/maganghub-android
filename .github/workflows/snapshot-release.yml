@@ -81,7 +81,7 @@ jobs:
           SHORT_SHA=$(git rev-parse --short HEAD)
           SNAPSHOT_TAG="v${VERSION}-snapshot.${SHORT_SHA}"
           VERSION_SUFFIX="-snapshot.${SHORT_SHA}"
-          SNAPSHOT_APK="maganghub-${SNAPSHOT_TAG}.apk"
+          SNAPSHOT_APK="maganghub-companion-${SNAPSHOT_TAG}.apk"
           echo "snapshot_tag=$SNAPSHOT_TAG" >> $GITHUB_OUTPUT
           echo "VERSION_SUFFIX=$VERSION_SUFFIX" >> $GITHUB_ENV
           echo "SNAPSHOT_TAG=$SNAPSHOT_TAG" >> $GITHUB_ENV
