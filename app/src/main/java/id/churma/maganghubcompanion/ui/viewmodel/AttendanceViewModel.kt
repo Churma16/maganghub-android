@@ -146,6 +146,21 @@ class AttendanceViewModel(
             result.fold(
                 onSuccess = { checkResult ->
                     _uiState.update { current ->
+                        val successMsg = when {
+                            checkResult.approvedMentorReviewCount > 0 -> {
+                                if (checkResult.pendingMentorReviewCount == 0) {
+                                    if (checkResult.approvedMentorReviewCount == 1) {
+                                        "Logbook kamu telah disetujui mentor! 🎉"
+                                    } else {
+                                        "Semua logbook (${checkResult.approvedMentorReviewCount} laporan) telah disetujui mentor! 🎉"
+                                    }
+                                } else {
+                                    "${checkResult.approvedMentorReviewCount} logbook telah disetujui mentor! 👍"
+                                }
+                            }
+                            !silent -> "Logbook berhasil dicek!"
+                            else -> null
+                        }
                         current.copy(
                             isChecking = false,
                             attendanceStatus = checkResult.status,
@@ -153,7 +168,7 @@ class AttendanceViewModel(
                             pendingMentorReviewCount = checkResult.pendingMentorReviewCount,
                             mentorSyncDebug = checkResult.mentorSyncDebug ?: repository.getLastMentorSyncDebug(),
                             lastSyncTimestamp = checkResult.checkedAt,
-                            successMessage = if (!silent) "Logbook berhasil dicek!" else null,
+                            successMessage = successMsg,
                             errorMessage = null
                         )
                     }

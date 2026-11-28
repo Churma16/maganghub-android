@@ -76,4 +76,44 @@ class NotificationFormattingTest {
         val result = NotificationHelper.formatRemainingTimeToDeadline(timeWit)
         assertEquals("1 jam 44 menit", result)
     }
+
+    @Test
+    fun testFormatMentorApprovalMessage_SingleApproved_AllDone() {
+        val (title, body) = NotificationHelper.formatMentorApprovalMessage(
+            approvedCount = 1,
+            remainingPendingCount = 0
+        )
+        assertEquals("Logbook Disetujui Mentor! 🎉", title)
+        assertEquals("Kabar baik! Logbook kamu telah disetujui mentor.", body)
+    }
+
+    @Test
+    fun testFormatMentorApprovalMessage_MultipleApproved_AllDone() {
+        val (title, body) = NotificationHelper.formatMentorApprovalMessage(
+            approvedCount = 3,
+            remainingPendingCount = 0
+        )
+        assertEquals("Logbook Disetujui Mentor! 🎉", title)
+        assertEquals("Kabar baik! Semua laporan (3 logbook) telah disetujui mentor.", body)
+    }
+
+    @Test
+    fun testFormatMentorApprovalMessage_SingleApproved_RemainingPending() {
+        val (title, body) = NotificationHelper.formatMentorApprovalMessage(
+            approvedCount = 1,
+            remainingPendingCount = 2
+        )
+        assertEquals("Logbook Disetujui Mentor! 👍", title)
+        assertEquals("1 logbook telah disetujui mentor. Tersisa 2 laporan yang masih menunggu peninjauan.", body)
+    }
+
+    @Test
+    fun testFormatMentorApprovalMessage_MultipleApproved_RemainingPending() {
+        val (title, body) = NotificationHelper.formatMentorApprovalMessage(
+            approvedCount = 2,
+            remainingPendingCount = 1
+        )
+        assertEquals("Logbook Disetujui Mentor! 👍", title)
+        assertEquals("2 logbook telah disetujui mentor. Tersisa 1 laporan yang masih menunggu peninjauan.", body)
+    }
 }

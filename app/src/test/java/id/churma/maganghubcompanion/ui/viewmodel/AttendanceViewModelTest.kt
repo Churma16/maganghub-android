@@ -50,6 +50,7 @@ class AttendanceViewModelTest {
         private var cachedStatus: AttendanceStatus = AttendanceStatus.UNKNOWN
         private var cachedTimestamp: Long = 0L
         private var cachedPendingMentorCount: Int = 0
+        private var cachedApprovedMentorCount: Int = 0
         private var hasCredentialsSaved: Boolean = false
 
         override suspend fun login(username: String, password: String): Result<String> {
@@ -69,7 +70,8 @@ class AttendanceViewModelTest {
                     status = status,
                     data = data,
                     checkedAt = cachedTimestamp,
-                    pendingMentorReviewCount = cachedPendingMentorCount
+                    pendingMentorReviewCount = cachedPendingMentorCount,
+                    approvedMentorReviewCount = cachedApprovedMentorCount
                 )
             )
         }
@@ -81,6 +83,7 @@ class AttendanceViewModelTest {
             cachedStatus = AttendanceStatus.UNKNOWN
             cachedTimestamp = 0L
             cachedPendingMentorCount = 0
+            cachedApprovedMentorCount = 0
         }
 
         override suspend fun updateReminderSettings(settings: ReminderSettings) {
@@ -117,6 +120,10 @@ class AttendanceViewModelTest {
 
         fun setCachedPendingMentorReviewCount(count: Int) {
             cachedPendingMentorCount = count
+        }
+
+        fun setApprovedMentorReviewCount(count: Int) {
+            cachedApprovedMentorCount = count
         }
 
         private var cachedMentorSyncDebug: String? = null
@@ -370,6 +377,48 @@ class AttendanceViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(6, viewModel.uiState.value.pendingMentorReviewCount)
+    }
+
+    @Test
+    fun testMentorApprovalSuccessMessage_AllApproved() = runTest {
+        val repo = FakeAttendanceRepository()
+        repo.setCachedPendingMentorReviewCount(0)
+        repo.setApprovedMentorReviewCount(2)
+        val viewModel = AttendanceViewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.checkAttendanceNow(silent = false)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Semua logbook (2 laporan) telah disetujui mentor! 🎉", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun testMentorApprovalSuccessMessage_SingleAllApproved() = runTest {
+        val repo = FakeAttendanceRepository()
+        repo.setCachedPendingMentorReviewCount(0)
+        repo.setApprovedMentorReviewCount(1)
+        val viewModel = AttendanceViewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.checkAttendanceNow(silent = false)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("Logbook kamu telah disetujui mentor! 🎉", viewModel.uiState.value.successMessage)
+    }
+
+    @Test
+    fun testMentorApprovalSuccessMessage_PartialApproved() = runTest {
+        val repo = FakeAttendanceRepository()
+        repo.setCachedPendingMentorReviewCount(3)
+        repo.setApprovedMentorReviewCount(2)
+        val viewModel = AttendanceViewModel(repo)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.checkAttendanceNow(silent = true)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("2 logbook telah disetujui mentor! 👍", viewModel.uiState.value.successMessage)
     }
 
     @Test

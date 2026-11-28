@@ -30,6 +30,7 @@ object NotificationHelper {
     const val NOTIFICATION_ID_CONFIRMATION = 1002
     const val NOTIFICATION_ID_AUTH_ALERT = 1003
     const val NOTIFICATION_ID_MENTOR_REMINDER = 1004
+    const val NOTIFICATION_ID_MENTOR_APPROVAL = 1005
 
     const val ACTION_CHECK_NOW = "id.churma.maganghubcompanion.ACTION_CHECK_NOW"
     const val ACTION_SNOOZE_30 = "id.churma.maganghubcompanion.ACTION_SNOOZE_30"
@@ -432,6 +433,85 @@ object NotificationHelper {
         try {
             NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_MENTOR_REMINDER)
         } catch (e: Exception) {}
+    }
+
+    /**
+     * Pure function to format mentor approval notification message.
+     */
+    fun formatMentorApprovalMessage(approvedCount: Int, remainingPendingCount: Int): Pair<String, String> {
+        val title = if (remainingPendingCount == 0) {
+            "Logbook Disetujui Mentor! 🎉"
+        } else {
+            "Logbook Disetujui Mentor! 👍"
+        }
+
+        val body = if (remainingPendingCount == 0) {
+            if (approvedCount == 1) {
+                "Kabar baik! Logbook kamu telah disetujui mentor."
+            } else {
+                "Kabar baik! Semua laporan ($approvedCount logbook) telah disetujui mentor."
+            }
+        } else {
+            if (approvedCount == 1) {
+                "1 logbook telah disetujui mentor. Tersisa $remainingPendingCount laporan yang masih menunggu peninjauan."
+            } else {
+                "$approvedCount logbook telah disetujui mentor. Tersisa $remainingPendingCount laporan yang masih menunggu peninjauan."
+            }
+        }
+
+        return Pair(title, body)
+    }
+
+    /**
+     * Shows notification when mentor has approved attendance reports.
+     */
+    fun showMentorApprovalNotification(
+        context: Context,
+        approvedCount: Int,
+        remainingPendingCount: Int = 0,
+        soundEnabled: Boolean = true,
+        vibrationEnabled: Boolean = true
+    ) {
+        if (approvedCount <= 0) return
+        createNotificationChannels(context)
+
+        val openAppIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val openAppPendingIntent = PendingIntent.getActivity(
+            context,
+            8,
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val (title, body) = formatMentorApprovalMessage(approvedCount, remainingPendingCount)
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_CONFIRMATION_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+            .setContentIntent(openAppPendingIntent)
+
+        if (!soundEnabled) {
+            builder.setSilent(true)
+        }
+        if (vibrationEnabled) {
+            builder.setVibrate(longArrayOf(0, 300, 150, 300))
+        } else {
+            builder.setVibrate(longArrayOf(0))
+        }
+
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_MENTOR_APPROVAL, builder.build())
+        } catch (e: SecurityException) {
+            // POST_NOTIFICATIONS permission not granted yet
+        }
     }
 
     /**

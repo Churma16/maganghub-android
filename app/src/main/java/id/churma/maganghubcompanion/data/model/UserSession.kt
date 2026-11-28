@@ -22,6 +22,7 @@ data class AttendanceCheckResult(
     val isSuccess: Boolean = true,
     val errorMessage: String? = null,
     val pendingMentorReviewCount: Int = 0,
+    val approvedMentorReviewCount: Int = 0,
     val mentorSyncDebug: String? = null
 )
 
