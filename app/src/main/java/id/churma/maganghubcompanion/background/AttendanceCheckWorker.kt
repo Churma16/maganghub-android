@@ -13,9 +13,13 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import id.churma.maganghubcompanion.MagangHubApp
+import id.churma.maganghubcompanion.data.api.RateLimitedException
 import id.churma.maganghubcompanion.data.api.UnauthorizedSessionException
+import id.churma.maganghubcompanion.data.model.AttendanceCheckResult
+import id.churma.maganghubcompanion.data.model.AttendanceHomeData
 import id.churma.maganghubcompanion.data.model.AttendanceStatus
 import id.churma.maganghubcompanion.data.model.ReminderSettings
+import id.churma.maganghubcompanion.data.repository.AttendanceRepositoryImpl
 import id.churma.maganghubcompanion.widget.AttendanceWidgetHelper
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -137,7 +141,7 @@ class AttendanceCheckWorker(
         } catch (_: Exception) {
             0L
         }
-        val isMentorDue = id.churma.maganghubcompanion.data.repository.AttendanceRepositoryImpl.isMentorCheckDue(
+        val isMentorDue = AttendanceRepositoryImpl.isMentorCheckDue(
             currentTimeMillis = System.currentTimeMillis(),
             lastCheckMillis = lastMentorCheck
         )
@@ -148,18 +152,13 @@ class AttendanceCheckWorker(
             isMentorCheckDue = isMentorDue
         )
 
-        val homeData: id.churma.maganghubcompanion.data.model.AttendanceHomeData?
+        val homeData: AttendanceHomeData?
         var pendingMentorCount: Int? = null
-        var resultData: id.churma.maganghubcompanion.data.model.AttendanceCheckResult? = null
+        var resultData: AttendanceCheckResult? = null
 
         if (shouldSkip) {
             Log.i(TAG, "Today's attendance confirmed ($todayDateString) and mentor check not due. Skipping network check to save battery.")
             homeData = cachedHomeData
-            pendingMentorCount = try {
-                MagangHubApp.instance.encryptedPreferences.getPendingMentorReviewCount()
-            } catch (_: Exception) {
-                0
-            }
         } else {
             val repository = try {
                 MagangHubApp.instance.attendanceRepository
@@ -174,7 +173,7 @@ class AttendanceCheckWorker(
                 val exception = checkResult.exceptionOrNull()
                 Log.e(TAG, "Attendance verification failed", exception)
 
-                if (exception is id.churma.maganghubcompanion.data.api.RateLimitedException) {
+                if (exception is RateLimitedException) {
                     val backoffSec = exception.retryAfterSeconds.coerceAtLeast(60L)
                     val resumeEpochMillis = System.currentTimeMillis() + (backoffSec * 1000L)
                     Log.w(TAG, "MagangHub API rate limited (HTTP 429). Rescheduling next alarm in $backoffSec seconds.")
