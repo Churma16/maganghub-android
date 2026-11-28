@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.0] - 2026-11-28
+
+* feat: rename app to MagangHub Companion and refactor package to id.churma.maganghubcompanion (#51)
+
 ## [0.3.0] - 2026-11-28
 
 * fix(ui,widget): align holiday purple theme, fix moon icon vector, and handle midnight rollover (#50)
