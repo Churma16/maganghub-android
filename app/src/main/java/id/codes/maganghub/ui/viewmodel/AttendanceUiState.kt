@@ -48,8 +48,29 @@ data class AttendanceUiState(
         get() = attendanceStatus == AttendanceStatus.BELUM_HADIR
 
     fun getDailyWorkPhase(nowWib: java.time.ZonedDateTime = java.time.ZonedDateTime.now(WorkPhaseResolver.ZONE_WIB)): DailyWorkPhase {
-        val hasAttendance = attendanceData?.hasAttendance == true || isAttended
-        val holiday = attendanceData?.isHoliday == true || attendanceData?.isScheduledOffDay == true || isHoliday
+        val todayStr = nowWib.toLocalDate().toString()
+        val isDataStale = if (attendanceData != null && attendanceData.date.isNotBlank()) {
+            attendanceData.date != todayStr
+        } else if (lastSyncTimestamp > 0L) {
+            val syncDate = java.time.Instant.ofEpochMilli(lastSyncTimestamp).atZone(WorkPhaseResolver.ZONE_WIB).toLocalDate().toString()
+            syncDate != todayStr
+        } else {
+            false
+        }
+
+        val hasAttendance = if (isDataStale) {
+            false
+        } else {
+            attendanceData?.hasAttendance == true || isAttended
+        }
+
+        val holiday = if (isDataStale) {
+            val dayOfWeek = nowWib.dayOfWeek
+            dayOfWeek == java.time.DayOfWeek.SATURDAY || dayOfWeek == java.time.DayOfWeek.SUNDAY
+        } else {
+            attendanceData?.isHoliday == true || attendanceData?.isScheduledOffDay == true || isHoliday
+        }
+
         return WorkPhaseResolver.resolve(
             hasAttendance = hasAttendance,
             isHoliday = holiday,

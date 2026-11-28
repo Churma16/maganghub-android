@@ -73,7 +73,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Segera isi sebelum 23:59 WIB"
         WidgetStatus.HARI_LIBUR -> {
             when {
-                pendingMentorCount == 0 -> "Tidak wajib isi logbook"
+                pendingMentorCount == 0 -> "Selamat beristirahat"
                 isMentorOverdue -> "$pendingMentorCount laporan belum di-approve"
                 else -> "$pendingMentorCount laporan menunggu approval"
             }
@@ -100,7 +100,7 @@ data class WidgetDataSnapshot(
         WidgetStatus.MENDESAK -> "Sisa $remainingTimeText"
         WidgetStatus.HARI_LIBUR -> {
             when {
-                pendingMentorCount == 0 -> "Tidak wajib logbook"
+                pendingMentorCount == 0 -> "Selamat beristirahat"
                 isMentorOverdue -> "$pendingMentorCount menunggu >$thresholdDays hr"
                 else -> "$pendingMentorCount menunggu approval"
             }
@@ -224,12 +224,37 @@ data class WidgetDataSnapshot(
             val prefs = (context.applicationContext as? id.codes.maganghub.MagangHubApp)?.encryptedPreferences
                 ?: EncryptedPreferences(context)
             val settings = prefs.getReminderSettings()
+            val nowWib = Instant.ofEpochMilli(nowMillis).atZone(WIB_ZONE_ID)
+            val todayStr = nowWib.toLocalDate().toString()
+            val cachedHomeData = prefs.getLastHomeData()
+            val lastCheckTime = prefs.getLastCheckTimestamp()
+
+            val isDataStale = if (cachedHomeData != null && cachedHomeData.date.isNotBlank()) {
+                cachedHomeData.date != todayStr
+            } else if (lastCheckTime > 0L) {
+                val syncDate = Instant.ofEpochMilli(lastCheckTime).atZone(WIB_ZONE_ID).toLocalDate().toString()
+                syncDate != todayStr
+            } else {
+                false
+            }
+
+            val effectiveStatus = if (isDataStale) {
+                val dayOfWeek = nowWib.dayOfWeek
+                if (dayOfWeek == java.time.DayOfWeek.SATURDAY || dayOfWeek == java.time.DayOfWeek.SUNDAY) {
+                    AttendanceStatus.LIBUR
+                } else {
+                    AttendanceStatus.BELUM_HADIR
+                }
+            } else {
+                prefs.getLastAttendanceStatus()
+            }
+
             return fromComponents(
                 hasCredentials = prefs.hasCredentials(),
-                attendanceStatus = prefs.getLastAttendanceStatus(),
+                attendanceStatus = effectiveStatus,
                 pendingCount = prefs.getPendingMentorReviewCount(),
                 thresholdDays = settings.mentorReviewThresholdDays,
-                lastCheckTimestamp = prefs.getLastCheckTimestamp(),
+                lastCheckTimestamp = if (isDataStale) 0L else lastCheckTime,
                 reminderEnabled = settings.isEnabled,
                 reminderStartHour = settings.startHour,
                 reminderIntervalMinutes = settings.intervalMinutes,
