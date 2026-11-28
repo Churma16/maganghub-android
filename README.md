@@ -143,8 +143,8 @@ Pengaturan yang tersedia:
 APK tersedia melalui halaman [GitHub Releases](../../releases).
 
 Ada tiga jenis build yang tersedia:
-1. **Official Release (`maganghub-v<version>.apk`)**: build stabil resmi untuk penggunaan sehari-hari.
-2. **Snapshot Pre-Release (`maganghub-v<version>-snapshot.<sha>.apk`)**: dibuat otomatis setiap ada commit baru di branch `main`.
+1. **Official Release (`maganghub-companion-v<version>.apk`)**: build stabil resmi untuk penggunaan sehari-hari.
+2. **Snapshot Pre-Release (`maganghub-companion-v<version>-snapshot.<sha>.apk`)**: dibuat otomatis setiap ada commit baru di branch `main`.
 3. **PR Preview Build**: APK pratinjau saat PR diberi label `build-preview`.
 
 ### Cara instalasi
@@ -238,7 +238,7 @@ flowchart TD
 ```
 app/src/main/
 ├── AndroidManifest.xml
-├── java/id/codes/maganghub/
+├── java/id/churma/maganghubcompanion/
 │   ├── MagangHubApp.kt
 │   ├── background/
 │   │   ├── AttendanceAlarmScheduler.kt
@@ -351,7 +351,7 @@ Validasi versi dilakukan secara otomatis oleh `verify-no-manual-version-bump.js`
 ### Snapshot Release
 Setiap perubahan yang masuk ke branch `main` akan memicu workflow snapshot.
 Jika test dan build berhasil, APK snapshot akan dipublikasikan melalui GitHub Pre-Releases.
-Format nama file: `maganghub-v<version>-snapshot.<sha>.apk`.
+Format nama file: `maganghub-companion-v<version>-snapshot.<sha>.apk`.
 
 ### Official Release
 Rilis stabil dilakukan secara manual melalui GitHub Actions (`workflow_dispatch`).

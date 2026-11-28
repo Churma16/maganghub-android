@@ -116,7 +116,7 @@ jobs:
         run: |
           ./gradlew assembleRelease \
             -PapplicationIdSuffix=".preview" \
-            -PappName="MagangHub (PR #${{ env.PR_NUMBER }})" \
+            -PappName="MagangHub Companion (PR #${{ env.PR_NUMBER }})" \
             -PversionSuffix="${{ env.VERSION_SUFFIX }}" \
             --stacktrace
         env:
@@ -127,7 +127,7 @@ jobs:
       - name: Package Preview APK
         run: |
           APK_FILE=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
-          PREVIEW_APK="maganghub-${{ env.PREVIEW_TAG }}.apk"
+          PREVIEW_APK="maganghub-companion-${{ env.PREVIEW_TAG }}.apk"
           cp "$APK_FILE" "$PREVIEW_APK"
           echo "PREVIEW_APK=$PREVIEW_APK" >> $GITHUB_ENV
           echo "[INFO] Ready to publish preview APK: $PREVIEW_APK"
@@ -147,7 +147,7 @@ jobs:
             This is an automated preview release built from commit `${{ env.SHORT_SHA }}` on PR #${{ env.PR_NUMBER }}.
 
             * **Pull Request:** https://github.com/${{ github.repository }}/pull/${{ env.PR_NUMBER }}
-            * **Package ID:** `id.codes.maganghub.preview` (Isolated package, can be installed side-by-side with official release)
+            * **Package ID:** `id.churma.maganghubcompanion.preview` (Isolated package, can be installed side-by-side with official release)
             * **Direct APK Download:** [${{ env.PREVIEW_APK }}](https://github.com/${{ github.repository }}/releases/download/${{ env.PREVIEW_TAG }}/${{ env.PREVIEW_APK }})
 
             Signed with dedicated preview keystore. Install directly to test on Android without overwriting your main app.
@@ -159,7 +159,7 @@ jobs:
           DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${{ env.PREVIEW_TAG }}/${{ env.PREVIEW_APK }}"
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ env.PREVIEW_TAG }}"
 
-          COMMENT_BODY=$(printf "### 📱 Preview APK Ready for Testing!\n\n* **PR:** #%s\n* **Commit:** \`%s\`\n* **Package ID:** \`id.codes.maganghub.preview\` (Bisa diinstall berdampingan tanpa bentrok)\n* **Release:** [%s](%s)\n* **Download APK:** [%s](%s)\n\n> Ditandatangani dengan keystore preview terisolasi — aman dipasang di HP tanpa menimpa aplikasi rilis utama.\n" \
+          COMMENT_BODY=$(printf "### 📱 Preview APK Ready for Testing!\n\n* **PR:** #%s\n* **Commit:** \`%s\`\n* **Package ID:** \`id.churma.maganghubcompanion.preview\` (Bisa diinstall berdampingan tanpa bentrok)\n* **Release:** [%s](%s)\n* **Download APK:** [%s](%s)\n\n> Ditandatangani dengan keystore preview terisolasi — aman dipasang di HP tanpa menimpa aplikasi rilis utama.\n" \
             "${{ env.PR_NUMBER }}" \
             "${{ env.SHORT_SHA }}" \
             "${{ env.PREVIEW_TAG }}" \

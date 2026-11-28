@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MagangHub</string>
+    <string name="app_name">MagangHub Companion</string>
     <string name="channel_attendance_id">maganghub_attendance_channel</string>
     <string name="channel_attendance_name">Pengingat Logbook MagangHub</string>
     <string name="channel_attendance_desc">Notifikasi pengingat pengisian logbook MagangHub</string>

@@ -67,7 +67,7 @@ test('updateGradleVersion modifies versionCode and versionName in build.gradle.k
 
   const initialContent = `
     defaultConfig {
-        applicationId = "id.codes.maganghub"
+        applicationId = "id.churma.maganghubcompanion"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
